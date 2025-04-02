@@ -1,6 +1,6 @@
 {
   "private": true,
-  "workspaces": ["app/backend", "app/frontend"],
+  "workspaces": ["backend", "frontend"],
   "devDependencies": {
     "eslint": "^8.0.0",
     "prettier": "^3.4.2",
