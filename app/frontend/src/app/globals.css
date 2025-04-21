@@ -119,9 +119,9 @@
   body {
     @apply bg-background text-foreground;
   }
-} */
+}
 
-/* Direct from V0 */
+/* Direct from V0 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
