@@ -76,6 +76,14 @@ export default function HealthScreenings() {
     },
   ]
 
+  const screeningTypes: string[] = [
+    "All Categories",
+    "Annual Checkups",
+    "Dental",
+    "Cancer Screenings",
+    "Vaccines"
+  ];
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-2">
@@ -86,7 +94,7 @@ export default function HealthScreenings() {
       </div>
       <p className="text-muted-foreground mb-8">Track and manage your recommended health screenings and checkups.</p>
 
-      <div className="bg-white border rounded-lg p-6 mb-6">
+      <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-semibold">Recommended Health Screenings</h2>
@@ -94,24 +102,25 @@ export default function HealthScreenings() {
               Your personalized health screening timeline based on your profile
             </p>
           </div>
-          <Select defaultValue="all">
+          <Select defaultValue="all"> 
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="annual">Annual Checkups</SelectItem>
-              <SelectItem value="dental">Dental</SelectItem>
-              <SelectItem value="vision">Vision</SelectItem>
-              <SelectItem value="cancer">Cancer Screenings</SelectItem>
-              <SelectItem value="vaccines">Vaccines</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem> {/* TO BE FIXED: This is here twice to fulfill the defaultValue Correctly*/}
+              {screeningTypes.map((type) => (
+                <SelectItem 
+                key={type} // Convert to value-safe string
+                value={type.toLowerCase().replace(/\s+/g, "")}
+                >{type}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-4">
           {screenings.map((screening) => (
-            <div key={screening.id} className="border-b pb-4 last:border-0 last:pb-0">
+            <div key={screening.id} className="border border-gray-300 p-2 rounded">
               <div className="flex items-center justify-between">
                 <div className="flex items-start gap-3">
                   <div className="mt-1">{screening.icon}</div>
