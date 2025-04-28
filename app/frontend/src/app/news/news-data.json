@@ -1,0 +1,74 @@
+[
+    {
+      "id": 1,
+      "title": "New Guidelines for Colorectal Cancer Screening",
+      "summary":
+        "The U.S. Preventive Services Task Force has updated its guidelines for colorectal cancer screening, now recommending that adults begin screening at age 45 instead of 50. This change comes as research shows an increase in colorectal cancer cases among younger adults.",
+      "category": "Screenings",
+      "source": "CDC",
+      "date": "April 15, 2025"
+    },
+    {
+      "id": 2,
+      "title": "COVID-19 Vaccine Booster Recommendations Updated",
+      "summary":
+        "Health authorities have released new recommendations for COVID-19 vaccine boosters, suggesting annual shots for most adults and more frequent boosters for high-risk populations. The updated vaccines target current circulating variants.",
+      "category": "Vaccines",
+      "source": "WHO",
+      "date": "April 10, 2025"
+    },
+    {
+      "id": 3,
+      "title": "Mediterranean Diet Linked to Reduced Alzheimer's Risk",
+      "summary":
+        "A new long-term study has found that consistent adherence to the Mediterranean diet is associated with a significant reduction in Alzheimer's disease risk. Researchers observed a 53% lower incidence among participants who closely followed the diet for over a decade.",
+      "category": "Lifestyle",
+      "source": "Mayo Clinic",
+      "date": "April 8, 2025"
+    },
+    {
+      "id": 4,
+      "title": "Breakthrough in Early Detection of Pancreatic Cancer",
+      "summary":
+        "Scientists have developed a new blood test that can detect pancreatic cancer at early stages with 94% accuracy. This breakthrough could dramatically improve survival rates for one of the most lethal forms of cancer by enabling treatment before the disease progresses.",
+      "category": "Research",
+      "source": "National Cancer Institute",
+      "date": "April 5, 2025"
+    },
+    {
+      "id": 5,
+      "title": "Digital Therapy Shows Promise for Depression Treatment",
+      "summary":
+        "A clinical trial of a new digital therapeutic program has shown significant improvements in patients with moderate to severe depression. The smartphone-based cognitive behavioral therapy intervention reduced symptoms by 45% compared to standard care alone.",
+      "category": "Mental Health",
+      "source": "American Psychiatric Association",
+      "date": "April 3, 2025"
+    },
+    {
+      "id": 6,
+      "title": "New Blood Pressure Guidelines for Heart Health",
+      "summary":
+        "The American Heart Association has released updated blood pressure guidelines, emphasizing the importance of home monitoring. The new recommendations suggest treatment should begin at lower thresholds for adults over 65 with other cardiovascular risk factors.",
+      "category": "Screenings",
+      "source": "American Heart Association",
+      "date": "March 30, 2025"
+    },
+    {
+      "id": 7,
+      "title": "Advances in mRNA Technology Beyond COVID Vaccines",
+      "summary":
+        "Following the success of mRNA COVID-19 vaccines, researchers are applying the technology to develop vaccines for other diseases including malaria, tuberculosis, and several types of cancer, with promising early results in clinical trials.",
+      "category": "Research",
+      "source": "NIH",
+      "date": "March 28, 2025"
+    },
+    {
+      "id": 8,
+      "title": "Study Links Regular Exercise to Improved Immune Function",
+      "summary":
+        "A comprehensive review of research has confirmed that moderate regular exercise significantly enhances immune system function. The study found that 150 minutes of moderate activity weekly can reduce the risk of respiratory infections by up to 31%.",
+      "category": "Lifestyle",
+      "source": "Journal of Applied Physiology",
+      "date": "March 25, 2025"
+    }
+]
