@@ -25,7 +25,7 @@ export function HealthNewsPage() {
   }
 
   return (
-        <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex flex-col p-6 bg-gray-50">
 
           {/* Main content */}
           <main className="flex-1">
