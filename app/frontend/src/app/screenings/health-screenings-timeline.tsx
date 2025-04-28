@@ -2,6 +2,8 @@ import { ArrowRight, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
+import timelineData from "./timeline-data.json"
+
 interface TimelineItem {
   id: string
   name: string
@@ -11,36 +13,13 @@ interface TimelineItem {
 }
 
 export default function HealthScreeningTimeline() {
-  const timelineItems: TimelineItem[] = [
-    {
-      id: "1",
-      name: "Hearing Test",
-      dueDate: "Due: March 20, 2025",
-      month: "April 2025",
-      status: "due-soon",
-    },
-    {
-      id: "2",
-      name: "Annual Physical Examination",
-      dueDate: "Due: April 20, 2025",
-      month: "May 2025",
-      status: "upcoming",
-    },
-    {
-      id: "3",
-      name: "Dental Checkup",
-      dueDate: "Due: May 20, 2025",
-      month: "June 2025",
-      status: "upcoming",
-    },
-    {
-      id: "4",
-      name: "Mammogram",
-      dueDate: "Due: June 5, 2025",
-      month: "July 2025",
-      status: "upcoming",
-    },
-  ]
+  const timelineItems: TimelineItem[] = timelineData.map((item) => ({
+    id: item.id,
+    name: item.name,
+    dueDate: item.dueDate,
+    month: new Date(item.dueDate).toLocaleString("default", { month: "long" }),
+    status: item.status as "upcoming" | "due-soon" | "overdue",
+  }))
 
   // Group timeline items by month
   const groupedItems: Record<string, TimelineItem[]> = {}

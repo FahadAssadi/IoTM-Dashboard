@@ -1,5 +1,3 @@
-import Header from "../../components/views/header";
-import Sidebar from "../../components/views/sidebar";
 import HealthScreenings from "./health-screenings"
 import HealthScreeningTimeline from "./health-screenings-timeline";
 import { CalendarDays } from "lucide-react";
