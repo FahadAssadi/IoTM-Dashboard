@@ -4,11 +4,11 @@ import { Activity, Calendar, Cog, Heart, Laptop, Newspaper, User } from "lucide-
 
 export default function Sidebar() {
   return (
-    <div className="w-[180px] border-r bg-white flex flex-col h-full">
+    <div className="w-[180px] border-r border-primary border-gray-300 bg-white flex flex-col h-full">
       <div className="flex-1 py-4">
         <nav className="space-y-1 px-2">
           <SidebarItem href="/" icon={Activity} label="Overview" />
-          <SidebarItem href="/screenings" icon={Calendar} label="Health Screenings" active />
+          <SidebarItem href="/HealthScreenings" icon={Calendar} label="Health Screenings" active />
           <SidebarItem href="/vitals" icon={Heart} label="Vitals" />
           <SidebarItem href="/devices" icon={Laptop} label="Connected Devices" />
           <SidebarItem href="/news" icon={Newspaper} label="Health News" />
