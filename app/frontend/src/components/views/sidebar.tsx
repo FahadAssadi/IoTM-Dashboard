@@ -10,7 +10,7 @@ export default async function Sidebar() {
         <nav className="space-y-1 px-2">
           <SidebarItem href="/" icon={Activity} label="Overview" />
           <SidebarItem href="/screenings" icon={Calendar} label="Health Screenings" />
-          <SidebarItem href="/vitals" icon={Heart} label="Vitals" />
+          <SidebarItem href="/health-insights" icon={Heart} label="Health Insights" />
           <SidebarItem href="/devices" icon={Laptop} label="Connected Devices" />
           <SidebarItem href="/news" icon={Newspaper} label="Health News" />
           <SidebarItem href="/profile" icon={User} label="Profile" />
