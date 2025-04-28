@@ -3,6 +3,8 @@ import { Calendar, CalendarClock, CircleAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
+import screeningsData from "./screenings-data.json"
+
 interface ScreeningItem {
   id: string
   name: string
@@ -12,69 +14,10 @@ interface ScreeningItem {
 }
 
 export default function HealthScreenings() {
-  const screenings: ScreeningItem[] = [
-    {
-      id: "1",
-      name: "Annual Physical Examination",
-      dueDate: "May 15, 2025",
-      icon: <Calendar className="h-5 w-5 text-primary" />,
-    },
-    {
-      id: "2",
-      name: "Dental Checkup",
-      dueDate: "June 3, 2025",
-      icon: <Calendar className="h-5 w-5 text-primary" />,
-    },
-    {
-      id: "3",
-      name: "Eye Examination",
-      dueDate: "August 12, 2025",
-      icon: <Calendar className="h-5 w-5 text-primary" />,
-    },
-    {
-      id: "4",
-      name: "Skin Cancer Screening",
-      dueDate: "March 10, 2025",
-      icon: <CircleAlert className="h-5 w-5 text-red-500" />,
-      alert: true,
-    },
-    {
-      id: "5",
-      name: "Mammogram",
-      dueDate: "July 22, 2025",
-      icon: <Calendar className="h-5 w-5 text-primary" />,
-    },
-    {
-      id: "6",
-      name: "Colonoscopy",
-      dueDate: "November 5, 2029",
-      icon: <Calendar className="h-5 w-5 text-blue-500" />,
-    },
-    {
-      id: "7",
-      name: "Cholesterol Test",
-      dueDate: "February 15, 2025",
-      icon: <Calendar className="h-5 w-5 text-primary" />,
-    },
-    {
-      id: "8",
-      name: "Bone Density Test",
-      dueDate: "September 20, 2025",
-      icon: <Calendar className="h-5 w-5 text-primary" />,
-    },
-    {
-      id: "9",
-      name: "Tetanus Booster",
-      dueDate: "October 10, 2025",
-      icon: <Calendar className="h-5 w-5 text-primary" />,
-    },
-    {
-      id: "10",
-      name: "Hearing Test",
-      dueDate: "April 5, 2025",
-      icon: <Calendar className="h-5 w-5 text-primary" />,
-    },
-  ]
+  const screenings: ScreeningItem[] = screeningsData.map((screening) => ({
+    ...screening,
+    icon: screening.alert ? <CircleAlert className="h-4 w-4 text-red-500" /> : <Calendar className="h-4 w-4 text-primary-500" />,
+  }))
 
   const screeningTypes: string[] = [
     "All Categories",
