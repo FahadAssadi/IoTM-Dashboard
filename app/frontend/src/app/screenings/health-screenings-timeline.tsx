@@ -32,51 +32,58 @@ export default function HealthScreeningTimeline() {
 
   return (
     <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6">
-    <div className="mb-4">
+      <div className="mb-4">
         <h2 className="text-lg font-semibold">Health Screening Timeline</h2>
         <p className="text-sm text-muted-foreground">Upcoming and recommended health screenings by date</p>
-    </div>
+      </div>
 
-    <div className="space-y-6">
+      <div className="space-y-6">
         {Object.entries(groupedItems).map(([month, items]) => (
-        <div key={month} className="relative">
+          <div key={month} className="relative">
             <div className="flex items-center gap-3 mb-4">
-            <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+              <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                 <Calendar className="h-4 w-4 text-primary" />
-            </div>
-            <span className="font-medium">{month}</span>
+              </div>
+              <span className="font-medium">{month}</span>
             </div>
 
             <div className="space-y-4 pl-4 ml-4 border-l border-dashed">
-            {items.map((item) => (
+              {items.map((item) => (
                 <div key={item.id} className="relative">
-                <div className="absolute -left-[21px] top-1.5 w-3 h-3 rounded-full border-2 border-primary bg-white"></div>
-                <div className="pl-6 p-2 border border-gray-300 rounded">
-                    <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-medium">{item.name}</h3>
-                    {item.status === "due-soon" ? (
-                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                        Due Soon
-                        </Badge>
-                    ) : (
-                        <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200">
-                        Upcoming
-                        </Badge>
-                    )}
+                  <div className="absolute -left-[21px] top-1.5 w-3 h-3 rounded-full border-2 border-primary bg-white"></div>
+                  <div className="pl-6 p-2 border border-gray-300 rounded">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium">{item.name}</h3>
+                          {item.status === "due-soon" ? (
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                              Due Soon
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200">
+                              Upcoming
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                          <span className="text-sm text-muted-foreground">{item.dueDate}</span>
+                        </div>
+                      </div>
+                      <Button className="bg-teal-500 hover:bg-teal-600 text-white">Export</Button>
                     </div>
-                    <p className="text-sm text-muted-foreground">{item.dueDate}</p>
+                  </div>
                 </div>
-                </div>
-            ))}
+              ))}
             </div>
-        </div>
+          </div>
         ))}
-    </div>
+      </div>
 
-    <Button variant="outline" className="w-full mt-6 flex items-center justify-center gap-2">
+      <Button variant="outline" className="w-full mt-6 flex items-center justify-center gap-2">
         View Full Timeline
         <ArrowRight className="h-4 w-4" />
-    </Button>
+      </Button>
     </div>
   )
 }
