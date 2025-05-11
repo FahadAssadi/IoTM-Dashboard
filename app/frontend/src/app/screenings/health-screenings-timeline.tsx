@@ -41,7 +41,7 @@ export default function HealthScreeningTimeline() {
         {Object.entries(groupedItems).map(([month, items]) => (
           <div key={month} className="relative">
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+              <div className="flex-shrink-0 w-8 h-8 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center">
                 <Calendar className="h-4 w-4 text-primary" />
               </div>
               <span className="font-medium">{month}</span>
@@ -50,7 +50,7 @@ export default function HealthScreeningTimeline() {
             <div className="space-y-4 pl-4 ml-4 border-l border-dashed">
               {items.map((item) => (
                 <div key={item.id} className="relative">
-                  <div className="absolute -left-[21px] top-1.5 w-3 h-3 rounded-full border-2 border-primary bg-white"></div>
+                  <div className="absolute -left-[22px] top-6 w-3 h-3 rounded-full border-2 border-primary bg-white"></div>
                   <div className="pl-6 p-2 border border-gray-300 rounded">
                     <div className="flex items-center justify-between">
                       <div>
