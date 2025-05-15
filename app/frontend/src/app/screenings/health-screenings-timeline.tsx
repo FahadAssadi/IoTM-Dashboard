@@ -70,7 +70,7 @@ export default function HealthScreeningTimeline() {
                           <span className="text-sm text-muted-foreground">{item.dueDate}</span>
                         </div>
                       </div>
-                      <Button className="bg-teal-500 hover:bg-teal-600 text-white">Export</Button>
+                      <Button variant="default">Export</Button>
                     </div>
                   </div>
                 </div>

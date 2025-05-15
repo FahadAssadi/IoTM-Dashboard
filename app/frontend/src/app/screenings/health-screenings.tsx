@@ -66,7 +66,7 @@ export default function HealthScreenings() {
                   </div>
                 </div>
               </div>
-              <Button className="bg-teal-500 hover:bg-teal-600 text-white">Schedule</Button>
+              <Button variant="default">Schedule</Button>
             </div>
           </div>
         ))}
