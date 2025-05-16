@@ -56,8 +56,8 @@ export default function HealthScreenings() {
         {screenings.map((screening) => (
           <div key={screening.id} className="border border-gray-300 p-2 rounded">
             <div className="flex items-center justify-between">
-              <div className="flex items-start gap-3">
-                <div className="mt-1">{screening.icon}</div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center mt-1 h-12 w-12 rounded-full bg-slate-100">{screening.icon}</div>
                 <div>
                   <h3 className="font-medium">{screening.name}</h3>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -66,7 +66,7 @@ export default function HealthScreenings() {
                   </div>
                 </div>
               </div>
-              <Button className="bg-teal-500 hover:bg-teal-600 text-white">Schedule</Button>
+              <Button variant="default">Schedule</Button>
             </div>
           </div>
         ))}
