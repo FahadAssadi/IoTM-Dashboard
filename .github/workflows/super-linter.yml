@@ -45,10 +45,11 @@ jobs:
         with:
           node-version: 18
 
+      # FRONTEND
       - name: Install root dependencies
         run: npm install
+        working-directory: frontend
 
-      # FRONTEND
       - name: Build frontend
         run: npm run build
         working-directory: frontend
@@ -64,6 +65,10 @@ jobs:
           path: frontend/coverage/
 
       # BACKEND
+      - name: Install root dependencies
+        run: npm install
+        working-directory: backend
+      
       - name: Build backend
         run: npm run build || echo "No build script"
         working-directory: backend
