@@ -1,0 +1,56 @@
+name: Super-Linter with CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  super-linter:
+    name: Super-Linter
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Super-Linter
+        uses: github/super-linter@v6
+        env:
+          VALIDATE_ALL_CODEBASE: false       # Lint only changed files on PRs
+          DEFAULT_BRANCH: main               # Set your main branch
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JAVASCRIPT_ES_CONFIG_FILE: .eslintrc.json
+          TYPESCRIPT_ES_CONFIG_FILE: .eslintrc.json
+          LINTER_RULES_PATH: .               # Where your .eslintrc lives
+          VALIDATE_TYPESCRIPT_ES: true
+          VALIDATE_JAVASCRIPT_ES: true
+          VALIDATE_JSON: true
+          VALIDATE_MARKDOWN: true
+          VALIDATE_YAML: true
+    
+  ci:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    needs: super-linter
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run build (optional)
+        run: npm run build || echo "No build script defined"
+
+      - name: Run tests
+        run: npm test
