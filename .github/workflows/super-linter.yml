@@ -48,15 +48,15 @@ jobs:
       # FRONTEND
       - name: Install root dependencies
         run: npm install
-        working-directory: frontend
+        working-directory: app/frontend
 
       - name: Build frontend
         run: npm run build
-        working-directory: frontend
+        working-directory: app/frontend
 
       - name: Test frontend with coverage
         run: npm run test:coverage
-        working-directory: frontend
+        working-directory: app/frontend
 
       - name: Upload frontend coverage report
         uses: actions/upload-artifact@v4
@@ -67,15 +67,15 @@ jobs:
       # BACKEND
       - name: Install root dependencies
         run: npm install
-        working-directory: backend
+        working-directory: app/backend
       
       - name: Build backend
         run: npm run build || echo "No build script"
-        working-directory: backend
+        working-directory: app/backend
 
       - name: Test backend with coverage
         run: npm run test:coverage
-        working-directory: backend
+        working-directory: app/backend
 
       - name: Upload backend coverage report
         uses: actions/upload-artifact@v4
