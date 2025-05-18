@@ -532,6 +532,92 @@ export default function HealthInsightsPage() {
                       </div>
                     </div>
 
+                    {/* Sleep Schedule Chart */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-medium text-slate-800">Sleep Schedule</h3>
+                        <span className="text-xs text-slate-500">Last 7 days</span>
+                      </div>
+                      <div className="h-[220px] w-full rounded-md border border-slate-200 bg-white p-6">
+                        <div className="flex h-full flex-col">
+                          <div className="relative flex-1">
+                            {/* Sleep Schedule Bars */}
+                            <div className="absolute inset-0">
+                              <div className="flex h-full flex-col justify-around">
+                                {/* Sunday */}
+                                <div className="relative h-[10%] w-full flex items-center">
+                                  <span className="w-10 text-xs text-slate-500 mr-4">Sun</span>
+                                  <div className="relative flex-1">
+                                    <div className="absolute top-1/2 -translate-y-1/2 left-[30%] right-[25%] h-4 rounded-full bg-indigo-300"></div>
+                                  </div>
+                                </div>
+
+                                {/* Saturday */}
+                                <div className="relative h-[10%] w-full flex items-center">
+                                  <span className="w-10 text-xs text-slate-500 mr-4">Sat</span>
+                                  <div className="relative flex-1">
+                                    <div className="absolute top-1/2 -translate-y-1/2 left-[35%] right-[15%] h-4 rounded-full bg-indigo-300"></div>
+                                  </div>
+                                </div>
+
+                                {/* Friday */}
+                                <div className="relative h-[10%] w-full flex items-center">
+                                  <span className="w-10 text-xs text-slate-500 mr-4">Fri</span>
+                                  <div className="relative flex-1">
+                                    <div className="absolute top-1/2 -translate-y-1/2 left-[25%] right-[35%] h-4 rounded-full bg-indigo-300"></div>
+                                  </div>
+                                </div>
+
+                                {/* Thursday */}
+                                <div className="relative h-[10%] w-full flex items-center">
+                                  <span className="w-10 text-xs text-slate-500 mr-4">Thu</span>
+                                  <div className="relative flex-1">
+                                    <div className="absolute top-1/2 -translate-y-1/2 left-[28%] right-[30%] h-4 rounded-full bg-indigo-300"></div>
+                                  </div>
+                                </div>
+
+                                {/* Wednesday */}
+                                <div className="relative h-[10%] w-full flex items-center">
+                                  <span className="w-10 text-xs text-slate-500 mr-4">Wed</span>
+                                  <div className="relative flex-1">
+                                    <div className="absolute top-1/2 -translate-y-1/2 left-[30%] right-[30%] h-4 rounded-full bg-indigo-300"></div>
+                                  </div>
+                                </div>
+
+                                {/* Tuesday */}
+                                <div className="relative h-[10%] w-full flex items-center">
+                                  <span className="w-10 text-xs text-slate-500 mr-4">Tue</span>
+                                  <div className="relative flex-1">
+                                    <div className="absolute top-1/2 -translate-y-1/2 left-[27%] right-[30%] h-4 rounded-full bg-indigo-300"></div>
+                                  </div>
+                                </div>
+
+                                {/* Monday */}
+                                <div className="relative h-[10%] w-full flex items-center">
+                                  <span className="w-10 text-xs text-slate-500 mr-4">Mon</span>
+                                  <div className="relative flex-1">
+                                    <div className="absolute top-1/2 -translate-y-1/2 left-[32%] right-[30%] h-4 rounded-full bg-indigo-300"></div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* X-axis labels */}
+                          <div className="mt-6 flex justify-between text-xs text-slate-500 pl-14 pr-2">
+                            <span>8 PM</span>
+                            <span>10 PM</span>
+                            <span>12 AM</span>
+                            <span>2 AM</span>
+                            <span>4 AM</span>
+                            <span>6 AM</span>
+                            <span>8 AM</span>
+                            <span>10 AM</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Sleep Metrics */}
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="rounded-lg border border-slate-200 p-4">
