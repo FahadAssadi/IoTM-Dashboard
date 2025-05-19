@@ -56,10 +56,10 @@ export default function DashboardPage() {
               <Calendar className="h-6 w-6 text-teal-600" />
             </div>
             <div className="flex-1 space-y-1">
-              <p className="font-medium text-slate-800">Annual Physical Examination</p>
+              <p className="font-medium text-slate-800">Flu Vaccine</p>
               <div className="flex items-center text-sm text-slate-600">
                 <Clock className="mr-1 h-4 w-4" />
-                <span>May 15, 2025 - 10:00 AM</span>
+                <span>May 20, 2025</span>
               </div>
             </div>
             <Badge variant="outline" className="ml-auto bg-amber-100 text-amber-700 border-amber-200">
@@ -75,10 +75,10 @@ export default function DashboardPage() {
               <Calendar className="h-6 w-6 text-teal-600" />
             </div>
             <div className="flex-1 space-y-1">
-              <p className="font-medium text-slate-800">Dental Checkup</p>
+              <p className="font-medium text-slate-800">Annual Physical Examination</p>
               <div className="flex items-center text-sm text-slate-600">
                 <Clock className="mr-1 h-4 w-4" />
-                <span>June 3, 2025 - 2:30 PM</span>
+                <span>June 30, 2025</span>
               </div>
             </div>
             <Badge variant="outline" className="ml-auto bg-teal-100 text-teal-700 border-teal-200">
