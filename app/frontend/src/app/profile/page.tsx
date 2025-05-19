@@ -13,9 +13,11 @@ import {
     FormMessage,
     FormDescription
 } from "@/components/ui/form"
+import { Cross } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Select from "react-select"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 
 const australianStates = [
     { value: "nsw", label: "New South Wales" },
@@ -50,7 +52,7 @@ type PersonalInfo = {
     city: { value: string; label: string }
 }
 
-export default function Home() {
+export default function ProfilePage() {
     const [selectedState, setSelectedState] = useState("nsw")
     const [cities, setCities] = useState<{ value: string; label: string }[]>(
         australianCities["nsw"].map((city) => ({ value: city, label: city }))
@@ -61,9 +63,9 @@ export default function Home() {
             firstName: "Jane",
             lastName: "Doe",
             email: "jane.doe@example.com",
-            dob: "1988-06-15",
+            dob: "2000-06-15",
             sex: { value: "female", label: "Female" },
-            phone: "0412 345 678",
+            phone: "",
             state: { value: "nsw", label: "New South Wales" },
             city: { value: "Sydney", label: "Sydney" },
         },
@@ -269,6 +271,112 @@ export default function Home() {
                                     </CardFooter>
                                 </form>
                             </Form>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center">
+                                    <Cross className="mr-2 h-5 w-5 text-teal-700" aria-hidden="true" />
+                                    <span>Medical Conditions</span>
+                                </CardTitle>
+                                <CardDescription>Select any of these medical conditions you currently have</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <fieldset className="space-y-4">
+                                    <legend className="sr-only">Medical conditions</legend>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox
+                                                        id="condition-hypertension"
+                                                        aria-describedby="condition-hypertension-description"
+                                                    />
+                                                    <p className="font-medium">
+                                                        Hypertension (High Blood Pressure)
+                                                    </p>
+                                                </div>
+                                                <p id="condition-hypertension-description" className="text-xs text-slate-600 ml-6 mt-1">
+                                                    High blood pressure that requires monitoring or medication
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox id="condition-diabetes" aria-describedby="condition-diabetes-description" />
+                                                    <p className="font-medium">
+                                                        Diabetes
+                                                    </p>
+                                                </div>
+                                                <p id="condition-diabetes-description" className="text-xs text-slate-600 ml-6 mt-1">
+                                                    Type 1 or Type 2 diabetes requiring management
+                                                </p>
+                                            </div>
+
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox id="condition-asthma" />
+                                                <p className="font-medium">
+                                                    Asthma
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox id="condition-heart-disease" aria-describedby="condition-heart-description" />
+                                                    <p className="font-medium">
+                                                        Heart Disease
+                                                    </p>
+                                                </div>
+                                                <p id="condition-heart-description" className="text-xs text-slate-600 ml-6 mt-1">
+                                                    Any diagnosed heart condition
+                                                </p>
+                                            </div>
+
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox id="condition-arthritis" />
+                                                <p className="font-medium">
+                                                    Arrhythmia
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox id="condition-cancer" />
+                                                <p className="font-medium">
+                                                    Sleep Apnea
+                                                </p>
+                                            </div>
+
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox id="condition-depression" />
+                                                <p className="font-medium">
+                                                    Insomnia
+                                                </p>
+                                            </div>
+
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox id="condition-thyroid" />
+                                                <p className="font-medium">
+                                                    Narcolepsy
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </fieldset>
+
+                            </CardContent>
+                            <CardFooter className="flex justify-end gap-2">
+                                <Button variant="outline" aria-label="Cancel changes to medical conditions">
+                                    Cancel
+                                </Button>
+                                <Button
+                                    className="bg-teal-700 hover:bg-teal-800 text-white"
+                                    aria-label="Save medical conditions changes"
+                                    onClick={() => alert("Medical conditions updated successfully!")}
+                                >
+                                    Save Changes
+                                </Button>
+                            </CardFooter>
                         </Card>
                     </TabsContent>
                 </Tabs>

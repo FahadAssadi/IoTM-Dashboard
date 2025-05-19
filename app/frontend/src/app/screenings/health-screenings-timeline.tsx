@@ -79,11 +79,6 @@ export default function HealthScreeningTimeline() {
           </div>
         ))}
       </div>
-
-      <Button variant="outline" className="w-full mt-6 flex items-center justify-center gap-2">
-        View Full Timeline
-        <ArrowRight className="h-4 w-4" />
-      </Button>
     </div>
   )
 }
