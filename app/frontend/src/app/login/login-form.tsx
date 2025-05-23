@@ -1,6 +1,7 @@
 import { useState } from "react"
 import Link from "next/link"
-import { Eye, EyeOff, ArrowRight } from "lucide-react"
+import { useForm } from "react-hook-form"
+import { Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import GoogleButton from "./google-button"
@@ -9,8 +10,22 @@ type LoginFormProps = {
     setTab: (tab: string) => void;
 };
 
+type FormData = {
+  email: string;
+  password: string;
+}
+
 export default function LoginForm({ setTab }: LoginFormProps){
     const [showPassword, setShowPassword] = useState(false)
+
+    const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+      mode: "onChange"
+    }); 
+
+    const onSubmit = (data: FormData) => {
+      console.log("Form submitted:", data);
+      // Send to API, etc.
+    };
 
     function switchToSignUpForm () {
         setTab("signup");
@@ -24,67 +39,95 @@ export default function LoginForm({ setTab }: LoginFormProps){
               <p className="text-sm">Enter your credentials to access your account</p>
             </div>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <label 
-                  htmlFor="email"
-                  className="font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  Email
-                </label>
-                <Input
-                  id="email"
-                  placeholder="name@example.com"
-                  type="email"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  autoCorrect="off"
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label
-                    htmlFor="password"
-                    className="font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Password
+              <form onSubmit={handleSubmit(onSubmit)}>
+                <div className="space-y-3">
+                  <label 
+                    htmlFor="email"
+                    className="font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Email
                   </label>
-                  <Link href="#" className="text-sm text-teal-600 hover:text-teal-500">
-                    Forgot password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    autoCapitalize="none"
-                    autoComplete="current-password"
-                    autoCorrect="off"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
+                  <div className="relative">
+                    <Input
+                      id="email"
+                      placeholder="name@example.com"
+                      {...register("email", { required: "Email is required", pattern: { value: /^\S+@\S+$/i, message: "Please enter a valid email address" } })}
+                      type="email"
+                      className={`${errors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-300'}`}
+                      autoCapitalize="none"
+                      autoComplete="email"
+                      autoCorrect="off"
+                    />
+                    {errors.email && (
+                      <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500" />
                     )}
-                    <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
-                  </Button>
+                  </div>
+                  <div>
+                    {errors.email &&
+                    <p className="mt-1 text-sm text-red-700 flex items-center">
+                        <AlertCircle className="h-3 w-3 mr-1" /> 
+                        {errors.email.message}
+                    </p>}
+                  </div>
                 </div>
-              </div>
-              <Button className="w-full bg-teal-600 hover:bg-teal-700">
-                Login
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="password"
+                      className="font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Password
+                    </label>
+                    <Link href="#" className="text-sm text-teal-600 hover:text-teal-500">
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      {...register("password", { required: "Password is required"})}
+                      className={`${errors.password ? 'border-red-500 focus:border-red-500' : 'border-gray-300'}`}
+                      autoCapitalize="none"
+                      autoComplete="current-password"
+                      autoCorrect="off"
+                    />
+                    {errors.password && (
+                      <AlertCircle className="absolute right-8 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500" />
+                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                    </Button>
+                  </div>
+                  <div className="pb-3">
+                      {errors.password &&
+                      <p className="mt-1 text-sm text-red-700 flex items-center">
+                                <AlertCircle className="h-3 w-3 mr-1" /> 
+                                {errors.password.message}
+                            </p>}
+                  </div>
+                </div>
+                <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700">
+                  Login
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </form>
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t" />
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-muted-foreground">Or continue with</span>
+                <div className="relative flex justify-center text-gray-600">
+                    <span className="bg-white px-2 text-muted-foreground">Or continue with</span>
                 </div>
               </div>
               <GoogleButton/>
