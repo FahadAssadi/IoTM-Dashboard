@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from "react"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
@@ -26,15 +28,18 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
         mode: "onChange"
     });
 
-    const onSubmit = (data: FormData) => {
-      console.log("Form submitted:", data);
-      // Send to API, etc.
-    };
-
     function switchToLoginForm () {
         setTab("login");
         return;
     }
+
+    const onSubmit = (data: FormData) => {
+      console.log("Form submitted:", data);
+      // Send to API, etc.
+      switchToLoginForm();
+    };
+
+    
 
     return (
         <div className="space-y-6">

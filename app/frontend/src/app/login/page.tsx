@@ -1,4 +1,5 @@
 "use client"
+
 import LoginSignUpForm from "./login-signup-form"
 
 export default function LoginPage() {
