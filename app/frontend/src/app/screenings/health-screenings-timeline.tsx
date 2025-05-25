@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge"
 
 import timelineData from "./timeline-data.json"
 
-interface TimelineItem {
+export interface TimelineItem {
   id: string
   name: string
   dueDate: string
