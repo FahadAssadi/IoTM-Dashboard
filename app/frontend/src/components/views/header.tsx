@@ -1,5 +1,6 @@
 import { Bell, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default function Header() {
   return (
@@ -15,7 +16,25 @@ export default function Header() {
           <Bell className="h-5 w-5" />
         </Button>
         <div className="h-8 w-8 rounded-full bg-gray-100"></div>
+        <HeaderItem href="/login" label="Login"></HeaderItem>
       </div>
     </header>
   )
+}
+
+interface HeaderItemProps {
+  href: string
+  label: string
+  active?: boolean
+}
+
+function HeaderItem({ href, label }: HeaderItemProps) {
+  //const activeClassName = "flex items-center gap-3 rounded-md px-3 py-2 text-sm bg-teal-50 text-teal-700 border-l-4 border-teal-500 pl-2";
+  const inactiveClassName = "flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground";
+
+  return (
+    <Link href={href} className={inactiveClassName}>
+      <span>{label}</span>
+    </Link>
+  );
 }

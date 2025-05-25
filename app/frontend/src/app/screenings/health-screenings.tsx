@@ -23,7 +23,6 @@ export default function HealthScreenings() {
     "All Categories",
     "Annual Checkups",
     "Dental",
-    "Cancer Screenings",
     "Vaccines"
   ];
 
