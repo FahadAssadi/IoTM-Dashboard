@@ -1,16 +1,15 @@
 import {
-  Activity,
   Calendar,
   Clock,
   Heart,
   ArrowRight,
-  Zap,
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { TimelineItem } from "./screenings/health-screenings-timeline"
 import timelineData from "./screenings/timeline-data.json"
+import { devices as importedDevices, Device } from "./devices/device-data"
 
 const timelineItems: TimelineItem[] = timelineData as TimelineItem[]
 
@@ -34,31 +33,6 @@ const BADGE_MAP: Record<TimelineItem["status"], { bg: string; text: string; bord
     label: "Overdue"
   },
 }
-
-type Device = {
-  id: string
-  name: string
-  lastSynced: string
-  icon: React.ReactNode
-  connected: boolean
-}
-
-const devices: Device[] = [
-  {
-    id: "apple-watch",
-    name: "Apple Watch Series 9",
-    lastSynced: "2 hours ago",
-    icon: <Zap className="h-5 w-5 text-teal-600" />,
-    connected: true,
-  },
-  {
-    id: "fitbit",
-    name: "Fitbit Charge 5",
-    lastSynced: "1 day ago",
-    icon: <Activity className="h-5 w-5 text-teal-600" />,
-    connected: true,
-  },
-]
 
 function HealthScreeningCard({
   item,
@@ -89,21 +63,20 @@ function HealthScreeningCard({
   )
 }
 
-function DeviceCard({
-  device,
-}: { device: Device }) {
+function DeviceCard({ device }: { device: Device }) {
+  const Icon = device.icon
   return (
     <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
       <div className="flex items-center gap-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-100">
-          {device.icon}
+          <Icon className="h-5 w-5 text-teal-600" />
         </div>
         <div>
           <p className="font-medium text-slate-800">{device.name}</p>
-          <p className="text-sm text-slate-600">Last synced: {device.lastSynced}</p>
+          <p className="text-sm text-slate-600">Last synced: {device.lastSync}</p>
         </div>
       </div>
-      <Badge variant="outline" className="bg-emerald-100 text-emerald-700 border-emerald-200">
+      <Badge variant="outline" className={device.connected ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-gray-100 text-gray-400 border-gray-200"}>
         {device.connected ? "Connected" : "Disconnected"}
       </Badge>
     </div>
@@ -111,6 +84,12 @@ function DeviceCard({
 }
 
 export default function DashboardPage() {
+
+  const deviceList: Device[] = importedDevices.map(device => ({
+    ...device,
+    status: device.status === "active" ? "active" : "inactive"
+  }))
+
   return (
     <main className="flex flex-col gap-4 p-4 md:gap-8 md:p-6 w-full bg-slate-50">
       <div className="flex flex-col gap-2">
@@ -176,7 +155,7 @@ export default function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {devices.map(device => (
+          {deviceList.map(device => (
             <DeviceCard key={device.id} device={device} />
           ))}
         </CardContent>
