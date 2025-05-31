@@ -1,0 +1,288 @@
+"use client"
+
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import { ArrowRight, ArrowLeft } from "lucide-react"
+
+export default function OnboardingForm() {
+    const [currentStep, setCurrentStep] = useState(1)
+    const [selectedConditions, setSelectedConditions] = useState<string[]>([])
+    const [smokingStatus, setSmokingStatus] = useState("")
+    const [activityLevel, setActivityLevel] = useState("")
+
+    const totalSteps = 3
+    const progressPercentage = (currentStep / totalSteps) * 100
+
+    const nextStep = () => {
+        if (currentStep < totalSteps) {
+        setCurrentStep(currentStep + 1)
+        }
+    }
+
+    const prevStep = () => {
+        if (currentStep > 1) {
+        setCurrentStep(currentStep - 1)
+        }
+    }
+
+    const handleConditionChange = (condition: string, checked: boolean) => {
+        if (checked) {
+        setSelectedConditions([...selectedConditions, condition])
+        } else {
+        setSelectedConditions(selectedConditions.filter((c) => c !== condition))
+        }
+    }
+
+    const renderProgressBar = () => (
+        <div className="w-full mb-8">
+        <div className="flex justify-between items-center mb-2">
+            <span className="text-sm text-gray-600">
+            Step {currentStep} of {totalSteps}
+            </span>
+            <span className="text-sm text-gray-600">{Math.round(progressPercentage)}% Complete</span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+            className="bg-teal-600 h-2 rounded-full transition-all duration-300 ease-in-out"
+            style={{ width: `${progressPercentage}%` }}
+            />
+        </div>
+        </div>
+    )
+
+    const renderStep1 = () => (
+        <div className="text-center space-y-6">
+        <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to HealthTrack</h1>
+            <p className="text-gray-600">{"Let's set up your profile to personalize your health journey"}</p>
+        </div>
+
+        <Card className="text-left">
+            <CardHeader>
+            <CardTitle className="text-xl">Getting Started</CardTitle>
+            <p className="text-gray-600">{"We'll guide you through a few quick steps to set up your account"}</p>
+            </CardHeader>
+            <CardContent>
+            <div className="space-y-4">
+                <h3 className="font-medium">{"What we'll cover:"}</h3>
+                <ul className="space-y-2">
+                <li className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-teal-600 rounded-full" />
+                    <span>Personal information</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-teal-600 rounded-full" />
+                    <span>Health conditions (optional)</span>
+                </li>
+                </ul>
+            </div>
+            </CardContent>
+        </Card>
+
+        <Button onClick={nextStep} className="w-full bg-teal-600 hover:bg-teal-700 text-white py-3">
+            {"Let's Get Started"}
+            <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+        </div>
+    )
+
+    const renderStep2 = () => (
+        <div className="text-center space-y-6">
+        <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Personal Information</h1>
+            <p className="text-gray-600">This step is intentionally left blank as requested</p>
+        </div>
+
+        <Card className="text-center py-16">
+            <CardContent>
+            <p className="text-gray-500">Personal information form would go here</p>
+            </CardContent>
+        </Card>
+
+        <div className="flex space-x-4">
+            <Button onClick={prevStep} variant="outline" className="flex-1">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+            </Button>
+            <Button onClick={nextStep} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white">
+            Continue
+            <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+        </div>
+        </div>
+    )
+
+    const renderStep3 = () => (
+        <div className="space-y-6">
+        <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Health Information</h1>
+            <p className="text-gray-600">This information is optional but helps us provide better recommendations</p>
+        </div>
+
+        <Card>
+            <CardHeader>
+            <CardTitle>Health Conditions</CardTitle>
+            <p className="text-sm text-gray-600">Select any conditions that apply to you</p>
+            </CardHeader>
+            <CardContent>
+            <div className="space-y-4">
+                <h4 className="font-medium">Health Conditions</h4>
+                <p className="text-sm text-gray-600">Select any conditions you currently have:</p>
+
+                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-3">
+                    {["Hypertension", "Heart Disease", "Insomnia"].map((condition) => (
+                    <div key={condition} className="flex items-center space-x-2">
+                        <Checkbox
+                        id={condition}
+                        checked={selectedConditions.includes(condition)}
+                        onCheckedChange={(checked) => handleConditionChange(condition, checked as boolean)}
+                        />
+                        <Label htmlFor={condition} className="text-sm">
+                        {condition}
+                        </Label>
+                    </div>
+                    ))}
+                </div>
+                <div className="space-y-3">
+                    {["Diabetes", "Arrhythmias", "Narcolepsy"].map((condition) => (
+                    <div key={condition} className="flex items-center space-x-2">
+                        <Checkbox
+                        id={condition}
+                        checked={selectedConditions.includes(condition)}
+                        onCheckedChange={(checked) => handleConditionChange(condition, checked as boolean)}
+                        />
+                        <Label htmlFor={condition} className="text-sm">
+                        {condition}
+                        </Label>
+                    </div>
+                    ))}
+                </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="flex items-center space-x-2">
+                    <Checkbox
+                    id="asthma"
+                    checked={selectedConditions.includes("Asthma")}
+                    onCheckedChange={(checked) => handleConditionChange("Asthma", checked as boolean)}
+                    />
+                    <Label htmlFor="asthma" className="text-sm">
+                    Asthma
+                    </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Checkbox
+                    id="sleep-apnea"
+                    checked={selectedConditions.includes("Sleep Apnea")}
+                    onCheckedChange={(checked) => handleConditionChange("Sleep Apnea", checked as boolean)}
+                    />
+                    <Label htmlFor="sleep-apnea" className="text-sm">
+                    Sleep Apnea
+                    </Label>
+                </div>
+                </div>
+            </div>
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+            <CardTitle>Lifestyle Factors</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+            <div>
+                <h4 className="font-medium mb-3">Smoking Status</h4>
+                <RadioGroup value={smokingStatus} onValueChange={setSmokingStatus}>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="never" id="never" />
+                    <Label htmlFor="never" className="text-sm">
+                    Never smoked
+                    </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="former" id="former" />
+                    <Label htmlFor="former" className="text-sm">
+                    Former smoker
+                    </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="current" id="current" />
+                    <Label htmlFor="current" className="text-sm">
+                    Current smoker
+                    </Label>
+                </div>
+                </RadioGroup>
+            </div>
+
+            <div>
+                <h4 className="font-medium mb-3">Physical Activity Level</h4>
+                <RadioGroup value={activityLevel} onValueChange={setActivityLevel}>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="sedentary" id="sedentary" />
+                    <Label htmlFor="sedentary" className="text-sm">
+                    Sedentary (little to no exercise)
+                    </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="light" id="light" />
+                    <Label htmlFor="light" className="text-sm">
+                    Light (1-3 days/week)
+                    </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="moderate" id="moderate" />
+                    <Label htmlFor="moderate" className="text-sm">
+                    Moderate (3-5 days/week)
+                    </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="active" id="active" />
+                    <Label htmlFor="active" className="text-sm">
+                    Active (6-7 days/week)
+                    </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="very-active" id="very-active" />
+                    <Label htmlFor="very-active" className="text-sm">
+                    Very active (twice daily)
+                    </Label>
+                </div>
+                </RadioGroup>
+            </div>
+            </CardContent>
+        </Card>
+
+        <div className="flex space-x-4">
+            <Button onClick={prevStep} variant="outline" className="flex-1">
+            Back
+            </Button>
+            <Button variant="outline" className="flex-1">
+            Skip
+            </Button>
+            <Button className="flex-1 bg-teal-600 hover:bg-teal-700 text-white">
+            Continue
+            <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+        </div>
+        </div>
+    )
+
+    return (
+        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-2xl mx-auto px-4">
+            {renderProgressBar()}
+
+            <div className="bg-white rounded-lg shadow-sm p-8">
+            {currentStep === 1 && renderStep1()}
+            {currentStep === 2 && renderStep2()}
+            {currentStep === 3 && renderStep3()}
+            </div>
+        </div>
+        </div>
+    )
+}
