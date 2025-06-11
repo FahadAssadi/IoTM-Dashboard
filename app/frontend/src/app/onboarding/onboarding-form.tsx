@@ -7,12 +7,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { ArrowRight, ArrowLeft } from "lucide-react"
+import onboardingScaffold from "./onboarding-scaffold.json";
+
+// Implementation of this may be overcomplicated for our use case - sorry
+const healthConditionColumns = 2;
 
 export default function OnboardingForm() {
     const [currentStep, setCurrentStep] = useState(1)
-    const [selectedConditions, setSelectedConditions] = useState<string[]>([])
-    const [smokingStatus, setSmokingStatus] = useState("")
-    const [activityLevel, setActivityLevel] = useState("")
+    const [onboardingForm, setOnboardingForm] = useState(onboardingScaffold);
 
     const totalSteps = 3
     const progressPercentage = (currentStep / totalSteps) * 100
@@ -30,11 +32,28 @@ export default function OnboardingForm() {
     }
 
     const handleConditionChange = (condition: string, checked: boolean) => {
-        if (checked) {
-        setSelectedConditions([...selectedConditions, condition])
-        } else {
-        setSelectedConditions(selectedConditions.filter((c) => c !== condition))
-        }
+        setOnboardingForm((prevForm) => {
+            const updatedHealthConditions = prevForm.healthConditions.map((item) =>
+                item.condition === condition ? { ...item, status: checked } : item
+            );
+            return {
+                ...prevForm,
+                healthConditions: updatedHealthConditions,
+            };
+        });
+    }
+
+    const handleLifestyleChange = (factor: string, selection: string) => {
+        setOnboardingForm((prevForm) => {
+            const updatedLifestyleFactors = prevForm.lifestyleFactors.map((item) =>
+                item.factor === factor ? { ...item, selection: selection} : item
+            );
+            console.log("LifestyleFactor: " + factor + " has been set to " + selection);
+            return {
+                ...prevForm,
+                lifestyleFactors: updatedLifestyleFactors
+            };
+        });
     }
 
     const renderProgressBar = () => (
@@ -125,66 +144,32 @@ export default function OnboardingForm() {
 
         <Card>
             <CardHeader>
-            <CardTitle>Health Conditions</CardTitle>
-            <p className="text-sm text-gray-600">Select any conditions that apply to you</p>
+                <CardTitle>Health Conditions</CardTitle>
+                <p className="text-sm text-gray-600">Select any conditions that apply to you</p>
             </CardHeader>
             <CardContent>
-            <div className="space-y-4">
-                <h4 className="font-medium">Health Conditions</h4>
-                <p className="text-sm text-gray-600">Select any conditions you currently have:</p>
-
-                <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-3">
-                    {["Hypertension", "Heart Disease", "Insomnia"].map((condition) => (
-                    <div key={condition} className="flex items-center space-x-2">
-                        <Checkbox
-                        id={condition}
-                        checked={selectedConditions.includes(condition)}
-                        onCheckedChange={(checked) => handleConditionChange(condition, checked as boolean)}
-                        />
-                        <Label htmlFor={condition} className="text-sm">
-                        {condition}
-                        </Label>
-                    </div>
+            <div>
+                <div className="grid grid-cols-2 gap-4"> 
+                    {/* This creates an array [0, 1, ... columns - 1] and iterates through it*/}
+                    {Array.from({ length: healthConditionColumns }, (_, column) => (
+                        <div className="space-y-3" key={column}>
+                            {/* This loop populates the columns with the conditions split relatively evenly*/}
+                            {onboardingForm.healthConditions.slice(
+                                column * onboardingForm.healthConditions.length / healthConditionColumns // (column * segment) to (column + 1 * segment)
+                                , (column + 1) * onboardingForm.healthConditions.length / healthConditionColumns).map((item) => (
+                                <div key={item.condition} className="flex items-center space-x-2">
+                                    <Checkbox
+                                    id={item.condition}
+                                    checked={item.status}
+                                    onCheckedChange={(checked) => handleConditionChange(item.condition, checked as boolean)}
+                                    />
+                                    <Label htmlFor={item.condition} className="text-sm">
+                                    {item.condition}
+                                    </Label>
+                                </div>
+                            ))}
+                        </div>
                     ))}
-                </div>
-                <div className="space-y-3">
-                    {["Diabetes", "Arrhythmias", "Narcolepsy"].map((condition) => (
-                    <div key={condition} className="flex items-center space-x-2">
-                        <Checkbox
-                        id={condition}
-                        checked={selectedConditions.includes(condition)}
-                        onCheckedChange={(checked) => handleConditionChange(condition, checked as boolean)}
-                        />
-                        <Label htmlFor={condition} className="text-sm">
-                        {condition}
-                        </Label>
-                    </div>
-                    ))}
-                </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="flex items-center space-x-2">
-                    <Checkbox
-                    id="asthma"
-                    checked={selectedConditions.includes("Asthma")}
-                    onCheckedChange={(checked) => handleConditionChange("Asthma", checked as boolean)}
-                    />
-                    <Label htmlFor="asthma" className="text-sm">
-                    Asthma
-                    </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <Checkbox
-                    id="sleep-apnea"
-                    checked={selectedConditions.includes("Sleep Apnea")}
-                    onCheckedChange={(checked) => handleConditionChange("Sleep Apnea", checked as boolean)}
-                    />
-                    <Label htmlFor="sleep-apnea" className="text-sm">
-                    Sleep Apnea
-                    </Label>
-                </div>
                 </div>
             </div>
             </CardContent>
@@ -192,71 +177,28 @@ export default function OnboardingForm() {
 
         <Card>
             <CardHeader>
-            <CardTitle>Lifestyle Factors</CardTitle>
+                <CardTitle>Lifestyle Factors</CardTitle>
+                <p className="text-sm text-gray-600">Select the condition that most applies to you</p>
             </CardHeader>
             <CardContent className="space-y-6">
-            <div>
-                <h4 className="font-medium mb-3">Smoking Status</h4>
-                <RadioGroup value={smokingStatus} onValueChange={setSmokingStatus}>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="never" id="never" />
-                    <Label htmlFor="never" className="text-sm">
-                    Never smoked
-                    </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="former" id="former" />
-                    <Label htmlFor="former" className="text-sm">
-                    Former smoker
-                    </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="current" id="current" />
-                    <Label htmlFor="current" className="text-sm">
-                    Current smoker
-                    </Label>
-                </div>
-                </RadioGroup>
-            </div>
-
-            <div>
-                <h4 className="font-medium mb-3">Physical Activity Level</h4>
-                <RadioGroup value={activityLevel} onValueChange={setActivityLevel}>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="sedentary" id="sedentary" />
-                    <Label htmlFor="sedentary" className="text-sm">
-                    Sedentary (little to no exercise)
-                    </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="light" id="light" />
-                    <Label htmlFor="light" className="text-sm">
-                    Light (1-3 days/week)
-                    </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="moderate" id="moderate" />
-                    <Label htmlFor="moderate" className="text-sm">
-                    Moderate (3-5 days/week)
-                    </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="active" id="active" />
-                    <Label htmlFor="active" className="text-sm">
-                    Active (6-7 days/week)
-                    </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="very-active" id="very-active" />
-                    <Label htmlFor="very-active" className="text-sm">
-                    Very active (twice daily)
-                    </Label>
-                </div>
-                </RadioGroup>
-            </div>
+                {onboardingForm.lifestyleFactors.map((lifestyleFactor) => (
+                    <div key={lifestyleFactor.factor}>
+                        <h4 className="mb-2">{lifestyleFactor.factor}</h4>
+                        <RadioGroup value={lifestyleFactor.selection} onValueChange={(lifestyleValue) => handleLifestyleChange(lifestyleFactor.factor, lifestyleValue)}>
+                            {lifestyleFactor.options.map((option) => (
+                                <div key={option} className="flex items-center space-x-2">
+                                    <RadioGroupItem value={option} id={option}/>
+                                    <Label htmlFor={option} className="text-sm">
+                                    {option}
+                                    </Label>
+                                </div>
+                            ))}
+                        </RadioGroup>
+                    </div>
+                ))}
             </CardContent>
         </Card>
-
+        
         <div className="flex space-x-4">
             <Button onClick={prevStep} variant="outline" className="flex-1">
             Back
