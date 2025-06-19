@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 import onboardingScaffold from "./onboarding-scaffold.json";
+import { Input } from "@/components/ui/input"
 
 // Implementation of this may be overcomplicated for our use case - sorry
 const healthConditionColumns = 2;
@@ -113,12 +114,152 @@ export default function OnboardingForm() {
         <div className="text-center space-y-6">
         <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Personal Information</h1>
-            <p className="text-gray-600">This step is intentionally left blank as requested</p>
+            <p className="text-gray-600">Tell us a bit about yourself to personalise the experience</p>
         </div>
 
-        <Card className="text-center py-16">
+        <Card className="text-left">
+            <CardHeader>
+                <CardTitle>Your Details</CardTitle>
+                <p className="text-sm text-gray-600">This information helps us provide personalised health reccomendations</p>
+            </CardHeader>
             <CardContent>
-            <p className="text-gray-500">Personal information form would go here</p>
+                <div className="grid grid-cols-2 gap-4 pb-2">
+                    <div className="flex flex-col">
+                        <label
+                            htmlFor="firstName"
+                            className="font-medium text-gray-700 ml-1">
+                            First Name
+                        </label>
+                        <div className="relative mt-1">
+                            <Input
+                                id="firstName"
+                                type="text"
+                                autoCorrect="off"
+                            />
+                        </div>
+                    </div>
+                    <div className="flex flex-col">
+                        <label
+                            htmlFor="lastName"
+                            className="font-medium text-gray-700 ml-1">
+                            Last Name
+                        </label>
+                        <div className="relative mt-1">
+                            <Input
+                                id="lastName"
+                                type="text"
+                                autoCorrect="off"
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div className="pb-2">
+                    <label
+                        htmlFor="email"
+                        className="font-medium text-gray-700 ml-1">
+                        Email
+                    </label>
+                    <div className="relative mt-1">
+                        <Input
+                            id="email"
+                            type="email"
+                            autoCorrect="off"
+                            autoCapitalize="none"
+                            autoComplete="email"
+                        />
+                    </div>
+                </div>
+                <div className="pb-2">
+                    <label
+                        htmlFor="date"
+                        className="font-medium text-gray-700 ml-1">
+                        Date
+                    </label>
+                    <div className="relative mt-1">
+                        <Input
+                            id="date"
+                            type="date"
+                        />
+                    </div>
+                </div>
+                <div className="pb-2">
+                    <label
+                        htmlFor="sex"
+                        className="font-medium text-gray-700 ml-1">
+                        Sex
+                    </label>
+                    <div className="relative mt-1">
+                        <RadioGroup>
+                            <div className="flex items-center space-x-3 p-1">
+                                {/* Should this also be generated? */}
+                                <RadioGroupItem value="male" id="male"/>
+                                <Label htmlFor="male">Male</Label>
+                                <RadioGroupItem value="female" id="female"/>
+                                <Label htmlFor="female">Female</Label>
+                                <RadioGroupItem value="other" id="other"/>
+                                <Label htmlFor="other">Other/Prefer not to say</Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 pb-2">
+                    <div className="flex flex-col">
+                        <label
+                            htmlFor="height"
+                            className="font-medium text-gray-700 ml-1">
+                            Height (cm)<span className="text-sm text-gray-500"> (optional)</span>
+                        </label>
+                        <div className="relative mt-1">
+                            <Input
+                                id="height"
+                                type="number"
+                                autoCorrect="off"
+                            />
+                        </div>
+                    </div>
+                    <div className="flex flex-col">
+                        <label
+                            htmlFor="weight"
+                            className="font-medium text-gray-700 ml-1">
+                            Weight (kg)<span className="text-sm text-gray-500"> (optional)</span>
+                        </label>
+                        <div className="relative mt-1">
+                            <Input
+                                id="weight"
+                                type="number"
+                                autoCorrect="off"
+                            />
+                        </div>
+                    </div>
+                    <div className="flex flex-col">
+                        <label
+                            htmlFor="state"
+                            className="font-medium text-gray-700 ml-1">
+                            State/Territory
+                        </label>
+                        <div className="relative mt-1">
+                            <Input
+                                id="state"
+                                type="state"
+                                autoCorrect="state"
+                            />
+                        </div>
+                    </div>
+                    <div className="flex flex-col">
+                        <label
+                            htmlFor="postcode"
+                            className="font-medium text-gray-700 ml-1">
+                            Postcode
+                        </label>
+                        <div className="relative mt-1">
+                            <Input
+                                id="postcode"
+                                type="number"
+                                autoCorrect="off"
+                            />
+                        </div>
+                    </div>
+                </div>
             </CardContent>
         </Card>
 

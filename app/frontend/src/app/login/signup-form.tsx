@@ -53,9 +53,9 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
                     <div className="grid grid-cols-2 gap-4 pb-2">
                         <div className="flex flex-col">
                             <label 
-                            htmlFor="firstName" 
-                            className="font-medium text-gray-700 mb-1">
-                            First name
+                                htmlFor="firstName" 
+                                className="font-medium text-gray-700 mb-1">
+                                First name
                             </label>
                             <div className="relative">
                                 <Input
