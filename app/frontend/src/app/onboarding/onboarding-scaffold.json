@@ -1,13 +1,13 @@
 {
-   "firstName": null,
-   "lastName": null,
-   "email": null,
-   "dob": null,
-   "sex": null,
-   "height": null,
-   "weight": null,
-   "state": null,
-   "postcode": null,
+   "firstName": "Jane",
+   "lastName": "Doe",
+   "email": "jane.doe@example.com",
+   "dob": "",
+   "sex": "female",
+   "height": 165,
+   "weight": 80,
+   "state": "",
+   "postcode": "",
    "healthConditions":
    [
     {

@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 import onboardingScaffold from "./onboarding-scaffold.json";
+import type { OnboardingFormType } from "./onboarding-interfaces"
 import { Input } from "@/components/ui/input"
 
 // Implementation of this may be overcomplicated for our use case - sorry
@@ -15,7 +16,8 @@ const healthConditionColumns = 2;
 
 export default function OnboardingForm() {
     const [currentStep, setCurrentStep] = useState(1)
-    const [onboardingForm, setOnboardingForm] = useState(onboardingScaffold);
+    const [onboardingForm, setOnboardingForm] = useState<OnboardingFormType>(
+        onboardingScaffold as OnboardingFormType);
 
     const totalSteps = 3
     const progressPercentage = (currentStep / totalSteps) * 100
@@ -30,6 +32,33 @@ export default function OnboardingForm() {
         if (currentStep > 1) {
         setCurrentStep(currentStep - 1)
         }
+    }
+
+    // There's probably a better way to do this...
+    const handleStringChange = (category: string, text: string | null) => {
+        setOnboardingForm((prevForm) => {
+            const updatedText = text
+            console.log(onboardingForm)
+            return {
+                ...prevForm,
+                [category]: updatedText,
+            }
+        });
+    }
+
+    const handleNumberChange = (category: string, number: string) => {
+        setOnboardingForm((prevForm) => {
+            let updatedNumber: number;
+            try {
+                updatedNumber = parseInt(number);
+            } catch {
+                updatedNumber = NaN;
+            }
+            return {
+                ...prevForm,
+                [category]: updatedNumber,
+            }
+        });
     }
 
     const handleConditionChange = (condition: string, checked: boolean) => {
@@ -135,6 +164,8 @@ export default function OnboardingForm() {
                                 id="firstName"
                                 type="text"
                                 autoCorrect="off"
+                                value={onboardingForm.firstName}
+                                onChange={(e) => handleStringChange("firstName", e.target.value)}
                             />
                         </div>
                     </div>
@@ -149,6 +180,8 @@ export default function OnboardingForm() {
                                 id="lastName"
                                 type="text"
                                 autoCorrect="off"
+                                value={onboardingForm.lastName}
+                                onChange={(e) => handleStringChange("lastName", e.target.value)}
                             />
                         </div>
                     </div>
@@ -166,6 +199,8 @@ export default function OnboardingForm() {
                             autoCorrect="off"
                             autoCapitalize="none"
                             autoComplete="email"
+                            value={onboardingForm.email}
+                            onChange={(e) => handleStringChange("email", e.target.value)}
                         />
                     </div>
                 </div>
@@ -179,6 +214,8 @@ export default function OnboardingForm() {
                         <Input
                             id="date"
                             type="date"
+                            value={onboardingForm.dob}
+                            onChange={(e) => handleStringChange("dob", e.target.value)}
                         />
                     </div>
                 </div>
@@ -189,7 +226,7 @@ export default function OnboardingForm() {
                         Sex
                     </label>
                     <div className="relative mt-1">
-                        <RadioGroup>
+                        <RadioGroup value={onboardingForm.sex} onValueChange={(sex) => handleStringChange("sex", sex)}>
                             <div className="flex items-center space-x-3 p-1">
                                 {/* Should this also be generated? */}
                                 <RadioGroupItem value="male" id="male"/>
@@ -214,6 +251,9 @@ export default function OnboardingForm() {
                                 id="height"
                                 type="number"
                                 autoCorrect="off"
+                                // value doesn't like getting a NaN input so when there's no value put it as ""
+                                value={isNaN(onboardingForm.height) ? "" : onboardingForm.height}
+                                onChange={(e) => handleNumberChange("height", e.target.value)}
                             />
                         </div>
                     </div>
@@ -228,6 +268,9 @@ export default function OnboardingForm() {
                                 id="weight"
                                 type="number"
                                 autoCorrect="off"
+                                // value doesn't like getting a NaN input so when there's no value put it as ""
+                                value={isNaN(onboardingForm.weight) ? "" : onboardingForm.weight} 
+                                onChange={(e) => handleNumberChange("weight", e.target.value)}
                             />
                         </div>
                     </div>
@@ -242,6 +285,8 @@ export default function OnboardingForm() {
                                 id="state"
                                 type="state"
                                 autoCorrect="state"
+                                value={onboardingForm.state}
+                                onChange={(e) => handleStringChange("state", e.target.value)}
                             />
                         </div>
                     </div>
@@ -256,6 +301,8 @@ export default function OnboardingForm() {
                                 id="postcode"
                                 type="number"
                                 autoCorrect="off"
+                                value={onboardingForm.postcode}
+                                onChange={(e) => handleNumberChange("postcode", e.target.value)}
                             />
                         </div>
                     </div>
