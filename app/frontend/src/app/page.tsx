@@ -1,103 +1,170 @@
-import Image from "next/image";
+import {
+  Calendar,
+  Clock,
+  Heart,
+  ArrowRight,
+} from "lucide-react"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import type { TimelineItem } from "./screenings/health-screenings-timeline"
+import timelineData from "./screenings/timeline-data.json"
+import { devices as importedDevices, Device } from "./devices/device-data"
 
-export default function Home() {
+const timelineItems: TimelineItem[] = timelineData as TimelineItem[]
+
+const BADGE_MAP: Record<TimelineItem["status"], { bg: string; text: string; border: string; label: string }> = {
+  "upcoming": {
+    bg: "bg-teal-100",
+    text: "text-teal-700",
+    border: "border-teal-200",
+    label: "Upcoming"
+  },
+  "due-soon": {
+    bg: "bg-amber-100",
+    text: "text-amber-700",
+    border: "border-amber-200",
+    label: "Due Soon"
+  },
+  "overdue": {
+    bg: "bg-red-100",
+    text: "text-red-700",
+    border: "border-red-200",
+    label: "Overdue"
+  },
+}
+
+function HealthScreeningCard({
+  item,
+}: { item: TimelineItem }) {
+  const badge = BADGE_MAP[item.status]
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="flex items-center gap-4 rounded-lg border border-slate-200 p-4">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
+        <Calendar className="h-6 w-6 text-teal-600" />
+      </div>
+      <div className="flex-1 space-y-1">
+        <p className="font-medium text-slate-800">{item.name}</p>
+        <div className="flex items-center text-sm text-slate-600">
+          <Clock className="mr-1 h-4 w-4" />
+          <span>{item.dueDate}</span>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+      <Badge
+        variant="outline"
+        className={`ml-auto ${badge.bg} ${badge.text} ${badge.border}`}
+      >
+        {badge.label}
+      </Badge>
+      <Button variant="default">
+        Export
+      </Button>
     </div>
-  );
+  )
+}
+
+function DeviceCard({ device }: { device: Device }) {
+  const Icon = device.icon
+  return (
+    <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
+      <div className="flex items-center gap-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-100">
+          <Icon className="h-5 w-5 text-teal-600" />
+        </div>
+        <div>
+          <p className="font-medium text-slate-800">{device.name}</p>
+          <p className="text-sm text-slate-600">Last synced: {device.lastSync}</p>
+        </div>
+      </div>
+      <Badge variant="outline" className={device.connected ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-gray-100 text-gray-400 border-gray-200"}>
+        {device.connected ? "Connected" : "Disconnected"}
+      </Badge>
+    </div>
+  )
+}
+
+export default function DashboardPage() {
+
+  const deviceList: Device[] = importedDevices.map(device => ({
+    ...device,
+    status: device.status === "active" ? "active" : "inactive"
+  }))
+
+  return (
+    <main className="flex flex-col gap-4 p-4 md:gap-8 md:p-6 w-full bg-slate-50">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-800">Welcome back, Jane</h1>
+        <p className="text-slate-600">Here&apos;s an overview of your health status and upcoming checkups.</p>
+      </div>
+
+      {/* Health Status Summary */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="border-slate-200">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-slate-800">Upcoming Checkups</CardTitle>
+            <Calendar className="h-4 w-4 text-teal-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-slate-800">
+              {timelineItems.length}
+            </div>
+            <p className="mt-2 text-xs text-slate-600">
+              You have {timelineItems.length} upcoming health screenings
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="border-slate-200 ">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-slate-800">Vitals Status</CardTitle>
+            <Heart className="h-4 w-4 text-teal-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-slate-800">Normal</div>
+            <p className="mt-2 text-xs text-slate-600">All your vital signs are within normal ranges</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Upcoming Health Screenings */}
+      <Card className="border-slate-200 ">
+        <CardHeader>
+          <CardTitle className="text-slate-800">Upcoming Health Screenings</CardTitle>
+          <CardDescription className="text-slate-600">
+            Your personalised health screening timeline based on your profile
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {timelineItems.slice(0, 2).map(item => (
+            <HealthScreeningCard key={item.id} item={item} />
+          ))}
+        </CardContent>
+        <CardFooter>
+          <Button variant="outline" className="w-full border-teal-700 text-teal-800 hover:bg-teal-50">
+            View All Screenings
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* Connected Devices */}
+      <Card className="border-slate-200">
+        <CardHeader>
+          <CardTitle className="text-slate-800">Connected Health Devices</CardTitle>
+          <CardDescription className="text-slate-600">
+            Devices currently syncing data with your account
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {deviceList.map(device => (
+            <DeviceCard key={device.id} device={device} />
+          ))}
+        </CardContent>
+        <CardFooter>
+          <Button variant="outline" className="w-full border-teal-700 text-teal-800 hover:bg-teal-50">
+            Connect New Device
+          </Button>
+        </CardFooter>
+      </Card>
+    </main>
+  )
 }

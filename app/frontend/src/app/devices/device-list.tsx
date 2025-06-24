@@ -1,52 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Watch, Scale, Heart, MoreVertical, Trash2, Edit, RefreshCw, CheckCircle2, XCircle } from "lucide-react"
-
-// Sample device data
-const devices = [
-  {
-    id: "1",
-    name: "Fitbit Charge 5",
-    type: "smartwatch",
-    icon: Watch,
-    lastSync: "2 hours ago",
-    battery: 72,
-    status: "active",
-    connected: true,
-  },
-  {
-    id: "2",
-    name: "Withings Body+",
-    type: "scale",
-    icon: Scale,
-    lastSync: "1 day ago",
-    battery: 85,
-    status: "active",
-    connected: true,
-  },
-  {
-    id: "3",
-    name: "Polar H10",
-    type: "heart-monitor",
-    icon: Heart,
-    lastSync: "3 days ago",
-    battery: 45,
-    status: "active",
-    connected: true,
-  },
-  {
-    id: "4",
-    name: "Old Fitness Band",
-    type: "smartwatch",
-    icon: Watch,
-    lastSync: "2 months ago",
-    battery: 0,
-    status: "inactive",
-    connected: false,
-  },
-]
-
+import { MoreVertical, CheckCircle2, XCircle } from "lucide-react"
+import { devices } from "./device-data"
 interface DeviceListProps {
   filterStatus?: "active" | "inactive"
 }
