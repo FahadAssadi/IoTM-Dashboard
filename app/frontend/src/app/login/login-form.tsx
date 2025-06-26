@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from "react"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
@@ -5,6 +7,7 @@ import { Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import GoogleButton from "./google-button"
+import { useRouter } from "next/navigation"
 
 type LoginFormProps = {
     setTab: (tab: string) => void;
@@ -17,6 +20,7 @@ type FormData = {
 
 export default function LoginForm({ setTab }: LoginFormProps){
     const [showPassword, setShowPassword] = useState(false)
+    const router = useRouter();
 
     const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
       mode: "onChange"
@@ -25,6 +29,7 @@ export default function LoginForm({ setTab }: LoginFormProps){
     const onSubmit = (data: FormData) => {
       console.log("Form submitted:", data);
       // Send to API, etc.
+      router.push("/");
     };
 
     function switchToSignUpForm () {

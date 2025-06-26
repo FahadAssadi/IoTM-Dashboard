@@ -1,0 +1,68 @@
+{
+   "firstName": "Jane",
+   "lastName": "Doe",
+   "email": "jane.doe@example.com",
+   "dob": "",
+   "sex": "female",
+   "height": 165,
+   "weight": 80,
+   "state": "",
+   "postcode": "",
+   "healthConditions":
+   [
+    {
+        "condition": "Hypertension",
+        "status": false
+    }, 
+    {
+        "condition": "Heart Disease",
+        "status": false
+    },
+    {
+        "condition": "Insomnia",
+        "status": false
+    }, 
+    {
+        "condition": "Diabetes",
+        "status": false
+    },
+    {
+        "condition": "Arrhythmia",
+        "status": false
+    }, 
+    {
+        "condition": "Narcolespy",
+        "status": false
+    }, 
+    {
+        "condition": "Asthma",
+        "status": false
+    }, 
+    {
+        "condition": "Sleep Apnea",
+        "status": false
+    }
+   ],
+   "lifestyleFactors":[
+    {
+        "factor": "Smoking Status",
+        "options": [
+            "Never Smoked",
+            "Former Smoker",
+            "Current Smoker"
+        ],
+        "selection": "Never Smoked"
+    },
+    {
+        "factor": "Physical Activity Level",
+        "options": [
+            "Sedentary (little to no exercise)",
+            "Light (1-3 days/week)",
+            "Moderate (3-5 days/week)",
+            "Active (6-7 days/week)",
+            "very Active (twice daily)"
+        ],
+        "selection": "Sedentary (little to no exercise)"
+    }
+   ]
+}
