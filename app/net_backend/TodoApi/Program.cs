@@ -1,19 +1,28 @@
 using Microsoft.EntityFrameworkCore;
 using TodoApi.Models;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Read Supabase connection string from secrets/env
-var connectionString = builder.Configuration["Supabase:DbConnection"];
+// Load .env variables from backend project root
+Env.Load();  // <-- loads .env file here
 
-// Register EF Core DbContext
+// Get Supabase DB connection string from environment variable
+var connectionString = Environment.GetEnvironmentVariable("SUPABASE_DB_CONNECTION");
+
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new Exception("SUPABASE_DB_CONNECTION environment variable not found");
+}
+
+// Register EF Core DbContext with Npgsql using Supabase connection string
 builder.Services.AddDbContext<TodoContext>(options =>
     options.UseNpgsql(connectionString));
 
 // Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+// Swagger setup
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
@@ -27,26 +36,16 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// HTTP pipeline config
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
 
     app.UseSwaggerUI(options =>
     {
-        // ✅ Use the default path that matches the actual endpoint
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "Todo API V1");
-
-        // Optional: make Swagger UI show up at http://localhost:5225/
         options.RoutePrefix = "";
     });
-    
-    // Original Version
-    // app.UseSwaggerUi(options =>
-    // {
-
-    //     options.DocumentPath = "/openapi/v1/swagger.json";
-    // });
 }
 
 app.UseHttpsRedirection();
