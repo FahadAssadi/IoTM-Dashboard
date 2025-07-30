@@ -3,14 +3,27 @@ using TodoApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Read Supabase connection string from secrets/env
+var connectionString = builder.Configuration["Supabase:DbConnection"];
+
+// Register EF Core DbContext
+builder.Services.AddDbContext<TodoContext>(options =>
+    options.UseNpgsql(connectionString));
+
 // Add services to the container.
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<TodoContext>(opt =>
-    opt.UseInMemoryDatabase("TodoList"));
+
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Todo API",
+        Version = "v1"
+    });
+});
 
 var app = builder.Build();
 

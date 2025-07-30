@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TodoApi.Models;
 
 namespace TodoApi.Controllers;
 
@@ -6,27 +8,30 @@ namespace TodoApi.Controllers;
 [Route("[controller]")]
 public class WeatherForecastController : ControllerBase
 {
-    private static readonly string[] Summaries = new[]
-    {
-        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-    };
-
+    private readonly TodoContext _context;
     private readonly ILogger<WeatherForecastController> _logger;
 
-    public WeatherForecastController(ILogger<WeatherForecastController> logger)
+    public WeatherForecastController(TodoContext context, ILogger<WeatherForecastController> logger)
     {
+        _context = context;
         _logger = logger;
     }
 
-    [HttpGet(Name = "GetWeatherForecast")]
-    public IEnumerable<WeatherForecast> Get()
+    // GET /weatherforecast
+    [HttpGet]
+    public async Task<IEnumerable<WeatherForecast>> Get()
     {
-        return Enumerable.Range(1, 5).Select(index => new WeatherForecast
-        {
-            Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            TemperatureC = Random.Shared.Next(-20, 55),
-            Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-        })
-        .ToArray();
+        return await _context.WeatherForecasts.ToListAsync();
     }
+
+    // POST /weatherforecast
+    [HttpPost]
+    public async Task<ActionResult<WeatherForecast>> Post(WeatherForecast forecast)
+    {
+        _context.WeatherForecasts.Add(forecast);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(Get), new { date_time = forecast.date_time }, forecast);
+    }
+
 }
