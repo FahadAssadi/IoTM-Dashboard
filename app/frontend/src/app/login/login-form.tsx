@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import GoogleButton from "./google-button"
 import { useRouter } from "next/navigation"
-import supabase from "./auth-functions"
+import { supabase } from '@/lib/supabase/client'
 
 type LoginFormProps = {
     setTab: (tab: string) => void;
@@ -30,7 +30,7 @@ export default function LoginForm({ setTab }: LoginFormProps){
     const onSubmit = async (formData: FormData) => {
       // console.log("Form submitted:", formData);
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password
       })
@@ -43,8 +43,7 @@ export default function LoginForm({ setTab }: LoginFormProps){
         });
         console.error(error)
       } else {
-        TODO: // save the data somewhere
-        console.log(data);
+        router.refresh() // Refresh to update server-side session
         router.push("/");
       }   
     };

@@ -7,7 +7,7 @@ import { Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import GoogleButton from "./google-button"
-import supabase from "./auth-functions"
+import { supabase } from '@/lib/supabase/client'
 import { useRouter } from "next/navigation"
 
 type SignUpFormProps = {
@@ -37,7 +37,7 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
 
     const onSubmit = async (formData: FormData) => {
         console.log("Form submitted:", formData);
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
             email: formData.email,
             password: formData.password,
             options: {
@@ -55,8 +55,9 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
             })
             console.error(error)
         } else {
-            console.log(data)
-            TODO: // Create a notification for succesful signin and save the data somewhere
+            // console.log(data)
+            TODO: // Create a notification for succesful signin
+            router.refresh() // refresh to update server-side session
             router.push("/")
         }
         switchToLoginForm();
