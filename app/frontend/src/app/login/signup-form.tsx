@@ -7,6 +7,8 @@ import { Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import GoogleButton from "./google-button"
+import supabase from "./auth-functions"
+import { useRouter } from "next/navigation"
 
 type SignUpFormProps = {
     setTab: (tab: string) => void;
@@ -21,10 +23,10 @@ type FormData = {
 }
 
 export default function SignUpForm({ setTab }: SignUpFormProps){
-
     const [showPassword, setShowPassword] = useState(false)
+    const router = useRouter();
 
-    const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+    const { register, handleSubmit, setError, formState: { errors } } = useForm<FormData>({
         mode: "onChange"
     });
 
@@ -33,10 +35,31 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
         return;
     }
 
-    const onSubmit = (data: FormData) => {
-      console.log("Form submitted:", data);
-      // Send to API, etc.
-      switchToLoginForm();
+    const onSubmit = async (formData: FormData) => {
+        console.log("Form submitted:", formData);
+        const { data, error } = await supabase.auth.signUp({
+            email: formData.email,
+            password: formData.password,
+            options: {
+                data: {
+                    full_name: formData.firstName + " " + formData.lastName
+                }
+            }
+        })
+
+        if (error) {
+            TODO: // Determine what errors can occur and create appropriate responses
+            setError("email", {
+                type: "manual",
+                message: "This user has already been registered"
+            })
+            console.error(error)
+        } else {
+            console.log(data)
+            TODO: // Create a notification for succesful signin and save the data somewhere
+            router.push("/")
+        }
+        switchToLoginForm();
     };
 
     
