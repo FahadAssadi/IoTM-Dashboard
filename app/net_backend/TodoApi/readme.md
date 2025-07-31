@@ -21,3 +21,5 @@ Then run the backend server using
 ```bash
 dotnet run
 ```
+ 
+ This should return a localhost connection in the terminal that you can use to access the swagger UI which shows all the available API endpoints and allows you to debug them.
