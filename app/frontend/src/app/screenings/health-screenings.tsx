@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import screeningsData from "./screenings-data.json"
-import HealthScreeningTimeline from "./health-screenings-timeline"
-import { TimelineItem } from "./health-screenings-timeline"
+import HealthScreeningTimeline, { TimelineItem } from "./health-screenings-timeline"
 
 export interface ScreeningItem {
   id: string
@@ -33,9 +32,19 @@ function getScreeningStatus(dueDate?: string): "due-soon" | "overdue" | "upcomin
   return "upcoming"
 }
 
+function formatDateForInput(dateStr?: string) {
+  if (!dateStr) return ""
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return ""
+  // Adjust for local timezone offset
+  const offset = date.getTimezoneOffset()
+  const localDate = new Date(date.getTime() - offset * 60 * 1000)
+  return localDate.toISOString().slice(0, 10)
+}
+
 export default function HealthScreenings() {
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([])
-  const [datePickerOpen, setDatePickerOpen] = useState<{ open: boolean; screening?: ScreeningItem }>({ open: false })
+  const [datePickerOpen, setDatePickerOpen] = useState<{ open: boolean; screening?: ScreeningItem; timelineItemId?: string }>({ open: false })
   const [selectedDate, setSelectedDate] = useState<string>("")
 
   const screenings: ScreeningItem[] = screeningsData.map((screening) => {
@@ -56,24 +65,56 @@ export default function HealthScreenings() {
   // Handle scheduling a screening
   const handleSchedule = (screening: ScreeningItem) => {
     setDatePickerOpen({ open: true, screening })
+    setSelectedDate(formatDateForInput(screening.dueDate))
   }
 
-  // Handle date selection and add to timeline
+  // Handle editing a timeline item
+  const handleEditTimelineItem = (item: TimelineItem) => {
+    setDatePickerOpen({ open: true, timelineItemId: item.id })
+    setSelectedDate(formatDateForInput(item.dueDate))
+  }
+
+  // Handle removing a timeline item
+  const handleRemoveTimelineItem = (id: string) => {
+    setTimelineItems((prev) => prev.filter((item) => item.id !== id))
+  }
+
+  // Handle date selection and add/update timeline
   const handleDateSelect = () => {
-    if (!datePickerOpen.screening || !selectedDate) return
-    const dueDate = selectedDate
-    const status = getScreeningStatus(dueDate) as "due-soon" | "overdue" | "upcoming"
-    const month = new Date(dueDate).toLocaleString("default", { month: "long" })
-    setTimelineItems((prev) => [
-      ...prev,
-      {
-        id: datePickerOpen.screening!.id + "-" + dueDate,
-        name: datePickerOpen.screening!.name,
-        dueDate,
-        month,
-        status,
-      }
-    ])
+    if (!selectedDate) return
+
+    // Editing an existing timeline item
+    if (datePickerOpen.timelineItemId) {
+      setTimelineItems((prev) =>
+        prev.map((item) =>
+          item.id === datePickerOpen.timelineItemId
+            ? {
+                ...item,
+                dueDate: selectedDate,
+                month: new Date(selectedDate).toLocaleString("default", { month: "long" }),
+                status: getScreeningStatus(selectedDate) as "due-soon" | "overdue" | "upcoming",
+              }
+            : item
+        )
+      )
+    }
+    // Scheduling a new screening
+    else if (datePickerOpen.screening) {
+      const dueDate = selectedDate
+      const status = getScreeningStatus(dueDate) as "due-soon" | "overdue" | "upcoming"
+      const month = new Date(dueDate).toLocaleString("default", { month: "long" })
+      setTimelineItems((prev) => [
+        ...prev,
+        {
+          id: datePickerOpen.screening!.id + "-" + dueDate,
+          name: datePickerOpen.screening!.name,
+          dueDate,
+          month,
+          status,
+        }
+      ])
+    }
+
     setDatePickerOpen({ open: false })
     setSelectedDate("")
   }
@@ -138,7 +179,9 @@ export default function HealthScreenings() {
       {datePickerOpen.open && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
           <div className="bg-white p-6 rounded shadow-lg flex flex-col gap-4 min-w-[320px]">
-            <h3 className="font-semibold text-lg mb-2">Select Due Date</h3>
+            <h3 className="font-semibold text-lg mb-2">
+              {datePickerOpen.timelineItemId ? "Edit Due Date" : "Select Due Date"}
+            </h3>
             <input
               type="date"
               className="border rounded px-3 py-2"
@@ -159,8 +202,12 @@ export default function HealthScreenings() {
         </div>
       )}
 
-      {/* Timeline */}
-      <HealthScreeningTimeline timelineItems={timelineItems} />
+      {/* Timeline with edit/remove actions */}
+      <HealthScreeningTimeline
+        timelineItems={timelineItems}
+        onEdit={handleEditTimelineItem}
+        onRemove={handleRemoveTimelineItem}
+      />
     </>
   )
 }

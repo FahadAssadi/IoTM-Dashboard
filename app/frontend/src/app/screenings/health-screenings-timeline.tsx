@@ -1,5 +1,5 @@
 import React from "react"
-import { Calendar, Sprout } from "lucide-react"
+import { Calendar, Sprout, Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
@@ -13,9 +13,11 @@ export interface TimelineItem {
 
 interface HealthScreeningTimelineProps {
   timelineItems: TimelineItem[]
+  onEdit?: (item: TimelineItem) => void
+  onRemove?: (id: string) => void
 }
 
-export default function HealthScreeningTimeline({ timelineItems = [] }: HealthScreeningTimelineProps) {
+export default function HealthScreeningTimeline({ timelineItems = [], onEdit, onRemove }: HealthScreeningTimelineProps) {
   // Group timeline items by month
   const groupedItems: Record<string, TimelineItem[]> = {}
   ;(timelineItems ?? []).forEach((item) => {
@@ -68,7 +70,29 @@ export default function HealthScreeningTimeline({ timelineItems = [] }: HealthSc
                             <span className="text-sm text-muted-foreground">{item.dueDate}</span>
                           </div>
                         </div>
-                        <Button variant="default">Export</Button>
+                        <div className="flex gap-2">
+                          {onEdit && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Edit"
+                              onClick={() => onEdit(item)}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {onRemove && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Remove"
+                              onClick={() => onRemove(item.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Button variant="default">Export</Button>
+                        </div>
                       </div>
                     </div>
                   </div>
