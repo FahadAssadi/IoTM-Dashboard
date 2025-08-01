@@ -1,4 +1,4 @@
-import { ArrowRight, Calendar } from "lucide-react"
+import { Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
@@ -9,7 +9,7 @@ export interface TimelineItem {
   name: string
   dueDate: string
   month: string
-  status: "upcoming" | "due-soon" | "overdue"
+  status: "due-soon" | "overdue" | undefined
 }
 
 export default function HealthScreeningTimeline() {
@@ -18,7 +18,7 @@ export default function HealthScreeningTimeline() {
     name: item.name,
     dueDate: item.dueDate,
     month: new Date(item.dueDate).toLocaleString("default", { month: "long" }),
-    status: item.status as "upcoming" | "due-soon" | "overdue",
+    status: item.status as "due-soon" | "overdue",
   }))
 
   // Group timeline items by month
