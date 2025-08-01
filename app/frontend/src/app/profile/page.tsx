@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/form"
 import { Cross } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import Select from "react-select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 
@@ -184,14 +184,25 @@ export default function ProfilePage() {
                                                     <FormLabel>Sex</FormLabel>
                                                     <FormControl>
                                                         <Select
-                                                            {...field}
-                                                            options={[
-                                                                { value: "female", label: "Female" },
-                                                                { value: "male", label: "Male" },
-                                                                { value: "other", label: "Other" },
-                                                            ]}
-                                                            onChange={(val) => field.onChange(val)}
-                                                        />
+                                                            value={field.value?.value}
+                                                            onValueChange={val => {
+                                                                const selected = [
+                                                                    { value: "female", label: "Female" },
+                                                                    { value: "male", label: "Male" },
+                                                                    { value: "other", label: "Other" },
+                                                                ].find(option => option.value === val)
+                                                                field.onChange(selected)
+                                                            }}
+                                                        >
+                                                            <SelectTrigger className="w-full">
+                                                                <SelectValue placeholder="Select sex" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="female">Female</SelectItem>
+                                                                <SelectItem value="male">Male</SelectItem>
+                                                                <SelectItem value="other">Other</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -228,15 +239,26 @@ export default function ProfilePage() {
                                                     <FormLabel>State/Territory</FormLabel>
                                                     <FormControl>
                                                         <Select
-                                                            {...field}
-                                                            options={australianStates}
-                                                            onChange={(val) => {
-                                                                field.onChange(val)
-                                                                if (val) {
-                                                                    handleStateChange(val)
+                                                            value={field.value?.value}
+                                                            onValueChange={val => {
+                                                                const selected = australianStates.find(option => option.value === val)
+                                                                field.onChange(selected)
+                                                                if (selected) {
+                                                                    handleStateChange(selected)
                                                                 }
                                                             }}
-                                                        />
+                                                        >
+                                                            <SelectTrigger className="w-full">
+                                                                <SelectValue placeholder="Select state" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {australianStates.map(option => (
+                                                                    <SelectItem key={option.value} value={option.value}>
+                                                                        {option.label}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -250,11 +272,24 @@ export default function ProfilePage() {
                                                     <FormLabel>City/Suburb</FormLabel>
                                                     <FormControl>
                                                         <Select
-                                                            {...field}
-                                                            options={cities}
-                                                            isDisabled={!selectedState}
-                                                            onChange={(val) => field.onChange(val)}
-                                                        />
+                                                            value={field.value?.value}
+                                                            onValueChange={val => {
+                                                                const selected = cities.find(option => option.value === val)
+                                                                field.onChange(selected)
+                                                            }}
+                                                            disabled={!selectedState}
+                                                        >
+                                                            <SelectTrigger className="w-full">
+                                                                <SelectValue placeholder="Select city" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {cities.map(option => (
+                                                                    <SelectItem key={option.value} value={option.value}>
+                                                                        {option.label}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
