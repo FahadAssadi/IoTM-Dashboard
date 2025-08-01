@@ -13,11 +13,13 @@ import {
     FormMessage,
     FormDescription
 } from "@/components/ui/form"
-import { Cross } from "lucide-react"
+import { UserCircle, Cross } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
+import ProfileSecurity from "./profile-security"
+import ProfilePreferences from "./profile-preferences"
 
 const australianStates = [
     { value: "nsw", label: "New South Wales" },
@@ -94,7 +96,7 @@ export default function ProfilePage() {
     }
 
     return (
-        <main className="flex-1 overflow-auto">
+        <main className="min-h-screen flex-1 overflow-auto bg-slate-50">
             <div className="p-6 bg-slate-50">
                 <h1 className="text-2xl font-semibold mb-2">Account Management</h1>
                 <p className="text-muted-foreground mb-8">Update your personal details</p>
@@ -115,7 +117,10 @@ export default function ProfilePage() {
                     <TabsContent value="personal" className="space-y-4 pt-4">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Personal Information</CardTitle>
+                                <CardTitle className="flex items-center">
+                                    <UserCircle className="mr-2 h-5 w-5 text-teal-700" aria-hidden="true" />
+                                    <span>Personal Information</span>
+                                </CardTitle>
                                 <CardDescription>Update your personal details</CardDescription>
                             </CardHeader>
 
@@ -414,6 +419,8 @@ export default function ProfilePage() {
                             </CardFooter>
                         </Card>
                     </TabsContent>
+                    <ProfileSecurity />
+                    <ProfilePreferences />
                 </Tabs>
             </div>
         </main>
