@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { Calendar, CalendarClock } from "lucide-react"
+import { Calendar, CalendarClock, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
@@ -47,14 +47,22 @@ export default function HealthScreenings() {
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([])
   const [datePickerOpen, setDatePickerOpen] = useState<{ open: boolean; screening?: ScreeningItem; timelineItemId?: string }>({ open: false })
   const [selectedDate, setSelectedDate] = useState<string>("")
+  const [hiddenScreenings, setHiddenScreenings] = useState<ScreeningItem[]>([])
+  const [showHidden, setShowHidden] = useState(false)
 
-  const screenings: ScreeningItem[] = screeningsData.map((screening) => {
+  // All screenings from data, with status
+  const allScreenings: ScreeningItem[] = screeningsData.map((screening) => {
     const status = getScreeningStatus(screening.dueDate)
     return {
       ...screening,
       status: status === "upcoming" ? undefined : status,
     }
   })
+
+  // Filter out hidden screenings for visible list
+  const screenings = allScreenings.filter(
+    (screening) => !hiddenScreenings.some((hidden) => hidden.id === screening.id)
+  )
 
   const screeningTypes: string[] = [
     "All Categories",
@@ -120,6 +128,22 @@ export default function HealthScreenings() {
     setSelectedDate("")
   }
 
+  // Hide a screening
+  const handleHideScreening = (screening: ScreeningItem) => {
+    setHiddenScreenings((prev) => [...prev, screening])
+  }
+
+  // Unhide a screening
+  const handleUnhideScreening = (screening: ScreeningItem) => {
+    setHiddenScreenings((prev) => prev.filter((item) => item.id !== screening.id))
+  }
+
+  // Unhide all hidden screenings
+  const handleUnhideAll = () => {
+    setHiddenScreenings([])
+    setShowHidden(false)
+  }
+
   return (
     <>
       <Card className="mb-6">
@@ -146,40 +170,113 @@ export default function HealthScreenings() {
             </Select>
           </div>
 
-          <div className="space-y-4">
-            {screenings.map((screening) => (
-              <Card key={screening.id} className="p-2 rounded">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center mt-1 h-12 w-12 rounded-full bg-slate-100">
-                      <Calendar className="h-4 w-4 text-primary-500" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">{screening.name}</h3>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <CalendarClock className="h-3.5 w-3.5" />
-                        <span>Due: {screening.dueDate || "Not scheduled"}</span>
-                        {screening.status === "overdue" && (
-                          <Badge variant="outline" className="bg-red-100 text-red-700 text-xs">Overdue</Badge>
-                        )}
-                        {screening.status === "due-soon" && (
-                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Due Soon</Badge>
-                        )}
+          {/* Visible Screenings */}
+          {!showHidden && (
+            <div className="space-y-4">
+              {screenings.length === 0 && (
+                <div className="text-center text-slate-500 py-8">No screenings to show.</div>
+              )}
+              {screenings.map((screening) => (
+                <Card key={screening.id} className="p-2 rounded">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center mt-1 h-12 w-12 rounded-full bg-slate-100">
+                        <Calendar className="h-4 w-4 text-primary-500" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{screening.name}</h3>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <CalendarClock className="h-3.5 w-3.5" />
+                          <span>Due: {screening.dueDate || "Not scheduled"}</span>
+                          {screening.status === "overdue" && (
+                            <Badge variant="outline" className="bg-red-100 text-red-700 text-xs">Overdue</Badge>
+                          )}
+                          {screening.status === "due-soon" && (
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Due Soon</Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="icon" aria-label="Hide" onClick={() => handleHideScreening(screening)}>
+                        <EyeOff className="w-5 h-5" />
+                      </Button>
+                      <Button variant="default" onClick={() => handleSchedule(screening)}>
+                        Schedule
+                      </Button>
+                    </div>
                   </div>
-                  <Button variant="default" onClick={() => handleSchedule(screening)}>
-                    Schedule
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Hidden Screenings */}
+          {showHidden && (
+            <div className="space-y-4">
+              {hiddenScreenings.length === 0 && (
+                <div className="text-center text-slate-500 py-8">No hidden screenings.</div>
+              )}
+              {hiddenScreenings.map((screening) => (
+                <Card key={screening.id} className="p-2 rounded bg-slate-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center mt-1 h-12 w-12 rounded-full bg-slate-200">
+                        <Calendar className="h-4 w-4 text-primary-500" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{screening.name}</h3>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <CalendarClock className="h-3.5 w-3.5" />
+                          <span>Due: {screening.dueDate || "Not scheduled"}</span>
+                          {screening.status === "overdue" && (
+                            <Badge variant="outline" className="bg-red-100 text-red-700 text-xs">Overdue</Badge>
+                          )}
+                          {screening.status === "due-soon" && (
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Due Soon</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="icon" aria-label="Unhide" onClick={() => handleUnhideScreening(screening)}>
+                        <Eye className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+              {hiddenScreenings.length > 0 && (
+                <Button
+                  variant="outline"
+                  className="w-full border-teal-700 text-teal-800 hover:bg-teal-50 mt-4"
+                  onClick={handleUnhideAll}
+                >
+                  Unhide All
+                </Button>
+              )}
+            </div>
+          )}
         </CardContent>
         <CardFooter>
-          <Button variant="outline" className="w-full border-teal-700 text-teal-800 hover:bg-teal-50">
-          View Hidden Screenings
-          </Button>
+          {!showHidden ? (
+            <Button
+              variant="outline"
+              className="w-full border-teal-700 text-teal-800 hover:bg-teal-50"
+              onClick={() => setShowHidden(true)}
+              disabled={hiddenScreenings.length === 0}
+            >
+              View Hidden Screenings
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              className="w-full border-teal-700 text-teal-800 hover:bg-teal-50"
+              onClick={() => setShowHidden(false)}
+            >
+              Show Screenings
+            </Button>
+          )}
         </CardFooter>
       </Card>
 
