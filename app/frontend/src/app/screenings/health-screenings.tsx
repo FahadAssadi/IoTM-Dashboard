@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import screeningsData from "./screenings-data.json"
 import HealthScreeningTimeline, { TimelineItem } from "./health-screenings-timeline"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
 
 export interface ScreeningItem {
   id: string
@@ -121,59 +122,66 @@ export default function HealthScreenings() {
 
   return (
     <>
-      <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold">Recommended Health Screenings</h2>
-            <p className="text-sm text-muted-foreground">
-              Your personalised health screening timeline based on your profile
-            </p>
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold">Recommended Health Screenings</h2>
+              <p className="text-sm text-muted-foreground">
+                Your personalised health screening timeline based on your profile
+              </p>
+            </div>
+            <Select>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                {screeningTypes.map((type) => (
+                  <SelectItem
+                    key={type}
+                    value={type.toLowerCase().replace(/\s+/g, "")}
+                  >{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Select>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              {screeningTypes.map((type) => (
-                <SelectItem
-                  key={type}
-                  value={type.toLowerCase().replace(/\s+/g, "")}
-                >{type}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
 
-        <div className="space-y-4">
-          {screenings.map((screening) => (
-            <div key={screening.id} className="border border-gray-300 p-2 rounded">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center mt-1 h-12 w-12 rounded-full bg-slate-100">
-                    <Calendar className="h-4 w-4 text-primary-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium">{screening.name}</h3>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <CalendarClock className="h-3.5 w-3.5" />
-                      <span>Due: {screening.dueDate || "Not scheduled"}</span>
-                      {screening.status === "overdue" && (
-                        <Badge variant="outline" className="bg-red-100 text-red-700 text-xs">Overdue</Badge>
-                      )}
-                      {screening.status === "due-soon" && (
-                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Due Soon</Badge>
-                      )}
+          <div className="space-y-4">
+            {screenings.map((screening) => (
+              <Card key={screening.id} className="p-2 rounded">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center mt-1 h-12 w-12 rounded-full bg-slate-100">
+                      <Calendar className="h-4 w-4 text-primary-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{screening.name}</h3>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        <span>Due: {screening.dueDate || "Not scheduled"}</span>
+                        {screening.status === "overdue" && (
+                          <Badge variant="outline" className="bg-red-100 text-red-700 text-xs">Overdue</Badge>
+                        )}
+                        {screening.status === "due-soon" && (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Due Soon</Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
+                  <Button variant="default" onClick={() => handleSchedule(screening)}>
+                    Schedule
+                  </Button>
                 </div>
-                <Button variant="default" onClick={() => handleSchedule(screening)}>
-                  Schedule
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button variant="outline" className="w-full border-teal-700 text-teal-800 hover:bg-teal-50">
+          View Hidden Screenings
+          </Button>
+        </CardFooter>
+      </Card>
 
       {/* Date Picker Modal */}
       {datePickerOpen.open && (
@@ -202,7 +210,7 @@ export default function HealthScreenings() {
         </div>
       )}
 
-      {/* Timeline with edit/remove actions */}
+      {/* Health Screenings Timeline */}
       <HealthScreeningTimeline
         timelineItems={timelineItems}
         onEdit={handleEditTimelineItem}

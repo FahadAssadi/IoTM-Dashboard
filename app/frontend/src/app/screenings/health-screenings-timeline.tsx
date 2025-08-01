@@ -2,6 +2,7 @@ import React from "react"
 import { Calendar, CalendarClock, Sprout, Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Card } from "@/components/ui/card"
 
 export interface TimelineItem {
   id: string
@@ -44,7 +45,7 @@ export default function HealthScreeningTimeline({ timelineItems = [], onEdit, on
   const hasItems = timelineItems && timelineItems.length > 0
 
   return (
-    <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6">
+    <Card className="bg-white border border-gray-300 p-6 mb-6">
       <div className="mb-4">
         <h2 className="text-lg font-semibold">Health Screening Timeline</h2>
         <p className="text-sm text-muted-foreground">Upcoming and recommended health screenings by date</p>
@@ -130,6 +131,6 @@ export default function HealthScreeningTimeline({ timelineItems = [], onEdit, on
           <p className="text-lg text-slate-500 font-medium">{`There's nothing here yet`}</p>
         </div>
       )}
-    </div>
+    </Card>
   )
 }
