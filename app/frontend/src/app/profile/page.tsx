@@ -1,9 +1,11 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import ProfileSecurity from "./profile-security"
-import ProfilePreferences from "./profile-preferences"
-import ProfilePersonalInformation from "./profile-personal-information"
+
+const ProfilePersonalInformation = dynamic(() => import("./profile-personal-information"))
+const ProfileSecurity = dynamic(() => import("./profile-security"))
+const ProfilePreferences = dynamic(() => import("./profile-preferences"))
 
 export default function ProfilePage() {
 
