@@ -4,7 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>todo-api-123456</UserSecretsId>  
+    <RootNamespace>IoTM</RootNamespace>
+    <AssemblyName>IoTM</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

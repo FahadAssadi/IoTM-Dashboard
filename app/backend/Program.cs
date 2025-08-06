@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using TodoApi.Models;
+using IoTM.Data; // This is the new namespace for your DbContext
 using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Load .env variables from backend project root
-Env.Load();  // <-- loads .env file here
+Env.Load();
 
 // Get Supabase DB connection string from environment variable
 var connectionString = Environment.GetEnvironmentVariable("SUPABASE_DB_CONNECTION");
@@ -16,7 +16,7 @@ if (string.IsNullOrEmpty(connectionString))
 }
 
 // Register EF Core DbContext with Npgsql using Supabase connection string
-builder.Services.AddDbContext<TodoContext>(options =>
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 // Add services to the container.
@@ -29,7 +29,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
     {
-        Title = "Todo API",
+        Title = "IoT-M Dashboard Backend API",
         Version = "v1"
     });
 });
@@ -43,7 +43,7 @@ if (app.Environment.IsDevelopment())
 
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Todo API V1");
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "IoT-M Dashboard Backend API V1");
         options.RoutePrefix = "";
     });
 }
