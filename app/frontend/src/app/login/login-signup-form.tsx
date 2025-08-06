@@ -4,10 +4,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import LoginForm from "./login-form"
 import SignUpForm from "./signup-form"
 import { useState } from "react"
+import supabase from "./auth-functions"
 
 type LoginSignUpFormProps = {
     tabProp: string;
 };
+
+console.log(supabase);
 
 export default function LoginSignUpForm({ tabProp }: LoginSignUpFormProps) {
 

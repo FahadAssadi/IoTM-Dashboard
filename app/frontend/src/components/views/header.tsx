@@ -1,8 +1,50 @@
+"use client"
+
 import { Bell, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { supabase } from "@/lib/supabase/client"
+import { User } from "@supabase/supabase-js"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 export default function Header() {
+
+  const [user, setUser] = useState<User|null>(null)
+  const router = useRouter()
+
+  const logout = async () => {
+    await supabase.auth.signOut()
+    router.push("/login") // Go back to the login page
+  }
+
+  useEffect(() => {
+    const getUser = async () => {
+      // sets user variable value from the supabase client cookie
+      const { data } = await supabase.auth.getUser()
+        if (data?.user){
+          setUser(data.user)
+        }
+    }
+    // Calls the function once on object mount
+    getUser()
+
+    // Listener for Auth State Change - updates the user whenever login, logout, or token refresh happens
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session?.user) {
+          setUser(session.user)
+        } else {
+          setUser(null)
+        }
+      }
+    )
+
+    return () => {
+      authListener.subscription.unsubscribe()
+    }
+  }, [])
+
   return (
     <header className="w-full border-b border-gray-300 bg-white px-4 py-3 flex items-center justify-between">
       <div className="flex items-center gap-2">
@@ -16,7 +58,16 @@ export default function Header() {
           <Bell className="h-5 w-5" />
         </Button>
         <div className="h-8 w-8 rounded-full bg-gray-100"></div>
-        <HeaderItem href="/login" label="Login"></HeaderItem>
+        {user ? (
+          <>
+            <span className="text-sm text-gray-700">
+              {user.user_metadata.full_name ?? user.email}
+            </span>
+            <Button onClick={logout}>Logout</Button>
+          </>
+        ) : (
+          <HeaderItem href="/login" label="Login"></HeaderItem>
+        )}
       </div>
     </header>
   )

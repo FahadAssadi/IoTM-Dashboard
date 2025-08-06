@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import GoogleButton from "./google-button"
 import { useRouter } from "next/navigation"
+import { supabase } from '@/lib/supabase/client'
 
 type LoginFormProps = {
     setTab: (tab: string) => void;
@@ -22,14 +23,29 @@ export default function LoginForm({ setTab }: LoginFormProps){
     const [showPassword, setShowPassword] = useState(false)
     const router = useRouter();
 
-    const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+    const { register, handleSubmit, setError, formState: { errors } } = useForm<FormData>({
       mode: "onChange"
     }); 
 
-    const onSubmit = (data: FormData) => {
-      console.log("Form submitted:", data);
-      // Send to API, etc.
-      router.push("/");
+    const onSubmit = async (formData: FormData) => {
+      // console.log("Form submitted:", formData);
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password
+      })
+
+      if (error) {
+        TODO: // add additional error message for other server errors
+        setError("password", {
+          type: "manual",
+          message: "Incorrect email or password"
+        });
+        console.error(error)
+      } else {
+        router.refresh() // Refresh to update server-side session
+        router.push("/");
+      }   
     };
 
     function switchToSignUpForm () {
