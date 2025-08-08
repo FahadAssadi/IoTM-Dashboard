@@ -14,6 +14,8 @@ export interface ScreeningItem {
   name: string
   dueDate?: string
   status?: "due-soon" | "overdue" | undefined
+  isReccuring: boolean
+  category?: string
 }
 
 function getScreeningStatus(dueDate?: string): "due-soon" | "overdue" | "upcoming" | undefined {
@@ -49,13 +51,15 @@ export default function HealthScreenings() {
   const [selectedDate, setSelectedDate] = useState<string>("")
   const [hiddenScreenings, setHiddenScreenings] = useState<ScreeningItem[]>([])
   const [showHidden, setShowHidden] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string>("")
 
-  // All screenings from data, with status
+  // All screenings from data, with status and isReoccuring flag
   const allScreenings: ScreeningItem[] = screeningsData.map((screening) => {
     const status = getScreeningStatus(screening.dueDate)
     return {
       ...screening,
       status: status === "upcoming" ? undefined : status,
+      isReoccuring: true, // TODO: update this when health alerts are implemented
     }
   })
 
@@ -73,12 +77,14 @@ export default function HealthScreenings() {
 
   // Handle scheduling a screening
   const handleSchedule = (screening: ScreeningItem) => {
+    setErrorMessage("")
     setDatePickerOpen({ open: true, screening })
     setSelectedDate(formatDateForInput(screening.dueDate))
   }
 
   // Handle editing a timeline item
   const handleEditTimelineItem = (item: TimelineItem) => {
+    setErrorMessage("")
     setDatePickerOpen({ open: true, timelineItemId: item.id })
     setSelectedDate(formatDateForInput(item.dueDate))
   }
@@ -106,26 +112,42 @@ export default function HealthScreenings() {
             : item
         )
       )
+      setDatePickerOpen({ open: false })
+      setSelectedDate("")
     }
     // Scheduling a new screening
     else if (datePickerOpen.screening) {
       const dueDate = selectedDate
       const status = getScreeningStatus(dueDate) as "due-soon" | "overdue" | "upcoming"
       const month = new Date(dueDate).toLocaleString("default", { month: "long" })
-      setTimelineItems((prev) => [
-        ...prev,
-        {
-          id: datePickerOpen.screening!.id + "-" + dueDate,
-          name: datePickerOpen.screening!.name,
-          dueDate,
-          month,
-          status,
-        }
-      ])
-    }
+      const newId = datePickerOpen.screening!.id + "-" + dueDate
 
-    setDatePickerOpen({ open: false })
-    setSelectedDate("")
+      setTimelineItems((prev) => {
+        // Prevent duplicates
+        if (prev.some((item) => item.id === newId)) {
+          setErrorMessage("This screening is already scheduled for this date.")
+          return prev // stop here
+        }
+
+        setErrorMessage("") // Clear error if adding new one
+
+        const updated = [
+          ...prev,
+          {
+            id: newId,
+            name: datePickerOpen.screening!.name,
+            dueDate,
+            month,
+            status,
+          }
+        ]
+
+        // Close popup after successful add
+        setDatePickerOpen({ open: false })
+        setSelectedDate("")
+        return updated
+      })
+    }
   }
 
   // Hide a screening
@@ -291,14 +313,20 @@ export default function HealthScreenings() {
               type="date"
               className="border rounded px-3 py-2"
               value={selectedDate}
-              onChange={e => setSelectedDate(e.target.value)}
+              onChange={e => {
+                setSelectedDate(e.target.value)
+                setErrorMessage("") // ✅ Clear error on date change
+              }}
             />
+            {errorMessage && (
+              <p className="text-red-600 text-sm">{errorMessage}</p> // ✅ Show error in popup
+            )}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setDatePickerOpen({ open: false })}>Cancel</Button>
               <Button
                 variant="default"
                 onClick={handleDateSelect}
-                disabled={!selectedDate}
+                disabled={!selectedDate || !!errorMessage} // ✅ Disable when error exists
               >
                 Confirm
               </Button>
