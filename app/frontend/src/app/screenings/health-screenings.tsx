@@ -59,7 +59,7 @@ export default function HealthScreenings() {
     return {
       ...screening,
       status: status === "upcoming" ? undefined : status,
-      isReoccuring: true, // TODO: update this when health alerts are implemented
+      isReccuring: true, // TODO: update this when health alerts are implemented
     }
   })
 
