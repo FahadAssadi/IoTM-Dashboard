@@ -3,6 +3,11 @@ import { Calendar, CalendarClock, Sprout, Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
+import ICalendarLink from "react-icalendar-link"
+
+const ICalendarLinkAny = ICalendarLink as unknown as React.FC<
+  React.PropsWithChildren<{ event: ICalEvent; rawContent?: string; filename?: string }>
+>
 
 export interface TimelineItem {
   id: string
@@ -12,10 +17,20 @@ export interface TimelineItem {
   status: "due-soon" | "overdue" | "upcoming"
 }
 
+type ICalEvent = {
+  title: string
+  description?: string
+  startTime: string
+  endTime?: string
+  location?: string
+  timezone?: string
+}
+
 interface HealthScreeningTimelineProps {
   timelineItems: TimelineItem[]
   onEdit?: (item: TimelineItem) => void
   onRemove?: (id: string) => void
+  timezone?: string // user-selectable, defaults to AEST
 }
 
 function getMonthYear(dateStr: string) {
@@ -23,7 +38,12 @@ function getMonthYear(dateStr: string) {
   return `${date.toLocaleString("default", { month: "long" })} ${date.getFullYear()}`
 }
 
-export default function HealthScreeningTimeline({ timelineItems = [], onEdit, onRemove }: HealthScreeningTimelineProps) {
+export default function HealthScreeningTimeline({
+  timelineItems = [],
+  onEdit,
+  onRemove,
+  timezone = "Australia/Sydney" // default to AEST
+}: HealthScreeningTimelineProps) {
   // Group timeline items by month and year
   const groupedItems: Record<string, TimelineItem[]> = {}
   ;(timelineItems ?? []).forEach((item) => {
@@ -36,7 +56,6 @@ export default function HealthScreeningTimeline({ timelineItems = [], onEdit, on
 
   // Sort group keys chronologically
   const sortedGroupKeys = Object.keys(groupedItems).sort((a, b) => {
-    // Parse "Month YYYY" to Date for sorting
     const aDate = new Date(a)
     const bDate = new Date(b)
     return aDate.getTime() - bDate.getTime()
@@ -54,7 +73,6 @@ export default function HealthScreeningTimeline({ timelineItems = [], onEdit, on
       {hasItems ? (
         <div className="space-y-6">
           {sortedGroupKeys.map((groupKey) => {
-            // Sort items within the group by dueDate
             const items = groupedItems[groupKey].slice().sort((a, b) =>
               new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
             )
@@ -68,58 +86,70 @@ export default function HealthScreeningTimeline({ timelineItems = [], onEdit, on
                 </div>
 
                 <div className="space-y-4 pl-4 ml-4 border-l border-dashed">
-                  {items.map((item) => (
-                    <div key={item.id} className="relative">
-                      <div className="absolute -left-[22px] top-6 w-3 h-3 rounded-full border-2 border-primary bg-white"></div>
-                      <div className="pl-6 p-2 border border-gray-300 rounded">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium">{item.name}</h3>
-                              {item.status === "due-soon" ? (
-                                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                                  Due Soon
-                                </Badge>
-                              ) : item.status === "overdue" ? (
-                                <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200">
-                                  Overdue
-                                </Badge>
-                              ) : null}
+                  {items.map((item) => {
+                    // Prepare event object for react-icalendar-link
+                    const startDate = new Date(item.dueDate)
+                    const endDate = new Date(item.dueDate)
+                    endDate.setHours(endDate.getHours() + 1) // 1 hour event by default
+
+                    const event: ICalEvent = {
+                      title: item.name,
+                      description: "Health screening reminder",
+                      startTime: startDate.toISOString(),
+                      endTime: endDate.toISOString(),
+                      location: "",
+                      timezone: timezone
+                    }
+
+                    return (
+                      <div key={item.id} className="relative">
+                        <div className="absolute -left-[22px] top-6 w-3 h-3 rounded-full border-2 border-primary bg-white"></div>
+                        <div className="pl-6 p-2 border border-gray-300 rounded">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium">{item.name}</h3>
+                                {item.status === "due-soon" ? (
+                                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                    Due Soon
+                                  </Badge>
+                                ) : item.status === "overdue" ? (
+                                  <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200">
+                                    Overdue
+                                  </Badge>
+                                ) : null}
+                              </div>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                                <CalendarClock className="h-3.5 w-3.5" />
+                                <span>
+                                  Due: {new Date(item.dueDate).toLocaleDateString("en-US", {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric"
+                                  })}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                              <CalendarClock className="h-3.5 w-3.5" />
-                              <span>
-                                Due: {new Date(item.dueDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
-                              </span>
+                            <div className="flex gap-2">
+                              {onEdit && (
+                                <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => onEdit(item)}>
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {onRemove && (
+                                <Button variant="ghost" size="icon" aria-label="Remove" onClick={() => onRemove(item.id)}>
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                              <ICalendarLinkAny event={event}>
+                                <Button variant="default">Export</Button>
+                              </ICalendarLinkAny>
                             </div>
-                          </div>
-                          <div className="flex gap-2">
-                            {onEdit && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label="Edit"
-                                onClick={() => onEdit(item)}
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                            )}
-                            {onRemove && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label="Remove"
-                                onClick={() => onRemove(item.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            )}
-                            <Button variant="default">Export</Button>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )
