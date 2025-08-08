@@ -5,9 +5,9 @@ import { AddDeviceButton } from "./add-device-button"
 
 export default function DevicesPage() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="w-full flex min-h-screen flex-col">
       {/* Main Content */}
-      <main className="flex-1 space-y-4 p-8 pt-6">
+      <main className="space-y-4 p-8 pt-6 bg-slate-50">
         {/* Dashboard Header */}
         <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-2">
           <div className="grid gap-1">
@@ -20,8 +20,8 @@ export default function DevicesPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="all" className="mt-6">
-          <TabsList className="bg-background border">
+        <Tabs defaultValue="all" className="mt-6 w-full">
+          <TabsList className="grid w-full grid-cols-3 bg-slate-100">
             <TabsTrigger value="all">All Devices</TabsTrigger>
             <TabsTrigger value="active">Active</TabsTrigger>
             <TabsTrigger value="inactive">Inactive</TabsTrigger>
@@ -46,7 +46,7 @@ export default function DevicesPage() {
 
         {/* Sync Section */}
         <div className="grid gap-6">
-          <h2 className="text-xl font-semibold tracking-tight">Sync Status</h2>
+          <h2 className="text-xl font-semibold tracking-tight px-2 pt-2">Sync Status</h2>
           <DeviceSync />
         </div>
       </main>
