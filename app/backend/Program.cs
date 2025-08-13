@@ -22,6 +22,27 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Add services to the container.
 builder.Services.AddControllers();
 
+// Add CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "https://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+// Add HttpClient for external API calls
+builder.Services.AddHttpClient<IoTM.Services.INewsService, IoTM.Services.NewsService>(client =>
+{
+    client.DefaultRequestHeaders.Add("User-Agent", "IoTM-Dashboard/1.0");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Register custom services
+builder.Services.AddScoped<IoTM.Services.INewsService, IoTM.Services.NewsService>();
+
 // Swagger setup
 builder.Services.AddEndpointsApiExplorer();
 
@@ -49,6 +70,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 
