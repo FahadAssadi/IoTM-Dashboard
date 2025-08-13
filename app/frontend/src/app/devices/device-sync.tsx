@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, CheckCircle, AlertCircle, Clock } from "lucide-react"
+import { Card, CardHeader, CardContent } from "@/components/ui/card"
 
 // Sample sync data
 const initialSyncData = [
@@ -71,19 +72,20 @@ export function DeviceSync() {
   }
 
   return (
-    <div className="rounded-lg border bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
+    <Card className="rounded-lg border bg-white ">
+      <CardHeader className="flex flex-row justify-between mb-4">
         <h2 className="text-lg font-semibold">Device Synchronization</h2>
         <Button
           onClick={handleSync}
           disabled={isSyncing}
-          className="flex items-center gap-2 rounded bg-[#0D9488] px-4 py-2 text-sm text-white hover:bg-[#0C8178] disabled:opacity-50"
+          className="flex rounded bg-[#0D9488] px-4 py-2 text-sm text-white hover:bg-[#0C8178] disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
           {isSyncing ? "Syncing..." : "Sync All Devices"}
         </Button>
-      </div>
+      </CardHeader>
 
+      <CardContent className="space-y-4">
       {isSyncing && (
         <div className="mb-6">
           <div className="flex justify-between mb-1 text-sm font-medium">
@@ -101,7 +103,7 @@ export function DeviceSync() {
 
       <div className="space-y-4">
         {syncData.map((item) => (
-          <div key={item.id} className="flex justify-between border-b pb-4 last:border-none last:pb-0">
+          <div key={item.id} className="flex justify-between border-b border-gray-200 pb-4 last:border-none last:pb-0">
             <div>
               <div className="font-medium">{item.deviceName}</div>
               <div className="text-sm text-gray-500">Last sync: {item.lastSync}</div>
@@ -111,6 +113,7 @@ export function DeviceSync() {
           </div>
         ))}
       </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

@@ -16,28 +16,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { TabsContent } from "@/components/ui/tabs"
+import profileData from "./profile-data.json"
 
-const australianStates = [
-    { value: "nsw", label: "New South Wales" },
-    { value: "vic", label: "Victoria" },
-    { value: "qld", label: "Queensland" },
-    { value: "wa", label: "Western Australia" },
-    { value: "sa", label: "South Australia" },
-    { value: "tas", label: "Tasmania" },
-    { value: "act", label: "Australian Capital Territory" },
-    { value: "nt", label: "Northern Territory" },
-]
-
-const australianCities = {
-    nsw: ["Sydney", "Newcastle", "Wollongong", "Central Coast", "Coffs Harbour", "Wagga Wagga", "Albury"],
-    vic: ["Melbourne", "Geelong", "Ballarat", "Bendigo", "Shepparton", "Mildura", "Warrnambool"],
-    qld: ["Brisbane", "Gold Coast", "Sunshine Coast", "Townsville", "Cairns", "Toowoomba", "Mackay"],
-    wa: ["Perth", "Bunbury", "Geraldton", "Kalgoorlie", "Albany", "Broome", "Port Hedland"],
-    sa: ["Adelaide", "Mount Gambier", "Whyalla", "Port Augusta", "Port Lincoln", "Murray Bridge", "Victor Harbor"],
-    tas: ["Hobart", "Launceston", "Devonport", "Burnie", "Kingston", "Ulverstone", "Wynyard"],
-    act: ["Canberra", "Belconnen", "Tuggeranong", "Woden", "Gungahlin", "Queanbeyan"],
-    nt: ["Darwin", "Alice Springs", "Palmerston", "Katherine", "Tennant Creek", "Nhulunbuy"],
-}
+const australianStates = profileData.australianStates
+const australianCities = profileData.australianCities
 
 type PersonalInfo = {
     firstName: string
