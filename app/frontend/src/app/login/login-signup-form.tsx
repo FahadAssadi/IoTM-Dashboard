@@ -3,6 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import LoginForm from "./login-form"
 import SignUpForm from "./signup-form"
+import ForgotPasswordForm from "./forgot-password-form"
 import { useState } from "react"
 import supabase from "./auth-functions"
 
@@ -30,6 +31,10 @@ export default function LoginSignUpForm({ tabProp }: LoginSignUpFormProps) {
 
             <TabsContent value="signup">
               <SignUpForm setTab={setTab}/>
+            </TabsContent>
+
+            <TabsContent value="forgotPassword">
+              <ForgotPasswordForm setTab={setTab}/>
             </TabsContent>
           </div>
       </Tabs>

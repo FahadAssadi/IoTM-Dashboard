@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -32,6 +31,11 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
 
     function switchToLoginForm () {
         setTab("login");
+        return;
+    }
+
+    function switchToForgotPasswordForm () {
+        setTab("forgotPassword");
         return;
     }
 
@@ -170,9 +174,9 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
                             >
                                 Password
                             </label>
-                            <Link href="#" className="text-sm text-teal-600 hover:text-teal-500">
+                            <button onClick={switchToForgotPasswordForm} className="text-sm text-teal-600 hover:text-teal-500">
                                 Forgot password?
-                            </Link>
+                            </button>
                         </div>
                         <div className="relative">
                             <Input
