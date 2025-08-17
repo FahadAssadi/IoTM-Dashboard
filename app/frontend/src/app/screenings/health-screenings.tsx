@@ -12,25 +12,40 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 export interface ScreeningItem {
   id: string
   name: string
-  dueDate?: string
+  lastScheduled?: string
   status?: "due-soon" | "overdue" | undefined
-  isReccuring: boolean
-  category?: string
+  isRecurring: boolean
+  screeningType?: string
+  recommendedFrequency?: string
+  description?: string
+  eligibility?: string
+  cost?: string
+  delivery?: string
+  link?: string
 }
 
-function getScreeningStatus(dueDate?: string): "due-soon" | "overdue" | "upcoming" | undefined {
-  if (!dueDate) return undefined
+function getScreeningStatus(lastScheduled?: string, recommendedFrequency?: string): "due-soon" | "overdue" | "upcoming" | undefined {
+  if (!lastScheduled || !recommendedFrequency) return undefined
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const due = new Date(dueDate)
-  due.setHours(0, 0, 0, 0)
+  const last = new Date(lastScheduled)
+  last.setHours(0, 0, 0, 0)
 
-  if (due < today) return "overdue"
+  const nextDue = new Date(last)
+  if (recommendedFrequency.includes("year")) {
+    const years = parseInt(recommendedFrequency.replace(/\D/g, "")) || 1
+    nextDue.setFullYear(last.getFullYear() + years)
+  } else if (recommendedFrequency.includes("month")) {
+    const months = parseInt(recommendedFrequency.replace(/\D/g, "")) || 6
+    nextDue.setMonth(last.getMonth() + months)
+  }
+
+  if (nextDue < today) return "overdue"
 
   const twoWeeksFromNow = new Date(today)
   twoWeeksFromNow.setDate(today.getDate() + 14)
 
-  if (due >= today && due <= twoWeeksFromNow) return "due-soon"
+  if (nextDue >= today && nextDue <= twoWeeksFromNow) return "due-soon"
 
   return "upcoming"
 }
@@ -39,7 +54,6 @@ function formatDateForInput(dateStr?: string) {
   if (!dateStr) return ""
   const date = new Date(dateStr)
   if (isNaN(date.getTime())) return ""
-  // Adjust for local timezone offset
   const offset = date.getTimezoneOffset()
   const localDate = new Date(date.getTime() - offset * 60 * 1000)
   return localDate.toISOString().slice(0, 10)
@@ -53,15 +67,35 @@ export default function HealthScreenings() {
   const [showHidden, setShowHidden] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string>("")
 
-  // All screenings from data, with status and isReoccuring flag
-  const allScreenings: ScreeningItem[] = screeningsData.map((screening) => {
-    const status = getScreeningStatus(screening.dueDate)
-    return {
-      ...screening,
-      status: status === "upcoming" ? undefined : status,
-      isReccuring: true, // TODO: update this when health alerts are implemented
-    }
-  })
+  // Add this state to track scheduled dates for each screening
+  // TODO: ignore error for now, won't need this state once backend is connected
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [scheduledDates, setScheduledDates] = useState<Record<string, string[]>>({})
+
+  // All screenings from data, with status and isRecurring flag
+  const [allScreenings, setAllScreenings] = useState<ScreeningItem[]>(
+    screeningsData.map((screening) => {
+      const status = getScreeningStatus(screening.last_scheduled ?? undefined, screening.recommended_frequency)
+      return {
+        id: screening.id,
+        name: screening.name,
+        lastScheduled: screening.last_scheduled ?? undefined,
+        status: status === "upcoming" ? undefined : status,
+        isRecurring: screening.recurring,
+        screeningType: screening.screening_type,
+        recommendedFrequency: screening.recommended_frequency,
+        description: screening.description,
+        eligibility: typeof screening.eligibility === "string"
+          ? screening.eligibility
+          : screening.eligibility
+            ? `Age: ${screening.eligibility.age ? `${screening.eligibility.age.min}-${screening.eligibility.age.max}` : "N/A"}, Gender: ${screening.eligibility.gender ? screening.eligibility.gender.join(", ") : "N/A"}`
+            : undefined,
+        cost: screening.cost,
+        delivery: screening.delivery,
+        link: screening.link ?? undefined,
+      }
+    })
+  )
 
   // Filter out hidden screenings for visible list
   const screenings = allScreenings.filter(
@@ -70,16 +104,14 @@ export default function HealthScreenings() {
 
   const screeningTypes: string[] = [
     "All Categories",
-    "Annual Checkups",
-    "Dental",
-    "Vaccines"
+    ...Array.from(new Set(allScreenings.map(s => s.screeningType).filter((type): type is string => typeof type === "string")))
   ];
 
   // Handle scheduling a screening
   const handleSchedule = (screening: ScreeningItem) => {
     setErrorMessage("")
     setDatePickerOpen({ open: true, screening })
-    setSelectedDate(formatDateForInput(screening.dueDate))
+    setSelectedDate(formatDateForInput(screening.lastScheduled))
   }
 
   // Handle editing a timeline item
@@ -91,15 +123,45 @@ export default function HealthScreenings() {
 
   // Handle removing a timeline item
   const handleRemoveTimelineItem = (id: string) => {
-    setTimelineItems((prev) => prev.filter((item) => item.id !== id))
+    setTimelineItems((prev) => {
+      const itemToRemove = prev.find(item => item.id === id)
+      if (!itemToRemove) return prev
+      const screeningId = itemToRemove.id.split("-")[0]
+      const removedDate = itemToRemove.dueDate
+      const now = new Date()
+      const removedDateObj = new Date(removedDate)
+      // Remove the date from scheduledDates
+      setScheduledDates((dates) => {
+        const updated = { ...dates }
+        if (updated[screeningId]) {
+          updated[screeningId] = updated[screeningId].filter(date => date !== removedDate)
+          // If the removed date is in the future, update lastScheduled
+          if (removedDateObj > now) {
+            const latest = updated[screeningId].length > 0
+              ? updated[screeningId][updated[screeningId].length - 1]
+              : undefined
+            setAllScreenings((screenings) =>
+              screenings.map(s =>
+                s.id === screeningId
+                  ? { ...s, lastScheduled: latest }
+                  : s
+              )
+            )
+          }
+        }
+        return updated
+      })
+      // Remove the timeline item
+      return prev.filter(item => item.id !== id)
+    })
   }
 
   // Handle date selection and add/update timeline
   const handleDateSelect = () => {
     if (!selectedDate) return
 
-    // Editing an existing timeline item
     if (datePickerOpen.timelineItemId) {
+      // Editing an existing timeline item
       setTimelineItems((prev) =>
         prev.map((item) =>
           item.id === datePickerOpen.timelineItemId
@@ -107,7 +169,7 @@ export default function HealthScreenings() {
                 ...item,
                 dueDate: selectedDate,
                 month: new Date(selectedDate).toLocaleString("default", { month: "long" }),
-                status: getScreeningStatus(selectedDate) as "due-soon" | "overdue" | "upcoming",
+                status: (getScreeningStatus(selectedDate, allScreenings.find(s => s.id === item.id.split("-")[0])?.recommendedFrequency) ?? "upcoming"),
               }
             : item
         )
@@ -117,36 +179,45 @@ export default function HealthScreenings() {
     }
     // Scheduling a new screening
     else if (datePickerOpen.screening) {
+      const screeningId = datePickerOpen.screening.id
       const dueDate = selectedDate
-      const status = getScreeningStatus(dueDate) as "due-soon" | "overdue" | "upcoming"
+      const status = getScreeningStatus(dueDate, datePickerOpen.screening.recommendedFrequency)
       const month = new Date(dueDate).toLocaleString("default", { month: "long" })
-      const newId = datePickerOpen.screening!.id + "-" + dueDate
+      const newId = screeningId + "-" + dueDate
 
       setTimelineItems((prev) => {
-        // Prevent duplicates
         if (prev.some((item) => item.id === newId)) {
           setErrorMessage("This screening is already scheduled for this date.")
-          return prev // stop here
+          return prev
         }
-
-        setErrorMessage("") // Clear error if adding new one
-
-        const updated = [
+        setErrorMessage("")
+        // Update scheduledDates history
+        setScheduledDates((dates) => {
+          const updated = { ...dates }
+          updated[screeningId] = [...(updated[screeningId] || []), dueDate].sort()
+          // Update lastScheduled in allScreenings
+          setAllScreenings((screenings) =>
+            screenings.map(s =>
+              s.id === screeningId
+                ? { ...s, lastScheduled: updated[screeningId][updated[screeningId].length - 1] }
+                : s
+            )
+          )
+          return updated
+        })
+        return [
           ...prev,
           {
             id: newId,
             name: datePickerOpen.screening!.name,
             dueDate,
             month,
-            status,
+            status: status ?? "upcoming",
           }
         ]
-
-        // Close popup after successful add
-        setDatePickerOpen({ open: false })
-        setSelectedDate("")
-        return updated
       })
+      setDatePickerOpen({ open: false })
+      setSelectedDate("")
     }
   }
 
@@ -185,7 +256,7 @@ export default function HealthScreenings() {
                 {screeningTypes.map((type) => (
                   <SelectItem
                     key={type}
-                    value={type.toLowerCase().replace(/\s+/g, "")}
+                    value={type?.toLowerCase().replace(/\s+/g, "")}
                   >{type}</SelectItem>
                 ))}
               </SelectContent>
@@ -202,14 +273,14 @@ export default function HealthScreenings() {
                 <Card key={screening.id} className="p-2 rounded">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center mt-1 h-12 w-12 rounded-full bg-slate-100">
+                      <div className="flex items-center justify-center h-12 w-12 rounded-full bg-slate-100">
                         <Calendar className="h-4 w-4 text-primary-500" />
                       </div>
                       <div>
                         <h3 className="font-medium">{screening.name}</h3>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <CalendarClock className="h-3.5 w-3.5" />
-                          <span>Due: {screening.dueDate || "Not scheduled"}</span>
+                          <span>Last scheduled: {screening.lastScheduled || "Not recorded"}</span>
                           {screening.status === "overdue" && (
                             <Badge variant="outline" className="bg-red-100 text-red-700 text-xs">Overdue</Badge>
                           )}
@@ -217,6 +288,23 @@ export default function HealthScreenings() {
                             <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Due Soon</Badge>
                           )}
                         </div>
+                        {screening.description && (
+                          <div className="text-xs text-gray-500 mt-1">{screening.description}</div>
+                        )}
+                        {screening.recommendedFrequency && (
+                          <div className="text-xs text-gray-500 mt-1">Recommended frequency: {screening.recommendedFrequency}</div>
+                        )}
+                        {screening.cost && (
+                          <div className="text-xs text-gray-500 mt-1">Cost: {screening.cost}</div>
+                        )}
+                        {screening.delivery && (
+                          <div className="text-xs text-gray-500 mt-1">Delivery: {screening.delivery}</div>
+                        )}
+                        {screening.link && (
+                          <a href={screening.link} target="_blank" rel="noopener noreferrer" className="text-xs text-teal-700 underline mt-1 block">
+                            Learn more
+                          </a>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -243,14 +331,14 @@ export default function HealthScreenings() {
                 <Card key={screening.id} className="p-2 rounded bg-slate-50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center mt-1 h-12 w-12 rounded-full bg-slate-200">
+                      <div className="flex items-center justify-center h-12 w-12 rounded-full bg-slate-200">
                         <Calendar className="h-4 w-4 text-primary-500" />
                       </div>
                       <div>
                         <h3 className="font-medium">{screening.name}</h3>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <CalendarClock className="h-3.5 w-3.5" />
-                          <span>Due: {screening.dueDate || "Not scheduled"}</span>
+                          <span>Last scheduled: {screening.lastScheduled || "Not recorded"}</span>
                           {screening.status === "overdue" && (
                             <Badge variant="outline" className="bg-red-100 text-red-700 text-xs">Overdue</Badge>
                           )}
@@ -258,6 +346,23 @@ export default function HealthScreenings() {
                             <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Due Soon</Badge>
                           )}
                         </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          <span className="ml-2">Frequency: {screening.recommendedFrequency}</span>
+                        </div>
+                        {screening.description && (
+                          <div className="text-xs text-gray-500 mt-1">{screening.description}</div>
+                        )}
+                        {screening.cost && (
+                          <div className="text-xs text-gray-500 mt-1">Cost: {screening.cost}</div>
+                        )}
+                        {screening.delivery && (
+                          <div className="text-xs text-gray-500 mt-1">Delivery: {screening.delivery}</div>
+                        )}
+                        {screening.link && (
+                          <a href={screening.link} target="_blank" rel="noopener noreferrer" className="text-xs text-teal-700 underline mt-1 block">
+                            Learn more
+                          </a>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -315,18 +420,18 @@ export default function HealthScreenings() {
               value={selectedDate}
               onChange={e => {
                 setSelectedDate(e.target.value)
-                setErrorMessage("") // ✅ Clear error on date change
+                setErrorMessage("")
               }}
             />
             {errorMessage && (
-              <p className="text-red-600 text-sm">{errorMessage}</p> // ✅ Show error in popup
+              <p className="text-red-600 text-sm">{errorMessage}</p>
             )}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setDatePickerOpen({ open: false })}>Cancel</Button>
               <Button
                 variant="default"
                 onClick={handleDateSelect}
-                disabled={!selectedDate || !!errorMessage} // ✅ Disable when error exists
+                disabled={!selectedDate || !!errorMessage}
               >
                 Confirm
               </Button>
