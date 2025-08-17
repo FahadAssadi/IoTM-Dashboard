@@ -1,7 +1,7 @@
 [
   {
     "id": "1",
-    "screening_type": "general",
+    "screening_type": "General",
     "name": "Cervical Cancer Screening",
     "last_scheduled": "2020-06-03",
     "recommended_frequency": "Every 5 years",
@@ -17,7 +17,7 @@
   },
   {
     "id": "2",
-    "screening_type": "vision",
+    "screening_type": "Vision",
     "name": "Eye Examination",
     "last_scheduled": null,
     "recommended_frequency": "Every 2 years",
@@ -30,7 +30,7 @@
   },
   {
     "id": "3",
-    "screening_type": "dental",
+    "screening_type": "Dental",
     "name": "Dental Checkup",
     "last_scheduled": "2025-09-05",
     "recommended_frequency": "Every 6 months",

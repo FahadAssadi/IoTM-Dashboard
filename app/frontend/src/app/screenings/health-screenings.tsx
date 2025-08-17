@@ -72,6 +72,8 @@ export default function HealthScreenings() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [scheduledDates, setScheduledDates] = useState<Record<string, string[]>>({})
 
+  const [selectedType, setSelectedType] = useState<string>("allcategories")
+
   // All screenings from data, with status and isRecurring flag
   const [allScreenings, setAllScreenings] = useState<ScreeningItem[]>(
     screeningsData.map((screening) => {
@@ -99,7 +101,9 @@ export default function HealthScreenings() {
 
   // Filter out hidden screenings for visible list
   const screenings = allScreenings.filter(
-    (screening) => !hiddenScreenings.some((hidden) => hidden.id === screening.id)
+    (screening) =>
+      !hiddenScreenings.some((hidden) => hidden.id === screening.id) &&
+      (selectedType === "allcategories" || (screening.screeningType?.toLowerCase().replace(/\s+/g, "") === selectedType))
   )
 
   const screeningTypes: string[] = [
@@ -248,7 +252,10 @@ export default function HealthScreenings() {
                 Your personalised health screening timeline based on your profile
               </p>
             </div>
-            <Select>
+            <Select
+              value={selectedType}
+              onValueChange={setSelectedType}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
