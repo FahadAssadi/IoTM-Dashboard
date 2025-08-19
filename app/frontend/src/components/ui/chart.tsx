@@ -10,13 +10,14 @@ import {
     XAxis,
     YAxis,
   } from "recharts"
+import { NameType } from "recharts/types/component/DefaultTooltipContent"
   
   interface ChartProps {
     data: any[]
     categories: string[]
     index: string
     colors: string[]
-    valueFormatter?: (value: any, category?: string) => string
+    valueFormatter?: (value: any, category?: string| NameType) => string
     showAnimation?: boolean
     showLegend?: boolean
     showXAxis?: boolean
