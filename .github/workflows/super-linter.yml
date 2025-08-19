@@ -60,6 +60,10 @@ jobs:
       - name: Build frontend
         run: npm run build
         working-directory: app/frontend
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
 
       - name: Test frontend with coverage
         run: npm run test:coverage
