@@ -25,7 +25,7 @@ import { NameType } from "recharts/types/component/DefaultTooltipContent"
     showGridLines?: boolean
     className?: string
     yAxisWidth?: number
-    layout?: "horizontal" | "vertical" | "stacked"
+    layout?: "horizontal" | "vertical"
   }
   
   export function LineChart({
