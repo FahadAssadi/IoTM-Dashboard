@@ -2,16 +2,22 @@
     {
         "id": "1",
         "name": "Cervical Cancer Screening",
-        "dueDate": "June 3, 2025"
+        "dueDate": "June 3, 2025",
+        "icon": null,
+        "alert": false
     },
     {
         "id": "2",
         "name": "Eye Examination",
-        "dueDate": "August 12, 2025"
+        "dueDate": "August 12, 2025",
+        "icon": null,
+        "alert": false
     },
     {
         "id": "3",
         "name": "Dental Checkup",
-        "dueDate": "September 5, 2025"
+        "dueDate": "September 5, 2025",
+        "icon": null,
+        "alert": false
     }
 ]

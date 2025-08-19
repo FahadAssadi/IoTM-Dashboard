@@ -9,7 +9,7 @@ interface ScreeningItem {
   id: string
   name: string
   dueDate: string
-  icon: React.ReactNode
+  icon: React.ReactNode | null
   alert?: boolean
 }
 
