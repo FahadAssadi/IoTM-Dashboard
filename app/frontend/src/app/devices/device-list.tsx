@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { MoreVertical, CheckCircle2, XCircle } from "lucide-react"
 import { devices } from "./device-data"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 interface DeviceListProps {
   filterStatus?: "active" | "inactive"
 }
@@ -19,10 +20,10 @@ export function DeviceList({ filterStatus }: DeviceListProps) {
       prev.map((d) =>
         d.id === id
           ? {
-              ...d,
-              status: d.status === "active" ? "inactive" : "active",
-              connected: d.status !== "active",
-            }
+            ...d,
+            status: d.status === "active" ? "inactive" : "active",
+            connected: d.status !== "active",
+          }
           : d
       )
     )
@@ -47,12 +48,12 @@ export function DeviceList({ filterStatus }: DeviceListProps) {
       {filteredDevices.map((device) => {
         const Icon = device.icon
         return (
-          <div
+          <Card
             key={device.id}
-            className="border rounded-lg shadow-sm bg-white p-4 flex flex-col justify-between"
+            className="flex flex-col justify-between"
           >
             {/* Header */}
-            <div className="flex items-start justify-between mb-2">
+            <CardHeader className="flex flex-row justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Icon className="h-8 w-8 text-black-600" />
                 <div>
@@ -66,16 +67,15 @@ export function DeviceList({ filterStatus }: DeviceListProps) {
               >
                 <MoreVertical className="h-5 w-5 text-gray-500" />
               </button>
-            </div>
+            </CardHeader>
 
             {/* Content */}
-            <div className="mb-4 space-y-2 text-sm">
+            <CardContent className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500">Status</span>
                 <span
-                  className={`flex items-center gap-1 ${
-                    device.connected ? "text-green-600" : "text-gray-500"
-                  }`}
+                  className={`flex items-center gap-1 ${device.connected ? "text-green-600" : "text-gray-500"
+                    }`}
                 >
                   {device.connected ? (
                     <>
@@ -98,10 +98,11 @@ export function DeviceList({ filterStatus }: DeviceListProps) {
                   {device.battery > 0 ? `${device.battery}%` : "N/A"}
                 </span>
               </div>
-            </div>
+            </CardContent>
 
             {/* Footer */}
-            <div className="border-t pt-3 flex justify-between items-center">
+            <hr className="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700"></hr>
+            <CardFooter className="flex justify-between items-center">
               <label
                 htmlFor={`toggle-${device.id}`}
                 className="text-sm cursor-pointer"
@@ -115,8 +116,8 @@ export function DeviceList({ filterStatus }: DeviceListProps) {
                 onChange={() => toggleDeviceStatus(device.id)}
                 className="w-5 h-5 cursor-pointer accent-[#0D9488]"
               />
-            </div>
-          </div>
+            </CardFooter>
+          </Card>
         )
       })}
     </div>
