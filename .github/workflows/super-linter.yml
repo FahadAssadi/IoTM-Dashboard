@@ -22,6 +22,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: app/frontend
+
       - name: Run Super-Linter
         uses: github/super-linter@v6
         env:
