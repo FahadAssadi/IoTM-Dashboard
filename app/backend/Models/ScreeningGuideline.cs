@@ -24,23 +24,44 @@ namespace IoTM.Models
         public Guid GuidelineId { get; set; }
 
         [Required]
+        public string Name { get; set; } = string.Empty;
+
+        [Required]
         [StringLength(200)]
         public string ScreeningType { get; set; } = string.Empty;
 
         [Required]
-        public ScreeningCategory Category { get; set; }
+        public int DefaultFrequencyMonths { get; set; }
 
-        public int? MinAge { get; set; }
-
-        public int? MaxAge { get; set; }
-
-        public SexApplicable SexApplicable { get; set; } = SexApplicable.both;
+        public ICollection<FrequencyRule> FrequencyRules { get; set; } = new List<FrequencyRule>();
 
         [Required]
-        public int FrequencyMonths { get; set; }
+        public ScreeningCategory Category { get; set; }
 
-        // Represent JSON columns as a string or a more specific C# type
-        public string? ConditionsRequired { get; set; }
+        /// <summary>
+        /// Recommendation Criteria
+        /// </summary>
+        public int? MinAge { get; set; }
+
+        /// <summary>
+        /// Recommendation Criteria
+        /// </summary>
+        public int? MaxAge { get; set; }
+
+        /// <summary>
+        /// Recommendation Criteria
+        /// </summary>
+        public SexApplicable SexApplicable { get; set; } = SexApplicable.both;
+
+        /// <summary>
+        /// Recommendation Criteria
+        /// </summary>
+        public bool PregnancyApplicable { get; set; } //TODO: enum? not applicable, is applicable, has new born
+
+        /// <summary>
+        /// Recommendation Criteria
+        /// </summary>
+        public string? ConditionsRequired { get; set; } // e.g. "smoker", "family history"
         public string? ConditionsExcluded { get; set; }
         public string? RiskFactors { get; set; }
 
@@ -62,6 +83,10 @@ namespace IoTM.Models
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string? Cost { get; set; }
+        public string? Delivery { get; set; }
+        public string? Link { get; set; }
+        public bool isRecurring { get; set; }
 
         // Navigation property
         public virtual ICollection<UserScreening> UserScreenings { get; set; } = new List<UserScreening>();
