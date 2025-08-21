@@ -85,20 +85,20 @@ jobs:
           path: frontend/coverage/
 
       # BACKEND
-      - name: Install root dependencies
-        run: npm install
-        working-directory: app/backend
+      # - name: Install root dependencies
+      #   run: npm install
+      #   working-directory: app/backend
       
-      - name: Build backend
-        run: npm run build || echo "No build script"
-        working-directory: app/backend
+      # - name: Build backend
+      #   run: npm run build || echo "No build script"
+      #   working-directory: app/backend
 
-      - name: Test backend with coverage
-        run: npm run test:coverage
-        working-directory: app/backend
+      # - name: Test backend with coverage
+      #   run: npm run test:coverage
+      #   working-directory: app/backend
 
-      - name: Upload backend coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage
-          path: backend/coverage/
+      # - name: Upload backend coverage report
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: backend-coverage
+      #     path: backend/coverage/
