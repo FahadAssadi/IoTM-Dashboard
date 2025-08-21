@@ -40,6 +40,7 @@ jobs:
           JAVASCRIPT_ES_CONFIG_FILE: .eslintrc.json
           TYPESCRIPT_ES_CONFIG_FILE: .eslintrc.json
           LINTER_RULES_PATH: .               # Where your .eslintrc lives
+          NODE_MODULES_PATH: /github/workspace/app/frontend/node_modules
           VALIDATE_TYPESCRIPT_ES: true
           VALIDATE_JAVASCRIPT_ES: true
           VALIDATE_JSON: true
