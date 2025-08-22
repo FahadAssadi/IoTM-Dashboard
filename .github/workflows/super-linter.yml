@@ -34,7 +34,7 @@ jobs:
       - name: Run Super-Linter
         uses: github/super-linter@v6
         env:
-          VALIDATE_ALL_CODEBASE: false       # Lint only changed files on PRs
+          VALIDATE_ALL_CODEBASE: true       # Lint only changed files on PRs
           DEFAULT_BRANCH: main               # Set your main branch
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JAVASCRIPT_ES_CONFIG_FILE: .eslintrc.json
