@@ -31,6 +31,11 @@ jobs:
         run: npm ci
         working-directory: app/frontend
 
+      # Maybe it not downloading it correctly here?
+      - name: Install root dependencies
+        run: npm ci
+        working-directory: .
+
       - name: Run Super-Linter
         uses: github/super-linter@v6
         env:
