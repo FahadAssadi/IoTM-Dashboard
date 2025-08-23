@@ -32,7 +32,6 @@ jobs:
       #   run: npm ci
       #   working-directory: app/frontend
 
-      # Maybe it not downloading it correctly here?
       - name: Install root dependencies
         run: npm ci
         working-directory: .
@@ -46,6 +45,8 @@ jobs:
           JAVASCRIPT_ES_CONFIG_FILE: .eslintrc.json
           TYPESCRIPT_ES_CONFIG_FILE: .eslintrc.json
           LINTER_RULES_PATH: .               # Where your .eslintrc lives
+          # Its actually using the node modules from the root
+          # Its unclear why the node_modules_path isnt working as it should?
           NODE_MODULES_PATH: /github/workspace/app/frontend/node_modules
           VALIDATE_TYPESCRIPT_ES: true
           VALIDATE_JAVASCRIPT_ES: true
