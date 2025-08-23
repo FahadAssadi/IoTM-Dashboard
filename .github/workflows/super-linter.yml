@@ -28,9 +28,9 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install frontend dependencies
-        run: npm ci
-        working-directory: app/frontend
+      # - name: Install frontend dependencies
+      #   run: npm ci
+      #   working-directory: app/frontend
 
       # Maybe it not downloading it correctly here?
       - name: Install root dependencies
