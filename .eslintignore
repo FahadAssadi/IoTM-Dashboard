@@ -1,1 +1,5 @@
+# imported components
 src/components/** */
+
+# configs
+*.json
