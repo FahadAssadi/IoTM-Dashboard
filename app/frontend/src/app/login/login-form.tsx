@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import GoogleButton from "./google-button"
 import { useRouter } from "next/navigation"
 import { supabase } from '@/lib/supabase/client'
+import { toast } from "react-toastify"
 
 type LoginFormProps = {
     setTab: (tab: string) => void;
@@ -35,13 +36,13 @@ export default function LoginForm({ setTab }: LoginFormProps){
       })
 
       if (error) {
-        TODO: // add additional error message for other server errors
-        setError("password", {
-          type: "manual",
-          message: "Incorrect email or password"
-        });
+        setError("email", {
+                type: "manual",
+                message: "An error has occured: " + error.message
+        })
         console.error(error)
       } else {
+        toast.success("Login Successful")
         router.refresh() // Refresh to update server-side session
         router.push("/");
       }   

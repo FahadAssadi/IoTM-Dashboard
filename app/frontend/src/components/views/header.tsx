@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase/client"
 import { User } from "@supabase/supabase-js"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "react-toastify"
 
 export default function Header() {
 
@@ -15,6 +16,7 @@ export default function Header() {
 
   const logout = async () => {
     await supabase.auth.signOut()
+    toast.success("User logged out Succesfully")
     router.push("/login") // Go back to the login page
   }
 

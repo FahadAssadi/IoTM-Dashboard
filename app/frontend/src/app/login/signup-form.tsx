@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import GoogleButton from "./google-button"
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from "next/navigation"
+import { toast } from "react-toastify"
 
 type SignUpFormProps = {
     setTab: (tab: string) => void;
@@ -52,15 +53,12 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
         })
 
         if (error) {
-            TODO: // Determine what errors can occur and create appropriate responses
             setError("email", {
                 type: "manual",
-                message: "This user has already been registered"
+                message: "An error has occured: " + error.message
             })
-            console.error(error)
         } else {
-            // console.log(data)
-            TODO: // Create a notification for succesful signin
+            toast.success("Signup successful")
             router.refresh() // refresh to update server-side session
             router.push("/")
         }
