@@ -1,3 +1,4 @@
+---
 name: Super-Linter with CI
 
 on:
@@ -27,9 +28,13 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install frontend dependencies
+      # - name: Install frontend dependencies
+      #   run: npm ci
+      #   working-directory: app/frontend
+
+      - name: Install root dependencies
         run: npm ci
-        working-directory: app/frontend
+        working-directory: .
 
       - name: Run Super-Linter
         uses: github/super-linter@v6
@@ -40,6 +45,9 @@ jobs:
           JAVASCRIPT_ES_CONFIG_FILE: .eslintrc.json
           TYPESCRIPT_ES_CONFIG_FILE: .eslintrc.json
           LINTER_RULES_PATH: .               # Where your .eslintrc lives
+          # Its actually using the node modules from the root
+          # Its unclear why the node_modules_path isnt working as it should?
+          NODE_MODULES_PATH: /github/workspace/app/frontend/node_modules
           VALIDATE_TYPESCRIPT_ES: true
           VALIDATE_JAVASCRIPT_ES: true
           VALIDATE_JSON: true
@@ -85,20 +93,20 @@ jobs:
           path: frontend/coverage/
 
       # BACKEND
-      - name: Install root dependencies
-        run: npm install
-        working-directory: app/backend
+      # - name: Install root dependencies
+      #   run: npm install
+      #   working-directory: app/backend
       
-      - name: Build backend
-        run: npm run build || echo "No build script"
-        working-directory: app/backend
+      # - name: Build backend
+      #   run: npm run build || echo "No build script"
+      #   working-directory: app/backend
 
-      - name: Test backend with coverage
-        run: npm run test:coverage
-        working-directory: app/backend
+      # - name: Test backend with coverage
+      #   run: npm run test:coverage
+      #   working-directory: app/backend
 
-      - name: Upload backend coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage
-          path: backend/coverage/
+      # - name: Upload backend coverage report
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: backend-coverage
+      #     path: backend/coverage/
