@@ -7,6 +7,9 @@ import { useForm } from "react-hook-form"
 import { Eye, EyeOff, AlertCircle, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { toast } from "react-toastify"
+import { redirect } from "next/navigation"
+import { useSupabaseUser } from "@/lib/supabase/useSupabaseUser"
 
 type FormData = {
         password1: string;
@@ -18,6 +21,14 @@ export default function PasswordResetPage(){
     const [showPassword1, setShowPassword1] = useState(false);
     const [showPassword2, setShowPassword2] = useState(false)
     const router = useRouter()
+
+    // Protect the page from being accessed when no user is logged in
+    const user = useSupabaseUser()
+    if (!user) {
+        // The notification doesn't work yet...
+        toast.error("Unathourised Navigation: Please login to access profile page")
+        redirect("/login")
+    }
 
     const { register, handleSubmit, setError, formState: {errors} } = useForm<FormData>({
         mode: "onChange"
@@ -33,19 +44,22 @@ export default function PasswordResetPage(){
             // Break because there is an error
             return
         }
+
         const { error } = await supabase.auth.updateUser({
             password: formData.password1
         })
         if (error) {
-            TODO: // Catch errors here
+            // Notification error
+            toast.error("An error occurred: " + error.message)
+            // Error appears in the UI
             setError("password2", {
                 type: "manual",
-                message: "An Error has occured"
+                message: "An Error has occured: " + error.message
             })
-            console.error(error);
         } else {
-            TODO: // Create a notification for succesful login
-            router.push("/login")
+            // Success notification
+            toast.success("Password Changed Succesfully")
+            router.push("/")
         }
     };
 

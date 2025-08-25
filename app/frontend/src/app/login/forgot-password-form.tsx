@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import GoogleButton from "./google-button"
 import { useRouter } from "next/navigation"
 import { supabase } from '@/lib/supabase/client'
+import { toast } from "react-toastify"
 
 type ForgotPasswordFormProps = {
     setTab: (tab: string) => void;
@@ -32,14 +33,13 @@ export default function ForgotPasswordForm({ setTab }: ForgotPasswordFormProps){
 
 
       if (error) {
-        TODO: // add additional error message for other server errors
         setError("email", {
                 type: "manual",
-                message: "An error has occured"
-            })
+                message: "An error has occured: " + error.message
+        })
         console.error(error)
       } else {
-        TODO: // add a notification that the email has been sent
+        toast.success("A password reset link has been sent to your email address")
         router.push("/");
       }   
     };

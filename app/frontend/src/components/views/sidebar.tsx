@@ -1,11 +1,14 @@
+"use client"
+
 import type React from "react"
 import { Activity, Calendar, Cog, Heart, Laptop, Newspaper, User } from "lucide-react"
 import ActiveLink from "./ActiveLink"
+import { useSupabaseUser } from "@/lib/supabase/useSupabaseUser"
 
-export default async function Sidebar() {
+export default function Sidebar() {
+  const user = useSupabaseUser();
   return (
     <div className="w-[180px] border-r border-gray-300 bg-white flex flex-col h-full">
-      
       <div className="flex-1 py-4">
         <nav className="space-y-1 px-2">
           <SidebarItem href="/" icon={Activity} label="Overview" />
@@ -13,7 +16,7 @@ export default async function Sidebar() {
           <SidebarItem href="/health-insights" icon={Heart} label="Health Insights" />
           <SidebarItem href="/devices" icon={Laptop} label="Connected Devices" />
           <SidebarItem href="/news" icon={Newspaper} label="Health News" />
-          <SidebarItem href="/profile" icon={User} label="Profile" />
+          {user && (<SidebarItem href="/profile" icon={User} label="Profile" />)}
           <SidebarItem href="/settings" icon={Cog} label="Settings" />
         </nav>
       </div>
