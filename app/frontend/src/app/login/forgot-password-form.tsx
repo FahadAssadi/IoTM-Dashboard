@@ -29,7 +29,7 @@ export default function ForgotPasswordForm({ setTab }: ForgotPasswordFormProps){
       // TODO: Update the link once the product is deployed
       const { error } = await supabase.auth.resetPasswordForEmail(
         formData.email,
-        {redirectTo: 'http://localhost:3000/password-reset'})
+        {redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/password-reset`})
 
 
       if (error) {

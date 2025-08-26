@@ -2,9 +2,9 @@
 
 import dynamic from "next/dynamic"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useSupabaseUser } from "@/lib/supabase/useSupabaseUser"
-import { redirect } from "next/navigation"
-import { toast } from "react-toastify"
+// import { useSupabaseUser } from "@/lib/supabase/useSupabaseUser"
+// import { redirect } from "next/navigation"
+// import { toast } from "react-toastify"
 
 const ProfilePersonalInformation = dynamic(() => import("./profile-personal-information"))
 const ProfileSecurity = dynamic(() => import("./profile-security"))
@@ -13,12 +13,12 @@ const ProfilePreferences = dynamic(() => import("./profile-preferences"))
 export default function ProfilePage() {
 
     // Protect the page from being accessed when no user is logged in
-    const user = useSupabaseUser()
-    if (!user) {
-        // The notification doesn't work yet...
-        toast.error("Unathourised Navigation: Please login to access profile page")
-        redirect("/login")
-    }
+    // const user = useSupabaseUser()
+    // if (!user) {
+    //     // The notification doesn't work yet...
+    //     toast.error("Unathourised Navigation: Please login to access profile page")
+    //     redirect("/login")
+    // }
 
     return (
         <main className="min-h-screen flex-1 overflow-auto bg-slate-50">

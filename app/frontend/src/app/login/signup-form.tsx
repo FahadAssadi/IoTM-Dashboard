@@ -58,11 +58,10 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
                 message: "An error has occured: " + error.message
             })
         } else {
-            toast.success("Signup successful")
+            toast.success("An authentication link has been sent to your email")
             router.refresh() // refresh to update server-side session
-            router.push("/")
+            switchToLoginForm();
         }
-        switchToLoginForm();
     };
 
     

@@ -8,8 +8,8 @@ import { Eye, EyeOff, AlertCircle, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "react-toastify"
-import { redirect } from "next/navigation"
-import { useSupabaseUser } from "@/lib/supabase/useSupabaseUser"
+// import { redirect } from "next/navigation"
+// import { useSupabaseUser } from "@/lib/supabase/useSupabaseUser"
 
 type FormData = {
         password1: string;
@@ -23,12 +23,12 @@ export default function PasswordResetPage(){
     const router = useRouter()
 
     // Protect the page from being accessed when no user is logged in
-    const user = useSupabaseUser()
-    if (!user) {
-        // The notification doesn't work yet...
-        toast.error("Unathourised Navigation: Please login to access profile page")
-        redirect("/login")
-    }
+    // const user = useSupabaseUser()
+    // if (!user) {
+    //     // The notification doesn't work yet...
+    //     toast.error("Unathourised Navigation: Please login to access profile page")
+    //     redirect("/login")
+    // }
 
     const { register, handleSubmit, setError, formState: {errors} } = useForm<FormData>({
         mode: "onChange"
