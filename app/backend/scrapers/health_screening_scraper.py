@@ -133,17 +133,59 @@ def extract_screening_info(program):
                     "frequency": freq.group()
                 })
 
+    # Determine PregnancyApplicable enum value
+    pregnancy_applicable = "notPregnant"
+    # If screening is for newborns, set to postpartum
+    if "newborn" in (name or "").lower() or "newborn" in (description or "").lower():
+        pregnancy_applicable = "postpartum"
+    elif eligibility.get("pregnant", False):
+        pregnancy_applicable = "pregnant"
+
     return {
-        "screening_type": screening_type,
-        "name": name,
-        "default_frequency": default_frequency,
-        "frequency_rules": frequency_rules,
-        "eligibility": eligibility,
-        "description": description,
-        "cost": cost,
-        "delivery": delivery,
-        "link": main_url,
-        "recurring": True
+        "ScreeningType": screening_type,
+        "Name": name,
+        "DefaultFrequencyMonths": (
+            int(re.search(r"\d+", default_frequency).group()) * 12
+            if default_frequency and "year" in default_frequency.lower()
+            else int(re.search(r"\d+", default_frequency).group())
+            if default_frequency and "month" in default_frequency.lower()
+            else None
+        ),
+        "Category": "screening",
+        "MinAge": eligibility.get("age", {}).get("min"),
+        "MaxAge": eligibility.get("age", {}).get("max"),
+        "SexApplicable": eligibility.get("gender", ["both"])[0] if "gender" in eligibility else "both",
+        "PregnancyApplicable": pregnancy_applicable,
+        "ConditionsRequired": None,  # TODO: implement logic to extract this
+        "ConditionsExcluded": None,  # TODO: implement logic to extract this
+        "RiskFactors": None,         # TODO: implement logic to extract this
+        "Description": description,
+        "CountrySpecific": "AUS",
+        "LastUpdated": "2025-08-25",
+        "Cost": cost,
+        "Delivery": delivery,
+        "Link": main_url,
+        "isRecurring": True,
+        "FrequencyRules": [
+            {
+                "MinAge": rule["conditions"].get("age", {}).get("min"),
+                "MaxAge": rule["conditions"].get("age", {}).get("max"),
+                "SexApplicable": rule["conditions"].get("gender", ["both"])[0] if "gender" in rule["conditions"] else "both",
+                "PregnancyApplicable": (
+                    "postpartum" if "newborn" in (name or "").lower() or "newborn" in (description or "").lower()
+                    else "pregnant" if rule["conditions"].get("pregnant", False)
+                    else "notPregnant"
+                ),
+                "FrequencyMonths": (
+                    int(re.search(r"\d+", rule["frequency"]).group()) * 12
+                    if "year" in rule["frequency"].lower()
+                    else int(re.search(r"\d+", rule["frequency"]).group())
+                    if "month" in rule["frequency"].lower()
+                    else None
+                )
+            }
+            for rule in frequency_rules
+        ]
     }
     
 if __name__ == "__main__":
@@ -159,4 +201,4 @@ if __name__ == "__main__":
     for program in programs:
         data = extract_screening_info(program)
         all_data.append(data)
-        print(f"Scraped: {data['name']}\n", json.dumps(data, indent=4, ensure_ascii=False), "\n")
+        print(f"Scraped: {data['Name']}\n", json.dumps(data, indent=4, ensure_ascii=False), "\n")

@@ -15,6 +15,10 @@ namespace IoTM.Models
     {
         critical, high, medium, low
     }
+    public enum PregnancyStatus
+    {
+        notPregnant, pregnant, postpartum
+    }
 
     [Table("screening_guidelines")]
     public class ScreeningGuideline
@@ -56,7 +60,7 @@ namespace IoTM.Models
         /// <summary>
         /// Recommendation Criteria
         /// </summary>
-        public bool PregnancyApplicable { get; set; } //TODO: enum? not applicable, is applicable, has new born
+        public PregnancyStatus PregnancyApplicable { get; set; } //TODO: enum? not applicable, is applicable, has new born
 
         /// <summary>
         /// Recommendation Criteria
