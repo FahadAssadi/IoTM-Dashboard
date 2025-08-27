@@ -107,7 +107,9 @@ export function HealthNewsPage() {
         const response = await fetch(url)
         if (!response.ok) throw new Error('Failed to fetch news')
         
+        console.log('API Request URL:', url)
         const data: NewsResponse = await response.json()
+        console.log('API Response:', data)
         
         if (data.success) {
           setArticles(data.articles)

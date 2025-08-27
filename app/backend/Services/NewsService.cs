@@ -30,16 +30,15 @@ namespace IoTM.Services
         public async Task<NewsResponse> GetHealthNewsAsync(NewsFilter filter)
         {
             var allNews = new List<NewsArticle>();
-            var responses = new List<NewsResponse>();
 
             try
             {
                 // Fetch from multiple sources in parallel
                 var tasks = new List<Task<NewsResponse>>
                 {
-                    GetCDCNewsAsync(filter),
-                    GetWHONewsAsync(filter),
-                    GetGeneralHealthNewsAsync(filter)
+                    GetCDCNewsAsync(new NewsFilter { Category = filter.Category, SearchTerm = filter.SearchTerm, FromDate = filter.FromDate, ToDate = filter.ToDate, PageSize = 100, Page = 1 }),
+                    GetWHONewsAsync(new NewsFilter { Category = filter.Category, SearchTerm = filter.SearchTerm, FromDate = filter.FromDate, ToDate = filter.ToDate, PageSize = 100, Page = 1 }),
+                    GetGeneralHealthNewsAsync(new NewsFilter { Category = filter.Category, SearchTerm = filter.SearchTerm, FromDate = filter.FromDate, ToDate = filter.ToDate, PageSize = 100, Page = 1 })
                 };
 
                 var results = await Task.WhenAll(tasks);
@@ -50,12 +49,44 @@ namespace IoTM.Services
                     {
                         allNews.AddRange(result.Articles);
                     }
-                    responses.Add(result);
                 }
 
-                // Sort by published date (newest first) and apply pagination
-                var sortedNews = allNews
-                    .OrderByDescending(a => a.PublishedAt)
+                // Apply category filter if specified
+                if (filter.Category.HasValue)
+                {
+                    allNews = allNews.Where(a => a.Category == filter.Category.Value).ToList();
+                }
+
+                // Apply search term filter if specified
+                if (!string.IsNullOrEmpty(filter.SearchTerm))
+                {
+                    var searchTerm = filter.SearchTerm.ToLowerInvariant();
+                    allNews = allNews.Where(a => 
+                        (a.Title?.ToLowerInvariant().Contains(searchTerm) == true) ||
+                        (a.Description?.ToLowerInvariant().Contains(searchTerm) == true) ||
+                        (a.Content?.ToLowerInvariant().Contains(searchTerm) == true)
+                    ).ToList();
+                }
+
+                // Apply date filters
+                if (filter.FromDate.HasValue)
+                {
+                    allNews = allNews.Where(a => a.PublishedAt >= filter.FromDate.Value).ToList();
+                }
+
+                if (filter.ToDate.HasValue)
+                {
+                    allNews = allNews.Where(a => a.PublishedAt <= filter.ToDate.Value).ToList();
+                }
+
+                // Sort by published date (newest first)
+                var sortedNews = allNews.OrderByDescending(a => a.PublishedAt).ToList();
+
+                // Calculate total results before pagination
+                var totalResults = sortedNews.Count;
+
+                // Apply pagination
+                var paginatedNews = sortedNews
                     .Skip((filter.Page - 1) * filter.PageSize)
                     .Take(filter.PageSize)
                     .ToList();
@@ -64,8 +95,8 @@ namespace IoTM.Services
                 {
                     Success = true,
                     Message = "Health news fetched successfully",
-                    Articles = sortedNews,
-                    TotalResults = allNews.Count,
+                    Articles = paginatedNews,
+                    TotalResults = totalResults,
                     Source = "Multiple Sources"
                 };
             }
@@ -112,12 +143,19 @@ namespace IoTM.Services
                     }
                 }
 
+                // Apply pagination for individual endpoint calls only
+                var totalResults = articles.Count;
+                var paginatedArticles = articles
+                    .Skip((filter.Page - 1) * filter.PageSize)
+                    .Take(filter.PageSize)
+                    .ToList();
+
                 return new NewsResponse
                 {
                     Success = true,
                     Message = "CDC news fetched successfully",
-                    Articles = articles.Take(filter.PageSize).ToList(),
-                    TotalResults = articles.Count,
+                    Articles = filter.Page == 1 && filter.PageSize >= 100 ? articles : paginatedArticles,
+                    TotalResults = totalResults,
                     Source = "CDC"
                 };
             }
@@ -157,12 +195,19 @@ namespace IoTM.Services
                     _logger.LogWarning(ex, "Failed to fetch WHO RSS feed, using mock data only");
                 }
 
+                // Apply pagination for individual endpoint calls only
+                var totalResults = articles.Count;
+                var paginatedArticles = articles
+                    .Skip((filter.Page - 1) * filter.PageSize)
+                    .Take(filter.PageSize)
+                    .ToList();
+
                 return new NewsResponse
                 {
                     Success = true,
                     Message = "WHO news fetched successfully",
-                    Articles = articles.Take(filter.PageSize).ToList(),
-                    TotalResults = articles.Count,
+                    Articles = filter.Page == 1 && filter.PageSize >= 100 ? articles : paginatedArticles,
+                    TotalResults = totalResults,
                     Source = "WHO"
                 };
             }
@@ -224,12 +269,19 @@ namespace IoTM.Services
                     }
                 }
 
+                // Apply pagination for individual endpoint calls only
+                var totalResults = articles.Count;
+                var paginatedArticles = articles
+                    .Skip((filter.Page - 1) * filter.PageSize)
+                    .Take(filter.PageSize)
+                    .ToList();
+
                 return new NewsResponse
                 {
                     Success = true,
                     Message = "General health news fetched successfully",
-                    Articles = articles.Take(filter.PageSize).ToList(),
-                    TotalResults = articles.Count,
+                    Articles = filter.Page == 1 && filter.PageSize >= 100 ? articles : paginatedArticles,
+                    TotalResults = totalResults,
                     Source = "Multiple Health Sources"
                 };
             }
