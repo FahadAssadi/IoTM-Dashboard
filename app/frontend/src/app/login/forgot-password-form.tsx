@@ -18,6 +18,8 @@ type FormData = {
   password: string;
 }
 
+const site_url = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+
 export default function ForgotPasswordForm({ setTab }: ForgotPasswordFormProps){
     const router = useRouter();
 
@@ -29,7 +31,7 @@ export default function ForgotPasswordForm({ setTab }: ForgotPasswordFormProps){
       // TODO: Update the link once the product is deployed
       const { error } = await supabase.auth.resetPasswordForEmail(
         formData.email,
-        {redirectTo: 'http://localhost:3000/password-reset'})
+        {redirectTo: `${site_url}/password-reset`})
 
 
       if (error) {
@@ -103,7 +105,7 @@ export default function ForgotPasswordForm({ setTab }: ForgotPasswordFormProps){
               <GoogleButton/>
               <div className="text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <button onClick={switchToSignUpForm} className="text-teal-600 hover:text-teal-500">
+                <button type="button" onClick={switchToSignUpForm} className="text-teal-600 hover:text-teal-500">
                   Sign up
                 </button>
               </div>
