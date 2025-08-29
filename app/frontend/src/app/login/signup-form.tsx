@@ -171,7 +171,7 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
                             >
                                 Password
                             </label>
-                            <button onClick={switchToForgotPasswordForm} className="text-sm text-teal-600 hover:text-teal-500">
+                            <button type="button" onClick={switchToForgotPasswordForm} className="text-sm text-teal-600 hover:text-teal-500">
                                 Forgot password?
                             </button>
                         </div>
@@ -223,12 +223,12 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
                         />
                         { errors.terms ? ( 
                             <span className="text-sm text-red-500">I agree to the{' '}
-                            <button className="text-teal-800 hover:text-teal-600">Terms of Service</button> and{' '}
-                            <button className="text-teal-800 hover:text-teal-600"> Privacy Policy</button></span>
+                            <button type="button" className="text-teal-800 hover:text-teal-600">Terms of Service</button> and{' '}
+                            <button type="button" className="text-teal-800 hover:text-teal-600"> Privacy Policy</button></span>
                             ) : (
                             <span className="text-sm text-gray-700">I agree to the{' '}
-                            <button className="text-teal-800 hover:text-teal-600">Terms of Service</button> and{' '}
-                            <button className="text-teal-800 hover:text-teal-600"> Privacy Policy</button></span>
+                            <button type="button" className="text-teal-800 hover:text-teal-600">Terms of Service</button> and{' '}
+                            <button type="button" className="text-teal-800 hover:text-teal-600"> Privacy Policy</button></span>
                         )}
                     </label>
                     <div className="py-1">
@@ -253,7 +253,7 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
                 <GoogleButton/>
                 <div className="text-center text-sm">
                     Already have an account?{" "}
-                    <button onClick={switchToLoginForm} className="text-teal-600 hover:text-teal-500">
+                    <button type="button" onClick={switchToLoginForm} className="text-teal-600 hover:text-teal-500">
                     Log in
                     </button>
                 </div>

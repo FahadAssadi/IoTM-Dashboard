@@ -103,7 +103,7 @@ export default function LoginForm({ setTab }: LoginFormProps){
                     >
                       Password
                     </label>
-                    <button onClick={switchToForgotPasswordForm} className="text-sm text-teal-600 hover:text-teal-500">
+                    <button type="button" onClick={switchToForgotPasswordForm} className="text-sm text-teal-600 hover:text-teal-500">
                       Forgot password?
                     </button>
                   </div>
@@ -159,7 +159,7 @@ export default function LoginForm({ setTab }: LoginFormProps){
               <GoogleButton/>
               <div className="text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <button onClick={switchToSignUpForm} className="text-teal-600 hover:text-teal-500">
+                <button type="button" onClick={switchToSignUpForm} className="text-teal-600 hover:text-teal-500">
                   Sign up
                 </button>
               </div>

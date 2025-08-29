@@ -105,7 +105,7 @@ export default function ForgotPasswordForm({ setTab }: ForgotPasswordFormProps){
               <GoogleButton/>
               <div className="text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <button onClick={switchToSignUpForm} className="text-teal-600 hover:text-teal-500">
+                <button type="button" onClick={switchToSignUpForm} className="text-teal-600 hover:text-teal-500">
                   Sign up
                 </button>
               </div>
