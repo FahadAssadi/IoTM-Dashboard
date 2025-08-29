@@ -44,7 +44,7 @@ namespace IoTM.Controllers
                 .FirstOrDefaultAsync(us => us.UserId == userId && us.ScreeningId == screeningId);
             if (screening == null) return NotFound();
 
-            screening.DueDate = updated.DueDate;
+            screening.LastScheduledDate = updated.LastScheduledDate;
             screening.Status = updated.Status;
             screening.ProviderName = updated.ProviderName;
             screening.Notes = updated.Notes;

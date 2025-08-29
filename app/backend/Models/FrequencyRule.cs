@@ -14,7 +14,7 @@ namespace IoTM.Models
         public int? MinAge { get; set; }
         public int? MaxAge { get; set; }
         public SexApplicable? SexApplicable { get; set; }
-        public PregnancyStatus PregnancyApplicable { get; set; } //TODO: enum? not applicable, is applicable, has new born
+        public PregnancyApplicable? PregnancyApplicable { get; set; }
         public int FrequencyMonths { get; set; }
         public string? Condition { get; set; } // e.g. "smoker", "family history"
     }

@@ -10,8 +10,8 @@ namespace IoTM.Models
     }
 
     [Table("user_screenings")]
-    [Index(nameof(UserId), nameof(DueDate), Name = "idx_user_due_date")]
-    [Index(nameof(Status), nameof(DueDate), Name = "idx_status_due")]
+    // [Index(nameof(UserId), nameof(DueDate), Name = "idx_user_due_date")]
+    // [Index(nameof(Status), nameof(DueDate), Name = "idx_status_due")]
     public class UserScreening
     {
         [Key]
@@ -26,12 +26,10 @@ namespace IoTM.Models
         public Guid GuidelineId { get; set; }
         public virtual ScreeningGuideline Guideline { get; set; } = null!;
 
-        [Required]
-        public DateOnly DueDate { get; set; }
+        public DateOnly? LastScheduledDate { get; set; }
 
         public ScreeningStatus Status { get; set; } = ScreeningStatus.pending;
 
-        public DateOnly? ScheduledDate { get; set; }
         public DateOnly? CompletedDate { get; set; }
 
         [StringLength(200)]

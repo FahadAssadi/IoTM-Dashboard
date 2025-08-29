@@ -124,9 +124,9 @@ def extract_screening_info(program):
             if age_cond:
                 conditions['age'] = {"min": int(age_cond.group(1)), "max": int(age_cond.group(3))}
             if re.search(r"\bwomen\b|\bfemale\b", sent, re.IGNORECASE):
-                conditions['gender'] = ["woman"]
+                conditions['gender'] = ["female"]
             if re.search(r"\bmen\b|\bmale\b", sent, re.IGNORECASE):
-                conditions['gender'] = ["man"]
+                conditions['gender'] = ["male"]
             if conditions:
                 frequency_rules.append({
                     "conditions": conditions,
@@ -134,7 +134,7 @@ def extract_screening_info(program):
                 })
 
     # Determine PregnancyApplicable enum value
-    pregnancy_applicable = "notPregnant"
+    pregnancy_applicable = "not_pregnant"
     # If screening is for newborns, set to postpartum
     if "newborn" in (name or "").lower() or "newborn" in (description or "").lower():
         pregnancy_applicable = "postpartum"
@@ -202,3 +202,9 @@ if __name__ == "__main__":
         data = extract_screening_info(program)
         all_data.append(data)
         print(f"Scraped: {data['Name']}\n", json.dumps(data, indent=4, ensure_ascii=False), "\n")
+
+    # Write all_data to a JSON file
+    output_path = "app/backend/Scrapers/health-screenings.json"
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(all_data, f, indent=2, ensure_ascii=False)
+    print(f"Saved {len(all_data)} screenings to {output_path}")

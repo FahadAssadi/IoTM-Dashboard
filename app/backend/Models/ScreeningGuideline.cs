@@ -15,9 +15,9 @@ namespace IoTM.Models
     {
         critical, high, medium, low
     }
-    public enum PregnancyStatus
+    public enum PregnancyApplicable
     {
-        notPregnant, pregnant, postpartum
+        not_pregnant, pregnant, postpartum
     }
 
     [Table("screening_guidelines")]
@@ -35,9 +35,8 @@ namespace IoTM.Models
         public string ScreeningType { get; set; } = string.Empty;
 
         [Required]
+        //TODO: make sure this is only required if isRecurring is true
         public int DefaultFrequencyMonths { get; set; }
-
-        public ICollection<FrequencyRule> FrequencyRules { get; set; } = new List<FrequencyRule>();
 
         [Required]
         public ScreeningCategory Category { get; set; }
@@ -60,7 +59,7 @@ namespace IoTM.Models
         /// <summary>
         /// Recommendation Criteria
         /// </summary>
-        public PregnancyStatus PregnancyApplicable { get; set; } //TODO: enum? not applicable, is applicable, has new born
+        public PregnancyApplicable PregnancyApplicable { get; set; }
 
         /// <summary>
         /// Recommendation Criteria
@@ -92,7 +91,8 @@ namespace IoTM.Models
         public string? Link { get; set; }
         public bool isRecurring { get; set; }
 
-        // Navigation property
+        // Navigation properties
         public virtual ICollection<UserScreening> UserScreenings { get; set; } = new List<UserScreening>();
+        public virtual ICollection<FrequencyRule> FrequencyRules { get; set; } = new List<FrequencyRule>();
     }
 }
