@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Loader2, AlertCircle } from "lucide-react"
+import { Calendar, Loader2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 
 // Types based on your backend API
 interface NewsArticle {
@@ -37,6 +37,7 @@ interface NewsCategory {
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5225'
+const ARTICLES_PER_PAGE = 10
 
 export function HealthNewsPage() {
   const [selectedCategory, setSelectedCategory] = useState("All")
@@ -45,6 +46,12 @@ export function HealthNewsPage() {
   const [categories, setCategories] = useState<NewsCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalResults, setTotalResults] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [paginationLoading, setPaginationLoading] = useState(false)
 
   // Fetch news categories from API
   useEffect(() => {
@@ -78,11 +85,16 @@ export function HealthNewsPage() {
   // Fetch news articles from API
   useEffect(() => {
     const fetchNews = async () => {
-      setLoading(true)
+      // Show main loading only on initial load or category change
+      if (currentPage === 1) {
+        setLoading(true)
+      } else {
+        setPaginationLoading(true)
+      }
       setError(null)
       
       try {
-        let url = `${API_BASE_URL}/api/news?pageSize=50`
+        let url = `${API_BASE_URL}/api/news?pageSize=${ARTICLES_PER_PAGE}&page=${currentPage}`
         
         // Add category filter if not "All"
         if (selectedCategory !== "All") {
@@ -95,10 +107,14 @@ export function HealthNewsPage() {
         const response = await fetch(url)
         if (!response.ok) throw new Error('Failed to fetch news')
         
+        console.log('API Request URL:', url)
         const data: NewsResponse = await response.json()
+        console.log('API Response:', data)
         
         if (data.success) {
           setArticles(data.articles)
+          setTotalResults(data.totalResults)
+          setTotalPages(Math.ceil(data.totalResults / ARTICLES_PER_PAGE))
         } else {
           throw new Error(data.message || 'Failed to fetch news')
         }
@@ -107,6 +123,7 @@ export function HealthNewsPage() {
         setError(err instanceof Error ? err.message : 'Failed to load news')
       } finally {
         setLoading(false)
+        setPaginationLoading(false)
       }
     }
 
@@ -114,7 +131,97 @@ export function HealthNewsPage() {
     if (categories.length > 0) {
       fetchNews()
     }
-  }, [selectedCategory, categories])
+  }, [selectedCategory, categories, currentPage])
+
+  // Reset to page 1 when category changes
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1)
+    }
+  }, [selectedCategory])
+
+  // Pagination helper functions
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages && page !== currentPage) {
+      setCurrentPage(page)
+      setExpandedArticle(null) // Collapse any expanded articles when changing pages
+      // Scroll to top of the page
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  const renderPageNumbers = () => {
+    const pageNumbers = []
+    const maxVisiblePages = 5
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+
+    // Adjust start page if we're near the end
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1)
+    }
+
+    // Add first page and ellipsis if needed
+    if (startPage > 1) {
+      pageNumbers.push(
+        <Button
+          key={1}
+          variant={1 === currentPage ? "default" : "outline"}
+          size="sm"
+          onClick={() => handlePageChange(1)}
+          className="w-10 h-10"
+        >
+          1
+        </Button>
+      )
+      if (startPage > 2) {
+        pageNumbers.push(
+          <span key="ellipsis-start" className="px-2 text-gray-500">
+            ...
+          </span>
+        )
+      }
+    }
+
+    // Add visible page numbers
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(
+        <Button
+          key={i}
+          variant={i === currentPage ? "default" : "outline"}
+          size="sm"
+          onClick={() => handlePageChange(i)}
+          className="w-10 h-10"
+        >
+          {i}
+        </Button>
+      )
+    }
+
+    // Add last page and ellipsis if needed
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        pageNumbers.push(
+          <span key="ellipsis-end" className="px-2 text-gray-500">
+            ...
+          </span>
+        )
+      }
+      pageNumbers.push(
+        <Button
+          key={totalPages}
+          variant={totalPages === currentPage ? "default" : "outline"}
+          size="sm"
+          onClick={() => handlePageChange(totalPages)}
+          className="w-10 h-10"
+        >
+          {totalPages}
+        </Button>
+      )
+    }
+
+    return pageNumbers
+  }
 
   const toggleArticle = (id: number) => {
     setExpandedArticle(expandedArticle === id ? null : id)
@@ -204,65 +311,120 @@ export function HealthNewsPage() {
 
               {/* News articles */}
               {!loading && !error && (
-                <div className="grid gap-6 md:grid-cols-2">
-                  {articles.length === 0 ? (
-                    <div className="col-span-2 text-center py-12">
-                      <p className="text-gray-600">No news articles found for the selected category.</p>
+                <div className="relative">
+                  {/* Pagination loading overlay */}
+                  {paginationLoading && (
+                    <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Loader2 className="h-6 w-6 animate-spin text-teal-600" />
+                        <span className="text-gray-600">Loading page {currentPage}...</span>
+                      </div>
                     </div>
-                  ) : (
-                    articles.map((article, index) => (
-                      <Card key={`${article.id}-${index}-${article.title.slice(0, 20)}`} className="overflow-hidden">
-                        <CardHeader className="pb-3">
-                          <div className="flex justify-between items-start">
-                            <Badge variant="outline" className="bg-teal-50 text-teal-700 hover:bg-teal-100">
-                              {getCategoryDisplayName(article.category)}
-                            </Badge>
-                            <div className="flex items-center text-sm text-gray-500">
-                              <Calendar className="h-3.5 w-3.5 mr-1" />
-                              {formatDate(article.publishedAt)}
+                  )}
+
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {articles.length === 0 ? (
+                      <div className="col-span-2 text-center py-12">
+                        <p className="text-gray-600">No news articles found for the selected category.</p>
+                      </div>
+                    ) : (
+                      articles.map((article, index) => (
+                        <Card key={`${article.id}-${index}-${article.title.slice(0, 20)}`} className="overflow-hidden">
+                          <CardHeader className="pb-3">
+                            <div className="flex justify-between items-start">
+                              <Badge variant="outline" className="bg-teal-50 text-teal-700 hover:bg-teal-100">
+                                {getCategoryDisplayName(article.category)}
+                              </Badge>
+                              <div className="flex items-center text-sm text-gray-500">
+                                <Calendar className="h-3.5 w-3.5 mr-1" />
+                                {formatDate(article.publishedAt)}
+                              </div>
                             </div>
-                          </div>
-                          <CardTitle className="text-lg font-semibold mt-2">{article.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="pb-3">
-                          <p className="text-gray-600 text-sm">
-                            {expandedArticle === article.id 
-                              ? article.description 
-                              : `${article.description.substring(0, 120)}...`
-                            }
-                          </p>
-                          {expandedArticle === article.id && article.content && article.content !== article.description && (
-                            <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-700">
-                              {article.content}
-                            </div>
-                          )}
-                        </CardContent>
-                        <CardFooter className="flex justify-between pt-0">
-                          <div className="flex gap-2">
-                            <Button
-                              variant="link"
-                              className="p-0 h-auto text-teal-600 hover:text-teal-800"
-                              onClick={() => toggleArticle(article.id)}
-                            >
-                              {expandedArticle === article.id ? "Show Less" : "Read More"}
-                            </Button>
-                            {article.url && (
+                            <CardTitle className="text-lg font-semibold mt-2">{article.title}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="pb-3">
+                            <p className="text-gray-600 text-sm">
+                              {expandedArticle === article.id 
+                                ? article.description 
+                                : `${article.description.substring(0, 120)}...`
+                              }
+                            </p>
+                            {expandedArticle === article.id && article.content && article.content !== article.description && (
+                              <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-700">
+                                {article.content}
+                              </div>
+                            )}
+                          </CardContent>
+                          <CardFooter className="flex justify-between pt-0">
+                            <div className="flex gap-2">
                               <Button
                                 variant="link"
-                                className="p-0 h-auto text-blue-600 hover:text-blue-800"
-                                onClick={() => window.open(article.url, '_blank')}
+                                className="p-0 h-auto text-teal-600 hover:text-teal-800"
+                                onClick={() => toggleArticle(article.id)}
                               >
-                                View Source
+                                {expandedArticle === article.id ? "Show Less" : "Read More"}
                               </Button>
-                            )}
-                          </div>
-                          <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-                            {article.source}
-                          </Badge>
-                        </CardFooter>
-                      </Card>
-                    ))
-                  )}
+                              {article.url && (
+                                <Button
+                                  variant="link"
+                                  className="p-0 h-auto text-blue-600 hover:text-blue-800"
+                                  onClick={() => window.open(article.url, '_blank')}
+                                >
+                                  View Source
+                                </Button>
+                              )}
+                            </div>
+                            <Badge variant="secondary" className="bg-gray-100 text-gray-700">
+                              {article.source}
+                            </Badge>
+                          </CardFooter>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Pagination Controls */}
+              {!loading && !error && totalPages > 1 && (
+                <div className="mt-8 flex flex-col items-center space-y-4">
+                  {/* Page info */}
+                  <div className="text-sm text-gray-600">
+                    Showing {Math.min((currentPage - 1) * ARTICLES_PER_PAGE + 1, totalResults)} to{' '}
+                    {Math.min(currentPage * ARTICLES_PER_PAGE, totalResults)} of {totalResults} articles
+                  </div>
+
+                  {/* Pagination buttons */}
+                  <div className="flex items-center space-x-2">
+                    {/* Previous button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="flex items-center space-x-1"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span>Previous</span>
+                    </Button>
+
+                    {/* Page numbers */}
+                    <div className="flex items-center space-x-1">
+                      {renderPageNumbers()}
+                    </div>
+
+                    {/* Next button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="flex items-center space-x-1"
+                    >
+                      <span>Next</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
