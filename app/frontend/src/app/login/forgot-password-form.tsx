@@ -8,6 +8,7 @@ import GoogleButton from "./google-button"
 import { useRouter } from "next/navigation"
 import { supabase } from '@/lib/supabase/client'
 import { toast } from "react-toastify"
+import { ErrorAlert } from "@/components/form-components"
 
 type ForgotPasswordFormProps = {
     setTab: (tab: string) => void;
@@ -81,11 +82,7 @@ export default function ForgotPasswordForm({ setTab }: ForgotPasswordFormProps){
                     )}
                   </div>
                   <div>
-                    {errors.email &&
-                    <p className="mt-1 text-sm text-red-700 flex items-center">
-                        <AlertCircle className="h-3 w-3 mr-1" /> 
-                        {errors.email.message}
-                    </p>}
+                    <ErrorAlert error={errors.email} />
                   </div>
                 </div>
                 
