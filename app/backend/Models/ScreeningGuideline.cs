@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace IoTM.Models
 {
@@ -92,6 +93,7 @@ namespace IoTM.Models
         public bool isRecurring { get; set; }
 
         // Navigation properties
+        [JsonIgnore]
         public virtual ICollection<UserScreening> UserScreenings { get; set; } = new List<UserScreening>();
         public virtual ICollection<FrequencyRule> FrequencyRules { get; set; } = new List<FrequencyRule>();
     }

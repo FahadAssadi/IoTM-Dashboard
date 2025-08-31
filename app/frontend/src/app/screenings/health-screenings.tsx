@@ -1,42 +1,46 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Calendar, CalendarClock, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import screeningsData from "./screenings-data.json"
 import HealthScreeningTimeline, { TimelineItem } from "./health-screenings-timeline"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+console.log("API Base URL:", apiBaseUrl);
+
 export interface ScreeningItem {
-  id: string
+  GuidelineId: string
   name: string
   lastScheduled?: string
   status?: "due-soon" | "overdue" | undefined
   isRecurring: boolean
   screeningType?: string
-  recommendedFrequency?: string
+  defaultFrequencyMonths?: string
   description?: string
   eligibility?: string
+  minAge?: number
+  maxAge?: number
   cost?: string
   delivery?: string
   link?: string
 }
 
-function getScreeningStatus(lastScheduled?: string, recommendedFrequency?: string): "due-soon" | "overdue" | "upcoming" | undefined {
-  if (!lastScheduled || !recommendedFrequency) return undefined
+function getScreeningStatus(lastScheduled?: string, defaultFrequencyMonths?: string): "due-soon" | "overdue" | "upcoming" | undefined {
+  if (!lastScheduled || !defaultFrequencyMonths) return undefined
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const last = new Date(lastScheduled)
   last.setHours(0, 0, 0, 0)
 
   const nextDue = new Date(last)
-  if (recommendedFrequency.includes("year")) {
-    const years = parseInt(recommendedFrequency.replace(/\D/g, "")) || 1
+  if (defaultFrequencyMonths.includes("year")) {
+    const years = parseInt(defaultFrequencyMonths.replace(/\D/g, "")) || 1
     nextDue.setFullYear(last.getFullYear() + years)
-  } else if (recommendedFrequency.includes("month")) {
-    const months = parseInt(recommendedFrequency.replace(/\D/g, "")) || 6
+  } else if (defaultFrequencyMonths.includes("month")) {
+    const months = parseInt(defaultFrequencyMonths.replace(/\D/g, "")) || 6
     nextDue.setMonth(last.getMonth() + months)
   }
 
@@ -75,34 +79,42 @@ export default function HealthScreenings() {
   const [selectedType, setSelectedType] = useState<string>("allcategories")
 
   // All screenings from data, with status and isRecurring flag
-  const [allScreenings, setAllScreenings] = useState<ScreeningItem[]>(
-    screeningsData.map((screening) => {
-      const status = getScreeningStatus(screening.last_scheduled ?? undefined, screening.recommended_frequency)
-      return {
-        id: screening.id,
-        name: screening.name,
-        lastScheduled: screening.last_scheduled ?? undefined,
-        status: status === "upcoming" ? undefined : status,
-        isRecurring: screening.recurring,
-        screeningType: screening.screening_type,
-        recommendedFrequency: screening.recommended_frequency,
-        description: screening.description,
-        eligibility: typeof screening.eligibility === "string"
-          ? screening.eligibility
-          : screening.eligibility
-            ? `Age: ${screening.eligibility.age ? `${screening.eligibility.age.min}-${screening.eligibility.age.max}` : "N/A"}, Gender: ${screening.eligibility.gender ? screening.eligibility.gender.join(", ") : "N/A"}`
-            : undefined,
-        cost: screening.cost,
-        delivery: screening.delivery,
-        link: screening.link ?? undefined,
-      }
-    })
-  )
+  const [allScreenings, setAllScreenings] = useState<ScreeningItem[]>([])
+
+  useEffect(() => {
+    fetch(`${apiBaseUrl}/api/UserScreenings/`)
+      .then(res => res.json())
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then((data: any[]) => {
+        // Extract only the guideline object from each user screening
+        const guidelines = data
+          .map(item => item.guideline)
+          .filter(g => !!g); // Remove any undefined/null guidelines
+
+        setAllScreenings(
+          guidelines.map((screening) => ({
+            GuidelineId: screening.guidelineId,
+            name: screening.name,
+            lastScheduled: screening.lastScheduled ?? undefined,
+            isRecurring: screening.isRecurring,
+            screeningType: screening.screeningType,
+            defaultFrequencyMonths: screening.defaultFrequencyMonths,
+            description: screening.description,
+            cost: screening.cost,
+            delivery: screening.delivery,
+            link: screening.link,
+          }))
+        )
+      })
+      .catch(err => {
+        console.error("Failed to fetch guidelines", err)
+      })
+  }, [])
 
   // Filter out hidden screenings for visible list
   const screenings = allScreenings.filter(
     (screening) =>
-      !hiddenScreenings.some((hidden) => hidden.id === screening.id) &&
+      !hiddenScreenings.some((hidden) => hidden.GuidelineId === screening.GuidelineId) &&
       (selectedType === "allcategories" || (screening.screeningType?.toLowerCase().replace(/\s+/g, "") === selectedType))
   )
 
@@ -146,7 +158,7 @@ export default function HealthScreenings() {
               : undefined
             setAllScreenings((screenings) =>
               screenings.map(s =>
-                s.id === screeningId
+                s.GuidelineId === screeningId
                   ? { ...s, lastScheduled: latest }
                   : s
               )
@@ -173,7 +185,7 @@ export default function HealthScreenings() {
                 ...item,
                 dueDate: selectedDate,
                 month: new Date(selectedDate).toLocaleString("default", { month: "long" }),
-                status: (getScreeningStatus(selectedDate, allScreenings.find(s => s.id === item.id.split("-")[0])?.recommendedFrequency) ?? "upcoming"),
+                status: (getScreeningStatus(selectedDate, allScreenings.find(s => s.GuidelineId === item.id.split("-")[0])?.defaultFrequencyMonths) ?? "upcoming"),
               }
             : item
         )
@@ -183,9 +195,9 @@ export default function HealthScreenings() {
     }
     // Scheduling a new screening
     else if (datePickerOpen.screening) {
-      const screeningId = datePickerOpen.screening.id
+      const screeningId = datePickerOpen.screening.GuidelineId
       const dueDate = selectedDate
-      const status = getScreeningStatus(dueDate, datePickerOpen.screening.recommendedFrequency)
+      const status = getScreeningStatus(dueDate, datePickerOpen.screening.defaultFrequencyMonths)
       const month = new Date(dueDate).toLocaleString("default", { month: "long" })
       const newId = screeningId + "-" + dueDate
 
@@ -202,7 +214,7 @@ export default function HealthScreenings() {
           // Update lastScheduled in allScreenings
           setAllScreenings((screenings) =>
             screenings.map(s =>
-              s.id === screeningId
+              s.GuidelineId === screeningId
                 ? { ...s, lastScheduled: updated[screeningId][updated[screeningId].length - 1] }
                 : s
             )
@@ -232,7 +244,7 @@ export default function HealthScreenings() {
 
   // Unhide a screening
   const handleUnhideScreening = (screening: ScreeningItem) => {
-    setHiddenScreenings((prev) => prev.filter((item) => item.id !== screening.id))
+    setHiddenScreenings((prev) => prev.filter((item) => item.GuidelineId !== screening.GuidelineId))
   }
 
   // Unhide all hidden screenings
@@ -277,7 +289,7 @@ export default function HealthScreenings() {
                 <div className="text-center text-slate-500 py-8">No screenings to show.</div>
               )}
               {screenings.map((screening) => (
-                <Card key={screening.id} className="p-2 rounded">
+                <Card key={screening.GuidelineId} className="p-2 rounded">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center h-12 w-12 rounded-full bg-slate-100">
@@ -298,8 +310,8 @@ export default function HealthScreenings() {
                         {screening.description && (
                           <div className="text-xs text-gray-500 mt-1">{screening.description}</div>
                         )}
-                        {screening.recommendedFrequency && (
-                          <div className="text-xs text-gray-500 mt-1">Recommended frequency: {screening.recommendedFrequency}</div>
+                        {screening.defaultFrequencyMonths && (
+                          <div className="text-xs text-gray-500 mt-1">Recommended frequency: {screening.defaultFrequencyMonths}</div>
                         )}
                         {screening.cost && (
                           <div className="text-xs text-gray-500 mt-1">Cost: {screening.cost}</div>
@@ -335,7 +347,7 @@ export default function HealthScreenings() {
                 <div className="text-center text-slate-500 py-8">No hidden screenings.</div>
               )}
               {hiddenScreenings.map((screening) => (
-                <Card key={screening.id} className="p-2 rounded bg-slate-50">
+                <Card key={screening.GuidelineId} className="p-2 rounded bg-slate-50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center h-12 w-12 rounded-full bg-slate-200">
@@ -354,7 +366,7 @@ export default function HealthScreenings() {
                           )}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          <span className="ml-2">Frequency: {screening.recommendedFrequency}</span>
+                          <span className="ml-2">Frequency: {screening.defaultFrequencyMonths}</span>
                         </div>
                         {screening.description && (
                           <div className="text-xs text-gray-500 mt-1">{screening.description}</div>

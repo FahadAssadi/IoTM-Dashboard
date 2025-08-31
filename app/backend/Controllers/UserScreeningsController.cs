@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using IoTM.Models;
-using IoTM.Data;
-using Microsoft.EntityFrameworkCore;
+using IoTM.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace IoTM.Controllers
 {
@@ -9,62 +9,92 @@ namespace IoTM.Controllers
     [Route("api/[controller]")]
     public class UserScreeningsController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IUserScreeningsService _userScreeningsService;
 
-        public UserScreeningsController(ApplicationDbContext context)
+        public UserScreeningsController(IUserScreeningsService userScreeningsService)
         {
-            _context = context;
+            _userScreeningsService = userScreeningsService;
         }
 
-        // Get all user screenings for a user
-        [HttpGet("{userId}")]
-        public async Task<ActionResult<IEnumerable<UserScreening>>> GetUserScreenings(Guid userId)
+        /// <summary>
+        /// Get existing user screenings.
+        /// </summary>
+        /// <returns></returns>
+        //[Authorize]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<UserScreening>>> GetUserScreenings()
         {
-            var screenings = await _context.UserScreenings
-                .Where(us => us.UserId == userId)
-                .ToListAsync();
+            // // Get userId from authentication context (claims)
+            // var userIdClaim = User.FindFirst("sub") ?? User.FindFirst("userId");
+            // if (userIdClaim == null)
+            //     return Unauthorized();
+
+            // Guid userId = Guid.Parse(userIdClaim.Value);
+
+            // TODO: Replace with authenticated user ID when available
+            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+            var screenings = await _userScreeningsService.GetExistingScreeningsForUserAsync(userId);
             return Ok(screenings);
         }
 
-        // Schedule (add) a new screening for a user
-        [HttpPost("{userId}/schedule")]
-        public async Task<ActionResult<UserScreening>> ScheduleScreening(Guid userId, [FromBody] UserScreening screening)
+        // Schedule a screening
+        [Authorize]
+        [HttpPost("schedule")]
+        public ActionResult<UserScreening> ScheduleScreening([FromBody] UserScreening screening)
         {
-            screening.UserId = userId;
-            _context.UserScreenings.Add(screening);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetUserScreenings), new { userId = userId }, screening);
+            // TODO: Replace with authenticated user ID when available
+            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+            // You should add a method in the service layer for adding a screening
+            // For now, you can use the db context if you haven't implemented it in the service
+            // _context.UserScreenings.Add(screening);
+            // await _context.SaveChangesAsync();
+            // return CreatedAtAction(nameof(GetUserScreenings), new { }, screening);
+
+            // Or, if you add a method in the service:
+            // var createdScreening = await _userScreeningsService.AddScreeningForUserAsync(screening);
+            // return CreatedAtAction(nameof(GetUserScreenings), new { }, createdScreening);
+
+            return BadRequest("Not implemented in service layer yet.");
         }
 
         // Edit a scheduled screening
-        [HttpPut("{userId}/schedule/{screeningId}")]
-        public async Task<IActionResult> EditScheduledScreening(Guid userId, Guid screeningId, [FromBody] UserScreening updated)
+        [Authorize]
+        [HttpPut("schedule/{screeningId}")]
+        public IActionResult EditScheduledScreening(Guid screeningId, [FromBody] UserScreening updated)
         {
-            var screening = await _context.UserScreenings
-                .FirstOrDefaultAsync(us => us.UserId == userId && us.ScreeningId == screeningId);
-            if (screening == null) return NotFound();
+            // TODO: Replace with authenticated user ID when available
+            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
-            screening.LastScheduledDate = updated.LastScheduledDate;
-            screening.Status = updated.Status;
-            screening.ProviderName = updated.ProviderName;
-            screening.Notes = updated.Notes;
-            screening.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-            return NoContent();
+            return BadRequest("Not implemented in service layer yet.");
         }
 
         // Remove a scheduled screening
-        [HttpDelete("{userId}/schedule/{screeningId}")]
-        public async Task<IActionResult> RemoveScheduledScreening(Guid userId, Guid screeningId)
+        [Authorize]
+        [HttpDelete("schedule/{screeningId}")]
+        public IActionResult RemoveScheduledScreening(Guid screeningId)
         {
-            var screening = await _context.UserScreenings
-                .FirstOrDefaultAsync(us => us.UserId == userId && us.ScreeningId == screeningId);
-            if (screening == null) return NotFound();
+            // TODO: Replace with authenticated user ID when available
+            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
-            _context.UserScreenings.Remove(screening);
-            await _context.SaveChangesAsync();
-            return NoContent();
+            return BadRequest("Not implemented in service layer yet.");
+        }
+
+        /// <summary>
+        /// Get new screenings that the user is eligible for.
+        /// This is called when the user creates an account and when they request to fetch new screenings,
+        /// such as when a new screening program is introduced.
+        /// </summary>
+        //[Authorize]
+        [HttpPost("new-screenings")]
+        public async Task<ActionResult<IEnumerable<UserScreening>>> GetNewScreeningsForUser()
+        {
+            // TODO: Replace with authenticated user ID when available
+            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+            var newScreenings = await _userScreeningsService.GetNewScreeningsForUserAsync(userId);
+            return Ok(newScreenings);
         }
     }
 }

@@ -9,9 +9,6 @@ namespace IoTM.Services
     {
         Task<List<UserScreening>> GetExistingScreeningsForUserAsync(Guid userId, int? page = null, int? pageSize = null);
         Task<List<UserScreening>> GetNewScreeningsForUserAsync(Guid userId);
-        Task<List<UserScreening>> GetScreeningsForMockUserAsync(int? page = null, int? pageSize = null);
-        User GetMockUser();
-
     }
 
     public class UserScreeningsService : IUserScreeningsService
@@ -31,7 +28,7 @@ namespace IoTM.Services
         }
 
         /// <summary>
-        /// Get all screenings for a specific user, with pagination.
+        /// Get all existing screenings for a specific user, with pagination.
         /// </summary>
         public async Task<List<UserScreening>> GetExistingScreeningsForUserAsync(Guid userId, int? page = null, int? pageSize = null)
         {
@@ -111,47 +108,5 @@ namespace IoTM.Services
             }
         }
 
-        // TODO: remove this mock data once real user data is available
-        /// <summary>
-        /// Provide screenings for a mock user (for development/testing).
-        /// </summary>
-        public async Task<List<UserScreening>> GetScreeningsForMockUserAsync(int? page = null, int? pageSize = null)
-        {
-            var mockUser = GetMockUser();
-            // Use the mock user's ID to fetch screenings
-            return await GetExistingScreeningsForUserAsync(mockUser.UserId, page, pageSize);
-        }
-
-        // TODO: remove this mock data once real user data is available
-        /// <summary>
-        /// Returns a mock user for development/testing.
-        /// </summary>
-        public User GetMockUser()
-        {
-            return new User
-            {
-                UserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-                Email = "mockuser@example.com",
-                FirstName = "Mock",
-                LastName = "User",
-                DateOfBirth = DateOnly.Parse("2000-01-01"),
-                Sex = Sex.female,
-                CountryCode = "AUS",
-                Timezone = "Australia/Sydney",
-                IsActive = true,
-                EmailVerified = true,
-                PrivacyConsent = true,
-                DataSharingConsent = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                MedicalProfile = new UserMedicalProfile
-                {
-                    ProfileId = Guid.NewGuid(),
-                    UserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-                    SmokingStatus = SmokingStatus.current,
-                    PregnancyStatus = PregnancyStatus.postpartum
-                }
-            };
-        }
     }
 }

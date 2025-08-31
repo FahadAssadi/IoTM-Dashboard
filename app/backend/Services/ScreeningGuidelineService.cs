@@ -50,11 +50,15 @@ namespace IoTM.Services
                     .ToListAsync();
 
                 // Filter for eligibility
-                // TODO: add pregnancy filtering functionality
                 var eligibleGuidelines = guidelines.Where(g =>
                     (!g.MinAge.HasValue || user.Age() >= g.MinAge) &&
                     (!g.MaxAge.HasValue || user.Age() <= g.MaxAge) &&
-                    (g.SexApplicable == SexApplicable.both || (int)g.SexApplicable == (int)user.Sex)
+                    (g.SexApplicable == SexApplicable.both || (int)g.SexApplicable == (int)user.Sex) &&
+                    (
+                        user.MedicalProfile == null || user.MedicalProfile.PregnancyStatus == null
+                            ? g.PregnancyApplicable == PregnancyApplicable.not_pregnant
+                            : (int)g.PregnancyApplicable == (int)user.MedicalProfile.PregnancyStatus
+                    )
                 ).ToList();
 
                 // Determine recommended frequency for each guideline
@@ -63,7 +67,12 @@ namespace IoTM.Services
                     var matchingRule = guideline.FrequencyRules.FirstOrDefault(r =>
                         (!r.MinAge.HasValue || user.Age() >= r.MinAge) &&
                         (!r.MaxAge.HasValue || user.Age() <= r.MaxAge) &&
-                        (!r.SexApplicable.HasValue || (int)r.SexApplicable == (int)user.Sex)
+                        (!r.SexApplicable.HasValue || (int)r.SexApplicable == (int)user.Sex) &&
+                        (!r.PregnancyApplicable.HasValue ||
+                            (user.MedicalProfile?.PregnancyStatus == null
+                                ? r.PregnancyApplicable == PregnancyApplicable.not_pregnant
+                                : (int)r.PregnancyApplicable == (int)user.MedicalProfile.PregnancyStatus)
+                        )
                     );
 
                     guideline.DefaultFrequencyMonths = matchingRule?.FrequencyMonths ?? guideline.DefaultFrequencyMonths;
@@ -78,6 +87,9 @@ namespace IoTM.Services
             }
         }
 
+        /// <summary>
+        /// Imports or updates screening guidelines from JSON files into database.
+        /// </summary>
         public async Task ImportOrUpdateScreeningGuidelinesFromJsonAsync(string scrapersFolderPath)
         {
             try
