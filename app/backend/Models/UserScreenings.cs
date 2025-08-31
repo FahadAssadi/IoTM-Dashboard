@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
 namespace IoTM.Models
@@ -20,6 +21,8 @@ namespace IoTM.Models
 
         [ForeignKey("User")]
         public Guid UserId { get; set; }
+        
+        [JsonIgnore]
         public virtual User User { get; set; } = null!;
 
         [ForeignKey("Guideline")]

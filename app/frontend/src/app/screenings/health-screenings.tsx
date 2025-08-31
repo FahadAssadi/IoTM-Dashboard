@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { Calendar, CalendarClock, Eye, EyeOff } from "lucide-react"
+import { Calendar, CalendarClock, Eye, EyeOff, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
@@ -78,8 +78,9 @@ export default function HealthScreenings() {
 
   const [selectedType, setSelectedType] = useState<string>("allcategories")
 
-  // All screenings from data, with status and isRecurring flag
   const [allScreenings, setAllScreenings] = useState<ScreeningItem[]>([])
+
+  const [feedbackMessage, setFeedbackMessage] = useState<string>("") // feedback message for fetching new screenings
 
   useEffect(() => {
     fetch(`${apiBaseUrl}/api/UserScreenings/`)
@@ -264,23 +265,76 @@ export default function HealthScreenings() {
                 Your personalised health screening timeline based on your profile
               </p>
             </div>
-            <Select
-              value={selectedType}
-              onValueChange={setSelectedType}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                {screeningTypes.map((type) => (
-                  <SelectItem
-                    key={type}
-                    value={type?.toLowerCase().replace(/\s+/g, "")}
-                  >{type}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <div className="relative group">
+                <Button
+                  variant="outline"
+                  aria-label="Check for new screenings"
+                  onClick={async () => {
+                    setFeedbackMessage("")
+                    try {
+                      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/new-screenings`, { method: "POST" })
+                      const data = await res.json()
+                      if (!Array.isArray(data) || data.length === 0) {
+                        setFeedbackMessage("No new screenings available.")
+                      } else {
+                        setFeedbackMessage(`${data.length} new screening${data.length > 1 ? "s" : ""} added.`)
+                        
+                          setAllScreenings(prev => [
+                          ...prev,
+                          ...data
+                            .map((item: { guideline: ScreeningItem }) => item.guideline)
+                            .filter((g: ScreeningItem | undefined): g is ScreeningItem => !!g)
+                            .map((screening: ScreeningItem) => ({
+                            GuidelineId: screening.GuidelineId,
+                            name: screening.name,
+                            lastScheduled: screening.lastScheduled ?? undefined,
+                            isRecurring: screening.isRecurring,
+                            screeningType: screening.screeningType,
+                            defaultFrequencyMonths: screening.defaultFrequencyMonths,
+                            description: screening.description,
+                            cost: screening.cost,
+                            delivery: screening.delivery,
+                            link: screening.link,
+                            }))
+                        ])
+                      }
+                    } catch {
+                      setFeedbackMessage("Failed to check for new screenings.")
+                    }
+                  }}
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+                <span
+                  className="absolute left-1/2 -translate-x-1/2 -top-8 px-2 py-1 rounded bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10"
+                >
+                  Fetch new screenings
+                </span>
+              </div>
+              <Select
+                value={selectedType}
+                onValueChange={setSelectedType}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  {screeningTypes.map((type) => (
+                    <SelectItem
+                      key={type}
+                      value={type?.toLowerCase().replace(/\s+/g, "")}
+                    >{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {/* Fetch screenings feedback Message */}
+          {feedbackMessage && (
+            <div className="mb-2 text-sm text-teal-700">{feedbackMessage}</div>
+          )}
 
           {/* Visible Screenings */}
           {!showHidden && (
