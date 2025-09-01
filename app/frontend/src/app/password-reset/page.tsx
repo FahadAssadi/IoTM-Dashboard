@@ -4,9 +4,12 @@ import { supabase } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
-import { Eye, EyeOff, AlertCircle, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { ShowPasswordButton, PasswordInput, ErrorAlert } from "@/components/form-components"
+import { toast } from "react-toastify"
+// import { redirect } from "next/navigation"
+// import { useSupabaseUser } from "@/lib/supabase/useSupabaseUser"
 
 type FormData = {
         password1: string;
@@ -18,6 +21,14 @@ export default function PasswordResetPage(){
     const [showPassword1, setShowPassword1] = useState(false);
     const [showPassword2, setShowPassword2] = useState(false)
     const router = useRouter()
+
+    // Protect the page from being accessed when no user is logged in
+    // const user = useSupabaseUser()
+    // if (!user) {
+    //     // The notification doesn't work yet...
+    //     toast.error("Unathourised Navigation: Please login to access profile page")
+    //     redirect("/login")
+    // }
 
     const { register, handleSubmit, setError, formState: {errors} } = useForm<FormData>({
         mode: "onChange"
@@ -33,19 +44,22 @@ export default function PasswordResetPage(){
             // Break because there is an error
             return
         }
+
         const { error } = await supabase.auth.updateUser({
             password: formData.password1
         })
         if (error) {
-            TODO: // Catch errors here
+            // Notification error
+            toast.error("An error occurred: " + error.message)
+            // Error appears in the UI
             setError("password2", {
                 type: "manual",
-                message: "An Error has occured"
+                message: "An Error has occured: " + error.message
             })
-            console.error(error);
         } else {
-            TODO: // Create a notification for succesful login
-            router.push("/login")
+            // Success notification
+            toast.success("Password Changed Succesfully")
+            router.push("/")
         }
     };
 
@@ -76,43 +90,19 @@ export default function PasswordResetPage(){
                                         </label>
                                     </div>
                                     <div className="relative">
-                                        <Input
-                                            id="password"
-                                            type={showPassword1 ? "text" : "password"}
-                                            {...register("password1", { required: "Password is required", minLength: { value: 8, message: "Password must be at least 8 characters" } })}
-                                            autoCapitalize="none"
-                                            className={`${errors.password1 ? 'border-red-500 focus:border-red-500' : 'border-gray-300'}`}
-                                            autoComplete="current-password"
-                                            autoCorrect="off"
+                                        <PasswordInput
+                                            id="password1"
+                                            showPassword={showPassword1} 
+                                            passwordError={errors.password1} 
+                                            registerFunc={register}
+                                            name={"password1"}
                                         />
-                                        {errors.password1 && (
-                                            <AlertCircle className="absolute right-9 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500" />
-                                        )}
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                            onClick={() => setShowPassword1(!showPassword1)}
-                                        >
-                                            {showPassword1 ? (
-                                            <EyeOff className="h-4 w-4 text-muted-foreground" />
-                                            ) : (
-                                            <Eye className="h-4 w-4 text-muted-foreground" />
-                                            )}
-                                            <span className="sr-only">{showPassword1 ? "Hide password" : "Show password"}</span>
-                                        </Button>
+                                        <ShowPasswordButton setShowPassword={setShowPassword1} showPassword={showPassword1}/>
                                     </div>
-                                    <div>
-                                        {errors.password1 ? (
-                                            <p className="mt-1 text-sm text-red-700 flex items-center">
-                                                <AlertCircle className="h-3 w-3 mr-1" /> 
-                                                {errors.password1.message}
-                                            </p>
-                                            ) : (
-                                            <span className="text-sm text-gray-500 pt-1">Password must be at least 8 characters long</span>
-                                        )}
-                                    </div>
+                                        <ErrorAlert
+                                            error={errors.password1}
+                                            defaultMessage="Password must be at least 8 characters long"
+                                        />
                                     {/* PASSWORD INPUT 2 */}
                                     <div className="flex items-center justify-between">
                                         <label
@@ -123,41 +113,16 @@ export default function PasswordResetPage(){
                                         </label>
                                     </div>
                                     <div className="relative">
-                                        <Input
-                                            id="password"
-                                            type={showPassword2 ? "text" : "password"}
-                                            {...register("password2", { required: "Password is required", minLength: { value: 8, message: "Password must be at least 8 characters" } })}
-                                            autoCapitalize="none"
-                                            className={`${errors.password2 ? 'border-red-500 focus:border-red-500' : 'border-gray-300'}`}
-                                            autoComplete="current-password"
-                                            autoCorrect="off"
+                                        <PasswordInput 
+                                            id="password2"
+                                            showPassword={showPassword2} 
+                                            passwordError={errors.password2} 
+                                            registerFunc={register}
+                                            name={"password2"}
                                         />
-                                        {errors.password2 && (
-                                            <AlertCircle className="absolute right-9 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500" />
-                                        )}
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                            onClick={() => setShowPassword2(!showPassword2)}
-                                        >
-                                            {showPassword2 ? (
-                                            <EyeOff className="h-4 w-4 text-muted-foreground" />
-                                            ) : (
-                                            <Eye className="h-4 w-4 text-muted-foreground" />
-                                            )}
-                                            <span className="sr-only">{showPassword2 ? "Hide password" : "Show password"}</span>
-                                        </Button>
+                                        <ShowPasswordButton setShowPassword={setShowPassword2} showPassword={showPassword2}/>
                                     </div>
-                                    <div>
-                                        {errors.password2 && (
-                                            <p className="mt-1 text-sm text-red-700 flex items-center">
-                                                <AlertCircle className="h-3 w-3 mr-1" /> 
-                                                {errors.password2.message}
-                                            </p>
-                                        )}
-                                    </div>
+                                    <ErrorAlert error={errors.password2}/>
                                 </div>
                                 <div className="mt-4">
                                     <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700">
