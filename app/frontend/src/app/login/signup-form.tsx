@@ -46,7 +46,9 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
             password: formData.password,
             options: {
                 data: {
-                    full_name: formData.firstName + " " + formData.lastName
+                    full_name: formData.firstName + " " + formData.lastName,
+                    first_name: formData.firstName,
+                    last_name: formData.lastName
                 }
             }
         })
