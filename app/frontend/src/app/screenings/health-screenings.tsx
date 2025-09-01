@@ -510,8 +510,15 @@ export default function HealthScreenings() {
               </Button>
             </div>
           </div>
-        ))}
-      </div>
-    </div>
+        </div>
+      )}
+
+      {/* Health Screenings Timeline */}
+      <HealthScreeningTimeline
+        timelineItems={timelineItems}
+        onEdit={handleEditTimelineItem}
+        onRemove={handleRemoveTimelineItem}
+      />
+    </>
   )
 }

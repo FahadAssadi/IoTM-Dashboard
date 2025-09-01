@@ -12,7 +12,7 @@ namespace IoTM.Data
             
             // Use a dummy connection string for migrations
             // This won't be used in production, only for generating migrations
-            optionsBuilder.UseNpgsql("Host=aws-0-ap-southeast-1.pooler.supabase.com;Port=5432;Username=postgres.vetwwtmxcdiotjxhdeza;Password=teamkevin12345;Database=postgres;SSL Mode=Require;Trust Server Certificate=true");
+            optionsBuilder.UseNpgsql("Host=localhost;Database=dummy;Username=dummy;Password=dummy");
 
             return new ApplicationDbContext(optionsBuilder.Options);
         }

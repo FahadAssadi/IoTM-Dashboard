@@ -1,6 +1,0 @@
-default: true
-
-# Disable some commonly annoying rules
-MD013: false  # Line length
-MD033: false  # Allow inline HTML
-MD041: false  # No top-level heading required

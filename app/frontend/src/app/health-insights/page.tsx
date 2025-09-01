@@ -7,7 +7,7 @@ import {
   Clock,
   Download,
   Heart,
-  // LineChart as LineChartIcon, - ES-Lint Error
+  LineChart as LineChartIcon,
   Trees as Lungs,
   Share2,
   Footprints as Shoe,
@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BarChart, LineChart } from "@/components/ui/chart"
+import { AreaChart, BarChart, LineChart } from "@/components/ui/chart"
 
 // Renamed the component and main heading to "Health Insights"
 export default function HealthInsightsPage() {
@@ -680,7 +680,7 @@ export default function HealthInsightsPage() {
                   <div>
                     <h4 className="text-sm font-medium">Consistent Sleep Schedule</h4>
                     <p className="text-sm text-muted-foreground mt-1">
-                      You&apos;ve maintained a consistent sleep schedule for 14 days. This regularity benefits your overall
+                      You've maintained a consistent sleep schedule for 14 days. This regularity benefits your overall
                       health.
                     </p>
                   </div>
@@ -695,7 +695,7 @@ export default function HealthInsightsPage() {
                   <div>
                     <h4 className="text-sm font-medium">Activity Pattern</h4>
                     <p className="text-sm text-muted-foreground mt-1">
-                      You&apos;re most active on Thursdays and Saturdays. Consider adding light activity on your less active
+                      You're most active on Thursdays and Saturdays. Consider adding light activity on your less active
                       days.
                     </p>
                   </div>
@@ -709,18 +709,8 @@ export default function HealthInsightsPage() {
   )
 }
 
-// TODO: FIX THIS PROPERLY
-type VitalCardProps = {
-  title: string;
-  value: number | string;
-  unit?: string;
-  status: "normal" | "good" | "warning" | "alert" | string;
-  change?: string;
-  icon?: unknown;
-};
-
-function VitalCard({ title, value, unit, status, change, icon }: VitalCardProps) {
-  const getStatusColor = (status: string) => {
+function VitalCard({ title, value, unit, status, change, icon }) {
+  const getStatusColor = (status) => {
     switch (status) {
       case "normal":
         return "text-teal-700"
@@ -735,15 +725,12 @@ function VitalCard({ title, value, unit, status, change, icon }: VitalCardProps)
     }
   }
 
-  // FIX THIS
-  console.log("Fix the problem with icon: ", icon)
-
   return (
     <Card>
       <CardContent className="p-6">
         <div className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-slate-800">{title}</CardTitle>
-          {"This should be 'icon' but I changed it to bypass the linter "} {/* This was icon but the types were weird*/}
+          {icon}
         </div>
 
         <div className="flex items-end gap-1">
@@ -761,159 +748,159 @@ function VitalCard({ title, value, unit, status, change, icon }: VitalCardProps)
 }
 
 // Chart components
-// function HeartRateChart() {
-//   const data = [
-//     { name: "12 AM", value: 62 },
-//     { name: "3 AM", value: 58 },
-//     { name: "6 AM", value: 65 },
-//     { name: "9 AM", value: 78 },
-//     { name: "12 PM", value: 84 },
-//     { name: "3 PM", value: 110 },
-//     { name: "6 PM", value: 82 },
-//     { name: "9 PM", value: 73 },
-//     { name: "12 AM", value: 68 },
-//   ]
+function HeartRateChart() {
+  const data = [
+    { name: "12 AM", value: 62 },
+    { name: "3 AM", value: 58 },
+    { name: "6 AM", value: 65 },
+    { name: "9 AM", value: 78 },
+    { name: "12 PM", value: 84 },
+    { name: "3 PM", value: 110 },
+    { name: "6 PM", value: 82 },
+    { name: "9 PM", value: 73 },
+    { name: "12 AM", value: 68 },
+  ]
 
-//   return (
-//     <LineChart
-//       data={data}
-//       categories={["value"]}
-//       index="name"
-//       colors={["#e11d48"]}
-//       yAxisWidth={30}
-//       showAnimation
-//       showLegend={false}
-//       className="h-[200px]"
-//     />
-//   )
-// }
+  return (
+    <LineChart
+      data={data}
+      categories={["value"]}
+      index="name"
+      colors={["#e11d48"]}
+      yAxisWidth={30}
+      showAnimation
+      showLegend={false}
+      className="h-[200px]"
+    />
+  )
+}
 
-// function BloodOxygenChart() {
-//   const data = [
-//     { name: "12 AM", value: 97 },
-//     { name: "3 AM", value: 96 },
-//     { name: "6 AM", value: 97 },
-//     { name: "9 AM", value: 98 },
-//     { name: "12 PM", value: 99 },
-//     { name: "3 PM", value: 97 },
-//     { name: "6 PM", value: 98 },
-//     { name: "9 PM", value: 98 },
-//     { name: "12 AM", value: 97 },
-//   ]
+function BloodOxygenChart() {
+  const data = [
+    { name: "12 AM", value: 97 },
+    { name: "3 AM", value: 96 },
+    { name: "6 AM", value: 97 },
+    { name: "9 AM", value: 98 },
+    { name: "12 PM", value: 99 },
+    { name: "3 PM", value: 97 },
+    { name: "6 PM", value: 98 },
+    { name: "9 PM", value: 98 },
+    { name: "12 AM", value: 97 },
+  ]
 
-//   return (
-//     <LineChart
-//       data={data}
-//       categories={["value"]}
-//       index="name"
-//       colors={["#0ea5e9"]}
-//       valueFormatter={(value) => `${value}%`}
-//       yAxisWidth={30}
-//       showAnimation
-//       showLegend={false}
-//       className="h-[200px]"
-//     />
-//   )
-// }
+  return (
+    <LineChart
+      data={data}
+      categories={["value"]}
+      index="name"
+      colors={["#0ea5e9"]}
+      valueFormatter={(value) => `${value}%`}
+      yAxisWidth={30}
+      showAnimation
+      showLegend={false}
+      className="h-[200px]"
+    />
+  )
+}
 
-// function ActivityChart() {
-//   const data = [
-//     { name: "Mon", steps: 5234 },
-//     { name: "Tue", steps: 7891 },
-//     { name: "Wed", steps: 6543 },
-//     { name: "Thu", steps: 9876 },
-//     { name: "Fri", steps: 8742 },
-//     { name: "Sat", steps: 4321 },
-//     { name: "Sun", steps: 3456 },
-//   ]
+function ActivityChart() {
+  const data = [
+    { name: "Mon", steps: 5234 },
+    { name: "Tue", steps: 7891 },
+    { name: "Wed", steps: 6543 },
+    { name: "Thu", steps: 9876 },
+    { name: "Fri", steps: 8742 },
+    { name: "Sat", steps: 4321 },
+    { name: "Sun", steps: 3456 },
+  ]
 
-//   return (
-//     <BarChart
-//       data={data}
-//       categories={["steps"]}
-//       index="name"
-//       colors={["#22c55e"]}
-//       valueFormatter={(value) => `${value.toLocaleString()} steps`}
-//       showAnimation
-//       showLegend={false}
-//       className="h-[200px]"
-//     />
-//   )
-// }
+  return (
+    <BarChart
+      data={data}
+      categories={["steps"]}
+      index="name"
+      colors={["#22c55e"]}
+      valueFormatter={(value) => `${value.toLocaleString()} steps`}
+      showAnimation
+      showLegend={false}
+      className="h-[200px]"
+    />
+  )
+}
 
-// function ECGChart() {
-//   // Simulated ECG data
-//   const generateECGData = () => {
-//     const data = []
-//     for (let i = 0; i < 100; i++) {
-//       let value = 0
+function ECGChart() {
+  // Simulated ECG data
+  const generateECGData = () => {
+    const data = []
+    for (let i = 0; i < 100; i++) {
+      let value = 0
 
-//       // Simple ECG pattern
-//       if (i % 25 === 0) value = 0.1
-//       else if (i % 25 === 1) value = 0.5
-//       else if (i % 25 === 2) value = 1
-//       else if (i % 25 === 3) value = 0.2
-//       else if (i % 25 === 4) value = -0.5
-//       else if (i % 25 === 5) value = -0.2
-//       else value = 0
+      // Simple ECG pattern
+      if (i % 25 === 0) value = 0.1
+      else if (i % 25 === 1) value = 0.5
+      else if (i % 25 === 2) value = 1
+      else if (i % 25 === 3) value = 0.2
+      else if (i % 25 === 4) value = -0.5
+      else if (i % 25 === 5) value = -0.2
+      else value = 0
 
-//       data.push({ x: i, value })
-//     }
-//     return data
-//   }
+      data.push({ x: i, value })
+    }
+    return data
+  }
 
-//   const data = generateECGData()
+  const data = generateECGData()
 
-//   return (
-//     <LineChart
-//       data={data}
-//       categories={["value"]}
-//       index="x"
-//       colors={["#f59e0b"]}
-//       showAnimation
-//       showLegend={false}
-//       showXAxis={false}
-//       showGridLines={false}
-//       className="h-[200px]"
-//     />
-//   )
-// }
+  return (
+    <LineChart
+      data={data}
+      categories={["value"]}
+      index="x"
+      colors={["#f59e0b"]}
+      showAnimation
+      showLegend={false}
+      showXAxis={false}
+      showGridLines={false}
+      className="h-[200px]"
+    />
+  )
+}
 
-// function ExerciseImpactChart() {
-//   // Combined data for heart rate, blood oxygen, exercise
-//   const data = [
-//     { time: "6 AM", heartRate: 65, bloodOxygen: 97, exercise: 0 },
-//     { time: "7 AM", heartRate: 68, bloodOxygen: 97, exercise: 0 },
-//     { time: "8 AM", heartRate: 110, bloodOxygen: 96, exercise: 1 },
-//     { time: "9 AM", heartRate: 115, bloodOxygen: 95, exercise: 1 },
-//     { time: "10 AM", heartRate: 75, bloodOxygen: 98, exercise: 0 },
-//     { time: "11 AM", heartRate: 72, bloodOxygen: 98, exercise: 0 },
-//     { time: "12 PM", heartRate: 70, bloodOxygen: 98, exercise: 0 },
-//     { time: "1 PM", heartRate: 68, bloodOxygen: 98, exercise: 0 },
-//     { time: "2 PM", heartRate: 70, bloodOxygen: 98, exercise: 0 },
-//     { time: "3 PM", heartRate: 105, bloodOxygen: 96, exercise: 1 },
-//     { time: "4 PM", heartRate: 112, bloodOxygen: 95, exercise: 1 },
-//     { time: "5 PM", heartRate: 78, bloodOxygen: 97, exercise: 0 },
-//     { time: "6 PM", heartRate: 72, bloodOxygen: 98, exercise: 0 },
-//   ]
+function ExerciseImpactChart() {
+  // Combined data for heart rate, blood oxygen, exercise
+  const data = [
+    { time: "6 AM", heartRate: 65, bloodOxygen: 97, exercise: 0 },
+    { time: "7 AM", heartRate: 68, bloodOxygen: 97, exercise: 0 },
+    { time: "8 AM", heartRate: 110, bloodOxygen: 96, exercise: 1 },
+    { time: "9 AM", heartRate: 115, bloodOxygen: 95, exercise: 1 },
+    { time: "10 AM", heartRate: 75, bloodOxygen: 98, exercise: 0 },
+    { time: "11 AM", heartRate: 72, bloodOxygen: 98, exercise: 0 },
+    { time: "12 PM", heartRate: 70, bloodOxygen: 98, exercise: 0 },
+    { time: "1 PM", heartRate: 68, bloodOxygen: 98, exercise: 0 },
+    { time: "2 PM", heartRate: 70, bloodOxygen: 98, exercise: 0 },
+    { time: "3 PM", heartRate: 105, bloodOxygen: 96, exercise: 1 },
+    { time: "4 PM", heartRate: 112, bloodOxygen: 95, exercise: 1 },
+    { time: "5 PM", heartRate: 78, bloodOxygen: 97, exercise: 0 },
+    { time: "6 PM", heartRate: 72, bloodOxygen: 98, exercise: 0 },
+  ]
 
-//   return (
-//     <AreaChart
-//       data={data}
-//       categories={["heartRate", "bloodOxygen", "exercise"]}
-//       index="time"
-//       colors={["#e11d48", "#0ea5e9", "#bbf7d0"]}
-//       valueFormatter={(value, category) => {
-//         if (category === "heartRate") return `${value} bpm`
-//         if (category === "bloodOxygen") return `${value}%`
-//         return value ? "Active" : "Rest"
-//       }}
-//       showAnimation
-//       showLegend
-//       className="h-[300px]"
-//     />
-//   )
-// }
+  return (
+    <AreaChart
+      data={data}
+      categories={["heartRate", "bloodOxygen", "exercise"]}
+      index="time"
+      colors={["#e11d48", "#0ea5e9", "#bbf7d0"]}
+      valueFormatter={(value, category) => {
+        if (category === "heartRate") return `${value} bpm`
+        if (category === "bloodOxygen") return `${value}%`
+        return value ? "Active" : "Rest"
+      }}
+      showAnimation
+      showLegend
+      className="h-[300px]"
+    />
+  )
+}
 
 function HeartRateDetailedChart() {
   // More detailed heart rate data
@@ -1052,29 +1039,29 @@ function ActivityTrackingChart() {
   )
 }
 
-// function SleepAnalysisChart() {
-//   // Sleep data for the past week
-//   const data = [
-//     { day: "Mon", deep: 1.5, light: 4.5, rem: 1.2, awake: 0.5 },
-//     { day: "Tue", deep: 1.8, light: 4.2, rem: 1.5, awake: 0.3 },
-//     { day: "Wed", deep: 1.2, light: 4.8, rem: 1.0, awake: 0.7 },
-//     { day: "Thu", deep: 2.0, light: 4.0, rem: 1.7, awake: 0.2 },
-//     { day: "Fri", deep: 1.7, light: 4.3, rem: 1.4, awake: 0.4 },
-//     { day: "Sat", deep: 2.2, light: 4.5, rem: 1.8, awake: 0.3 },
-//     { day: "Sun", deep: 2.0, light: 4.7, rem: 1.6, awake: 0.2 },
-//   ]
+function SleepAnalysisChart() {
+  // Sleep data for the past week
+  const data = [
+    { day: "Mon", deep: 1.5, light: 4.5, rem: 1.2, awake: 0.5 },
+    { day: "Tue", deep: 1.8, light: 4.2, rem: 1.5, awake: 0.3 },
+    { day: "Wed", deep: 1.2, light: 4.8, rem: 1.0, awake: 0.7 },
+    { day: "Thu", deep: 2.0, light: 4.0, rem: 1.7, awake: 0.2 },
+    { day: "Fri", deep: 1.7, light: 4.3, rem: 1.4, awake: 0.4 },
+    { day: "Sat", deep: 2.2, light: 4.5, rem: 1.8, awake: 0.3 },
+    { day: "Sun", deep: 2.0, light: 4.7, rem: 1.6, awake: 0.2 },
+  ]
 
-//   return (
-//     <BarChart
-//       data={data}
-//       categories={["deep", "light", "rem", "awake"]}
-//       index="day"
-//       colors={["#3b82f6", "#94a3b8", "#8b5cf6", "#f97316"]}
-//       valueFormatter={(value) => `${value} hrs`}
-//       showAnimation
-//       showLegend
-//       className="h-[400px]"
-//       layout="stacked"
-//     />
-//   )
-// }
+  return (
+    <BarChart
+      data={data}
+      categories={["deep", "light", "rem", "awake"]}
+      index="day"
+      colors={["#3b82f6", "#94a3b8", "#8b5cf6", "#f97316"]}
+      valueFormatter={(value) => `${value} hrs`}
+      showAnimation
+      showLegend
+      className="h-[400px]"
+      layout="stacked"
+    />
+  )
+}
