@@ -28,6 +28,7 @@ but in order to access login and signup functionality create a .env file in the 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://vetwwtmxcdiotjxhdeza.supabase.co/
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZldHd3dG14Y2Rpb3RqeGhkZXphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4NTczMjIsImV4cCI6MjA2OTQzMzMyMn0.0FvdBUM6K3rMWtT-b-4xz-w1ILsbHxXuyY9GGq7LoyA
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5225
 ````
 
 ## Learn More
