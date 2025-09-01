@@ -3,6 +3,7 @@ using IoTM.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using IoTM.Dtos;
 
 namespace IoTM.Services
 {
@@ -10,6 +11,7 @@ namespace IoTM.Services
     {
         Task<List<ScreeningGuideline>> GetRecommendedScreeningGuidelines(Guid userId);
         Task ImportOrUpdateScreeningGuidelinesFromJsonAsync(string jsonFilePath);
+        ScreeningGuidelineDto MapToDto(ScreeningGuideline guideline);
     }
 
     public class ScreeningGuidelineService : IScreeningGuidelineService
@@ -157,6 +159,40 @@ namespace IoTM.Services
             {
                 _logger.LogError(ex, "Error importing screening guidelines from scrapers folder");
                 throw;
+            }
+        }
+
+        public ScreeningGuidelineDto MapToDto(ScreeningGuideline guideline)
+        {
+            if (guideline == null) return null!;
+            return new ScreeningGuidelineDto
+            {
+                Id = guideline.GuidelineId,
+                Name = guideline.Name,
+                ScreeningType = guideline.ScreeningType,
+                RecommendedFrequency = FormatFrequency(guideline.DefaultFrequencyMonths),
+                Category = guideline.Category,
+                Description = guideline.Description,
+                Cost = guideline.Cost,
+                Delivery = guideline.Delivery,
+                Link = guideline.Link,
+                IsRecurring = guideline.isRecurring
+            };
+        }
+
+        /// <summary>
+        /// Helper to format frequency months as a string.
+        /// </summary>
+        private string FormatFrequency(int months)
+        {
+            if (months % 12 == 0)
+            {
+                int years = months / 12;
+                return years == 1 ? "1 year" : $"{years} years";
+            }
+            else
+            {
+                return months == 1 ? "1 month" : $"{months} months";
             }
         }
     }

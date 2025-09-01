@@ -35,7 +35,8 @@ namespace IoTM.Controllers
             Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
             var screenings = await _userScreeningsService.GetExistingScreeningsForUserAsync(userId);
-            return Ok(screenings);
+            var dto = _userScreeningsService.MapToDto(screenings);
+            return Ok(dto);
         }
 
         // Schedule a screening
@@ -94,7 +95,8 @@ namespace IoTM.Controllers
             Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
             var newScreenings = await _userScreeningsService.GetNewScreeningsForUserAsync(userId);
-            return Ok(newScreenings);
+            var dto = _userScreeningsService.MapToDto(newScreenings);
+            return Ok(dto);
         }
     }
 }

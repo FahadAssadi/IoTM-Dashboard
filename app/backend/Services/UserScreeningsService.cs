@@ -2,6 +2,7 @@ using IoTM.Models;
 using IoTM.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using IoTM.Dtos;
 
 namespace IoTM.Services
 {
@@ -9,6 +10,7 @@ namespace IoTM.Services
     {
         Task<List<UserScreening>> GetExistingScreeningsForUserAsync(Guid userId, int? page = null, int? pageSize = null);
         Task<List<UserScreening>> GetNewScreeningsForUserAsync(Guid userId);
+        List<UserScreeningDto> MapToDto(List<UserScreening> screenings);
     }
 
     public class UserScreeningsService : IUserScreeningsService
@@ -108,5 +110,19 @@ namespace IoTM.Services
             }
         }
 
+        public List<UserScreeningDto> MapToDto(List<UserScreening> screenings)
+        {
+            return screenings.Select(us => new UserScreeningDto
+            {
+                ScreeningId = us.ScreeningId,
+                GuidelineId = us.GuidelineId,
+                Guideline = us.Guideline != null ? _screeningGuidelineService.MapToDto(us.Guideline) : null!,
+                LastScheduledDate = us.LastScheduledDate,
+                Status = us.Status,
+                CompletedDate = us.CompletedDate,
+                NextDueDate = us.NextDueDate,
+                ReminderSent = us.ReminderSent
+            }).ToList();
+        }
     }
 }
