@@ -11,6 +11,10 @@ namespace IoTM.Services
         Task<List<UserScreening>> GetExistingScreeningsForUserAsync(Guid userId, int? page = null, int? pageSize = null);
         Task<List<UserScreening>> GetNewScreeningsForUserAsync(Guid userId);
         List<UserScreeningDto> MapToDto(List<UserScreening> screenings);
+        Task<List<ScheduledScreening>> GetScheduledScreenings(Guid userId);
+        Task ScheduleScreening(Guid userId, Guid guidelineId, DateOnly scheduledDate);
+        Task EditScheduledScreening(Guid screeningId, DateOnly newDate);
+        Task CancelScheduledScreening(Guid screeningId);
     }
 
     public class UserScreeningsService : IUserScreeningsService
@@ -89,7 +93,6 @@ namespace IoTM.Services
                     UserId = userId,
                     GuidelineId = g.GuidelineId,
                     Status = ScreeningStatus.pending,
-                    LastScheduledDate = null,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 }).ToList();
@@ -121,8 +124,135 @@ namespace IoTM.Services
                 Status = us.Status,
                 CompletedDate = us.CompletedDate,
                 NextDueDate = us.NextDueDate,
-                ReminderSent = us.ReminderSent
+                ReminderSent = us.ReminderSent,
+                ScheduledScreenings = us.ScheduledScreenings?
+                    .Select(ss => new ScheduledScreeningDto
+                    {
+                        ScheduledScreeningId = ss.ScheduledScreeningId,
+                        ScheduledDate = ss.ScheduledDate,
+                        IsActive = ss.IsActive
+                    }).ToList() ?? new List<ScheduledScreeningDto>()
             }).ToList();
         }
+
+        public async Task<List<ScheduledScreening>> GetScheduledScreenings(Guid userId)
+        {
+            try
+            {
+                return await _context.ScheduledScreenings
+                    .Include(ss => ss.UserScreening)
+                    .ThenInclude(us => us.Guideline)
+                    .Where(ss => ss.UserScreening.UserId == userId)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching scheduled screenings for {UserId}", userId);
+                return new List<ScheduledScreening>();
+            }
+        }
+
+        public async Task ScheduleScreening(Guid userId, Guid guidelineId, DateOnly scheduledDate)
+        {
+            try
+            {
+                // Find or create UserScreening for this guideline/user
+                var userScreening = await _context.UserScreenings
+                    .FirstOrDefaultAsync(us => us.UserId == userId && us.GuidelineId == guidelineId);
+
+                if (userScreening == null)
+                {
+                    userScreening = new UserScreening
+                    {
+                        ScreeningId = Guid.NewGuid(),
+                        UserId = userId,
+                        GuidelineId = guidelineId,
+                        Status = ScreeningStatus.pending,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    _context.UserScreenings.Add(userScreening);
+                    await _context.SaveChangesAsync();
+                }
+
+                // Add scheduled screening
+                var scheduledScreening = new ScheduledScreening
+                {
+                    ScheduledScreeningId = Guid.NewGuid(),
+                    ScreeningId = userScreening.ScreeningId,
+                    ScheduledDate = scheduledDate,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.ScheduledScreenings.Add(scheduledScreening);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error scheduling screening for user {UserId}", userId);
+                throw;
+            }
+        }
+
+        public async Task EditScheduledScreening(Guid screeningId, DateOnly newDate)
+        {
+            try
+            {
+                var scheduledScreening = await _context.ScheduledScreenings
+                    .FirstOrDefaultAsync(ss => ss.ScheduledScreeningId == screeningId);
+
+                if (scheduledScreening != null)
+                {
+                    scheduledScreening.ScheduledDate = newDate;
+                    scheduledScreening.UpdatedAt = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error editing scheduled screening {ScreeningId}", screeningId);
+                throw;
+            }
+        }
+
+        public async Task CancelScheduledScreening(Guid screeningId)
+        {
+            try
+            {
+                var scheduledScreening = await _context.ScheduledScreenings
+                    .FirstOrDefaultAsync(ss => ss.ScheduledScreeningId == screeningId);
+
+                if (scheduledScreening != null)
+                {
+                    _context.ScheduledScreenings.Remove(scheduledScreening);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error cancelling scheduled screening {ScreeningId}", screeningId);
+                throw;
+            }
+        }
+
+        public async Task ArchiveScheduledScreening(Guid screeningId)
+        {
+            try
+            {
+                var scheduledScreening = await _context.ScheduledScreenings
+                    .FirstOrDefaultAsync(ss => ss.ScheduledScreeningId == screeningId);
+
+                if (scheduledScreening != null)
+                {
+                    scheduledScreening.IsActive = false;
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error archiving scheduled screening {ScreeningId}", screeningId);
+                throw;
+            }
+        }
+
     }
 }

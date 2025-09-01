@@ -36,7 +36,7 @@ namespace IoTM.Models
         public string ScreeningType { get; set; } = string.Empty;
 
         [Required]
-        //TODO: make sure this is only required if isRecurring is true
+        //TODO: make sure this is only required if IsRecurring is true
         public int DefaultFrequencyMonths { get; set; }
 
         [Required]
@@ -90,7 +90,7 @@ namespace IoTM.Models
         public string? Cost { get; set; }
         public string? Delivery { get; set; }
         public string? Link { get; set; }
-        public bool isRecurring { get; set; }
+        public bool IsRecurring { get; set; }
 
         // Navigation properties
         public virtual ICollection<UserScreening> UserScreenings { get; set; } = new List<UserScreening>();

@@ -27,11 +27,7 @@ namespace IoTM.Models
         [ForeignKey("Guideline")]
         public Guid GuidelineId { get; set; }
         public virtual ScreeningGuideline Guideline { get; set; } = null!;
-
-        public DateOnly? LastScheduledDate { get; set; }
-
         public ScreeningStatus Status { get; set; } = ScreeningStatus.pending;
-
         public DateOnly? CompletedDate { get; set; }
 
         [StringLength(200)]
@@ -39,18 +35,26 @@ namespace IoTM.Models
 
         [StringLength(20)]
         public string? ProviderPhone { get; set; }
-
         public string? Results { get; set; }
         public string? Notes { get; set; }
-
         public DateOnly? NextDueDate { get; set; }
-
         public bool ReminderSent { get; set; } = false;
-
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation property
         public virtual ICollection<HealthAlert> HealthAlerts { get; set; } = new List<HealthAlert>();
+        public virtual ICollection<ScheduledScreening> ScheduledScreenings { get; set; } = new List<ScheduledScreening>();
+
+        [NotMapped]
+        public DateOnly? LastScheduledDate
+        {
+            get
+            {
+                return ScheduledScreenings
+                    .OrderByDescending(ss => ss.ScheduledDate)
+                    .FirstOrDefault()?.ScheduledDate;
+            }
+        }
     }
 }

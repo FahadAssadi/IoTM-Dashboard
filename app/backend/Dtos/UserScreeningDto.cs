@@ -11,5 +11,6 @@ public class UserScreeningDto
     public ScreeningStatus Status { get; set; }
     public DateOnly? CompletedDate { get; set; }
     public DateOnly? NextDueDate { get; set; }
-    public bool ReminderSent { get; set; } = false;
+    public bool ReminderSent { get; set; }
+    public List<ScheduledScreeningDto> ScheduledScreenings { get; set; } = new();
 }

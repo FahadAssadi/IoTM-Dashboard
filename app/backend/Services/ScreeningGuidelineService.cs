@@ -138,7 +138,7 @@ namespace IoTM.Services
                         existing.Link = imported.Link;
                         existing.IsActive = imported.IsActive;
                         existing.LastUpdated = imported.LastUpdated;
-                        existing.isRecurring = imported.isRecurring;
+                        existing.IsRecurring = imported.IsRecurring;
                         // Update frequency rules
                         existing.FrequencyRules.Clear();
                         foreach (var rule in imported.FrequencyRules)
@@ -176,7 +176,7 @@ namespace IoTM.Services
                 Cost = guideline.Cost,
                 Delivery = guideline.Delivery,
                 Link = guideline.Link,
-                IsRecurring = guideline.isRecurring
+                IsRecurring = guideline.IsRecurring
             };
         }
 
