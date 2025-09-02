@@ -102,6 +102,32 @@ namespace IoTM.Controllers
 
             return Ok(user);
         }
+
+        // PATCH: api/users/{id}
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> PatchUser(Guid id, [FromBody] User patchData)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Only update fields that are provided (not null)
+            if (!string.IsNullOrEmpty(patchData.FirstName))
+                user.FirstName = patchData.FirstName;
+
+            if (!string.IsNullOrEmpty(patchData.LastName))
+                user.LastName = patchData.LastName;
+
+            if (!string.IsNullOrEmpty(patchData.PhoneNumber))
+                user.PhoneNumber = patchData.PhoneNumber;
+
+            // Save changes
+            await _context.SaveChangesAsync();
+
+            return Ok(user);
+        }
     }
 }
 
