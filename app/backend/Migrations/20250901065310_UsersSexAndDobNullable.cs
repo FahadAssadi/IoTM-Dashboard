@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace IoTM.Migrations
 {
     /// <inheritdoc />
-    public partial class userssexanddobnullable : Migration
+    public partial class UsersSexAndDobNullable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

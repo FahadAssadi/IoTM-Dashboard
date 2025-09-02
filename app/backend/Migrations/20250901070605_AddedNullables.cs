@@ -5,7 +5,7 @@
 namespace IoTM.Migrations
 {
     /// <inheritdoc />
-    public partial class addednullables : Migration
+    public partial class AddedNullables : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IoTM.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250901052731_profile-backend-integrations-Kevin")]
-    partial class profilebackendintegrationsKevin
+    [Migration("20250901052731_ProfileBackendIntegrationsKevin")]
+    partial class ProfileBackendIntegrationsKevin
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

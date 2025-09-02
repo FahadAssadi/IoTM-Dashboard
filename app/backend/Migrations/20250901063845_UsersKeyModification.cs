@@ -5,7 +5,7 @@
 namespace IoTM.Migrations
 {
     /// <inheritdoc />
-    public partial class userskeymodification : Migration
+    public partial class UsersKeyModification : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

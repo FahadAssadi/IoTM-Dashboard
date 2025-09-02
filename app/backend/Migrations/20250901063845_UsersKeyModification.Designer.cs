@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IoTM.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250901070605_added-nullables")]
-    partial class addednullables
+    [Migration("20250901063845_UsersKeyModification")]
+    partial class UsersKeyModification
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -471,19 +471,29 @@ namespace IoTM.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("CountryCode")
+                        .IsRequired()
                         .HasMaxLength(3)
                         .HasColumnType("character varying(3)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateOnly?>("DateOfBirth")
+                    b.Property<bool>("DataSharingConsent")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateOnly>("DateOfBirth")
                         .HasColumnType("date");
+
+                    b.Property<bool>("EmailVerified")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -494,10 +504,15 @@ namespace IoTM.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<bool>("PrivacyConsent")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Sex")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Timezone")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 

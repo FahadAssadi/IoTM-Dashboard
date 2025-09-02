@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IoTM.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250901063845_users-key-modification")]
-    partial class userskeymodification
+    [Migration("20250901062828_RemovedEmailFromUsers")]
+    partial class RemovedEmailFromUsers
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -468,6 +468,7 @@ namespace IoTM.Migrations
             modelBuilder.Entity("IoTM.Models.User", b =>
                 {
                     b.Property<Guid>("UserId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("CountryCode")

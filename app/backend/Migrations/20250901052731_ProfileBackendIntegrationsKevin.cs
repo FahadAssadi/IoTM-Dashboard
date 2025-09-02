@@ -5,7 +5,7 @@
 namespace IoTM.Migrations
 {
     /// <inheritdoc />
-    public partial class profilebackendintegrationsKevin : Migration
+    public partial class ProfileBackendIntegrationsKevin : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

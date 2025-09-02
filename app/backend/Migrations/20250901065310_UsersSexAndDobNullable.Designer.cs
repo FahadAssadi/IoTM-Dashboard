@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IoTM.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250901062828_removed-email-from-users")]
-    partial class removedemailfromusers
+    [Migration("20250901065310_UsersSexAndDobNullable")]
+    partial class UsersSexAndDobNullable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -468,7 +468,6 @@ namespace IoTM.Migrations
             modelBuilder.Entity("IoTM.Models.User", b =>
                 {
                     b.Property<Guid>("UserId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("CountryCode")
@@ -482,7 +481,7 @@ namespace IoTM.Migrations
                     b.Property<bool>("DataSharingConsent")
                         .HasColumnType("boolean");
 
-                    b.Property<DateOnly>("DateOfBirth")
+                    b.Property<DateOnly?>("DateOfBirth")
                         .HasColumnType("date");
 
                     b.Property<bool>("EmailVerified")
@@ -509,7 +508,6 @@ namespace IoTM.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Sex")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Timezone")
