@@ -89,6 +89,9 @@ export default function HealthScreenings() {
 
   const [feedbackMessage, setFeedbackMessage] = useState<string>("") // feedback message for fetching new screenings
 
+  const [page, setPage] = useState(1);
+  const pageSize = 4;
+
   // Fetch timeline items from backend
   const fetchTimelineItems = async () => {
     try {
@@ -123,7 +126,7 @@ export default function HealthScreenings() {
   // Fetch all screenings
   const fetchAllScreenings = async () => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/`);
+      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/?page=${page}&pageSize=${pageSize}`);
       const data = await res.json();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const screenings = data.map((item: any) => ({
@@ -145,15 +148,9 @@ export default function HealthScreenings() {
         reminderSent: item.reminderSent,
       }));
 
-      console.log("Screenings:", screenings);
-
       setAllScreenings(screenings);
-      setHiddenScreenings(
-        screenings.filter((s: ScreeningItem) => s.status === "skipped")
-      );
-      setVisibleScreenings(
-        screenings.filter((s: ScreeningItem) => s.status !== "skipped")
-      );
+      setHiddenScreenings(screenings.filter((s: ScreeningItem) => s.status === "skipped"));
+      setVisibleScreenings(screenings.filter((s: ScreeningItem) => s.status !== "skipped"));
     } catch (err) {
       console.error("Failed to fetch screenings", err);
     }
@@ -161,7 +158,7 @@ export default function HealthScreenings() {
 
   useEffect(() => {
     fetchAllScreenings();
-  }, []);
+  }, [page]);
 
   // Filter out hidden screenings for visible list
   // Visible screenings: status !== "skipped"
@@ -483,23 +480,45 @@ export default function HealthScreenings() {
             </div>
           )}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-2">
           {!showHidden ? (
-            <Button
-              variant="outline"
-              className="w-full border-teal-700 text-teal-800 hover:bg-teal-50"
-              onClick={() => setShowHidden(true)}
-            >
-              View Hidden Screenings
-            </Button>
+            <>
+              <div className="flex justify-between w-full mb-2">
+                <Button
+                  variant="outline"
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setPage(page + 1)}
+                  disabled={visibleScreenings.length < pageSize}
+                >
+                  Next
+                </Button>
+              </div>
+              <div className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full border-teal-700 text-teal-800 hover:bg-teal-50"
+                  onClick={() => setShowHidden(true)}
+                >
+                  View Hidden Screenings
+                </Button>
+              </div>
+            </>
           ) : (
-            <Button
-              variant="outline"
-              className="w-full border-teal-700 text-teal-800 hover:bg-teal-50"
-              onClick={() => setShowHidden(false)}
-            >
-              Show Screenings
-            </Button>
+            <div className="w-full">
+              <Button
+                variant="outline"
+                className="w-full border-teal-700 text-teal-800 hover:bg-teal-50"
+                onClick={() => setShowHidden(false)}
+              >
+                Show Screenings
+              </Button>
+            </div>
           )}
         </CardFooter>
       </Card>

@@ -23,7 +23,7 @@ namespace IoTM.Controllers
         /// <returns></returns>
         //[Authorize]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserScreening>>> GetUserScreenings()
+        public async Task<ActionResult<IEnumerable<UserScreeningDto>>> GetUserScreenings([FromQuery] int page = 1, [FromQuery] int pageSize = 4)
         {
             // // Get userId from authentication context (claims)
             // var userIdClaim = User.FindFirst("sub") ?? User.FindFirst("userId");
@@ -35,7 +35,7 @@ namespace IoTM.Controllers
             // TODO: Replace with authenticated user ID when available
             Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
-            var screenings = await _userScreeningsService.GetExistingScreeningsForUserAsync(userId);
+            var screenings = await _userScreeningsService.GetExistingScreeningsForUserAsync(userId, page, pageSize);
             var dto = _userScreeningsService.MapToDto(screenings);
             return Ok(dto);
         }
