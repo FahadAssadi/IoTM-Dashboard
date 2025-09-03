@@ -55,7 +55,7 @@ namespace IoTM.Services
                 var eligibleGuidelines = guidelines.Where(g =>
                     (!g.MinAge.HasValue || user.Age() >= g.MinAge) &&
                     (!g.MaxAge.HasValue || user.Age() <= g.MaxAge) &&
-                    (g.SexApplicable == SexApplicable.both || (int)g.SexApplicable == (int)user.Sex) &&
+                    (g.SexApplicable == SexApplicable.both || (user.Sex != null && (int)g.SexApplicable == (int)user.Sex)) &&
                     (
                         user.MedicalProfile == null || user.MedicalProfile.PregnancyStatus == null
                             ? g.PregnancyApplicable == PregnancyApplicable.not_pregnant
@@ -69,7 +69,7 @@ namespace IoTM.Services
                     var matchingRule = guideline.FrequencyRules.FirstOrDefault(r =>
                         (!r.MinAge.HasValue || user.Age() >= r.MinAge) &&
                         (!r.MaxAge.HasValue || user.Age() <= r.MaxAge) &&
-                        (!r.SexApplicable.HasValue || (int)r.SexApplicable == (int)user.Sex) &&
+                        (!r.SexApplicable.HasValue || (user.Sex != null && (int)r.SexApplicable == (int)user.Sex)) &&
                         (!r.PregnancyApplicable.HasValue ||
                             (user.MedicalProfile?.PregnancyStatus == null
                                 ? r.PregnancyApplicable == PregnancyApplicable.not_pregnant

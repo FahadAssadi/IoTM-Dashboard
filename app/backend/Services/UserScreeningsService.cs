@@ -11,10 +11,11 @@ namespace IoTM.Services
         Task<List<UserScreening>> GetExistingScreeningsForUserAsync(Guid userId, int? page = null, int? pageSize = null);
         Task<List<UserScreening>> GetNewScreeningsForUserAsync(Guid userId);
         List<UserScreeningDto> MapToDto(List<UserScreening> screenings);
-        Task<List<ScheduledScreening>> GetScheduledScreenings(Guid userId);
+        Task<List<ScheduledScreeningDto>> GetScheduledScreenings(Guid userId);
         Task ScheduleScreening(Guid userId, Guid guidelineId, DateOnly scheduledDate);
         Task EditScheduledScreening(Guid screeningId, DateOnly newDate);
         Task CancelScheduledScreening(Guid screeningId);
+        Task ArchiveScheduledScreening(Guid screeningId);
     }
 
     public class UserScreeningsService : IUserScreeningsService
@@ -135,20 +136,32 @@ namespace IoTM.Services
             }).ToList();
         }
 
-        public async Task<List<ScheduledScreening>> GetScheduledScreenings(Guid userId)
+        public async Task<List<ScheduledScreeningDto>> GetScheduledScreenings(Guid userId)
         {
             try
             {
-                return await _context.ScheduledScreenings
+                var scheduledScreenings = await _context.ScheduledScreenings
                     .Include(ss => ss.UserScreening)
                     .ThenInclude(us => us.Guideline)
-                    .Where(ss => ss.UserScreening.UserId == userId)
+                    .Where(ss => ss.UserScreening.UserId == userId && ss.IsActive == true)
                     .ToListAsync();
+
+                return scheduledScreenings.Select(ss => new ScheduledScreeningDto
+                {
+                    ScheduledScreeningId = ss.ScheduledScreeningId,
+                    ScheduledDate = ss.ScheduledDate,
+                    IsActive = ss.IsActive,
+                    ScreeningId = ss.ScreeningId,
+                    GuidelineId = ss.UserScreening.Guideline.GuidelineId,
+                    GuidelineName = ss.UserScreening.Guideline.Name,
+                    ScreeningType = ss.UserScreening.Guideline.ScreeningType,
+                    DefaultFrequencyMonths = ss.UserScreening.Guideline.DefaultFrequencyMonths
+                }).ToList();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching scheduled screenings for {UserId}", userId);
-                return new List<ScheduledScreening>();
+                return new List<ScheduledScreeningDto>();
             }
         }
 

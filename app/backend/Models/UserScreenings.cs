@@ -11,8 +11,6 @@ namespace IoTM.Models
     }
 
     [Table("user_screenings")]
-    // [Index(nameof(UserId), nameof(DueDate), Name = "idx_user_due_date")]
-    // [Index(nameof(Status), nameof(DueDate), Name = "idx_status_due")]
     public class UserScreening
     {
         [Key]

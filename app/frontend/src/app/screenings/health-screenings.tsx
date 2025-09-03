@@ -12,13 +12,13 @@ const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 console.log("API Base URL:", apiBaseUrl);
 
 export interface ScreeningItem {
-  GuidelineId: string
+  guidelineId: string
   name: string
   lastScheduled?: string
   status?: "due-soon" | "overdue" | undefined
   isRecurring: boolean
   screeningType?: string
-  defaultFrequencyMonths?: string
+  recommendedFrequency?: string
   description?: string
   eligibility?: string
   minAge?: number
@@ -28,19 +28,19 @@ export interface ScreeningItem {
   link?: string
 }
 
-function getScreeningStatus(lastScheduled?: string, defaultFrequencyMonths?: string): "due-soon" | "overdue" | "upcoming" | undefined {
-  if (!lastScheduled || !defaultFrequencyMonths) return undefined
+function getScreeningStatus(lastScheduled?: string, recommendedFrequency?: string): "due-soon" | "overdue" | "upcoming" | undefined {
+  if (!lastScheduled || !recommendedFrequency) return undefined
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const last = new Date(lastScheduled)
   last.setHours(0, 0, 0, 0)
 
   const nextDue = new Date(last)
-  if (defaultFrequencyMonths.includes("year")) {
-    const years = parseInt(defaultFrequencyMonths.replace(/\D/g, "")) || 1
+  if (recommendedFrequency.includes("year")) {
+    const years = parseInt(recommendedFrequency.replace(/\D/g, "")) || 1
     nextDue.setFullYear(last.getFullYear() + years)
-  } else if (defaultFrequencyMonths.includes("month")) {
-    const months = parseInt(defaultFrequencyMonths.replace(/\D/g, "")) || 6
+  } else if (recommendedFrequency.includes("month")) {
+    const months = parseInt(recommendedFrequency.replace(/\D/g, "")) || 6
     nextDue.setMonth(last.getMonth() + months)
   }
 
@@ -94,12 +94,12 @@ export default function HealthScreenings() {
 
         setAllScreenings(
           guidelines.map((screening) => ({
-            GuidelineId: screening.guidelineId,
+            guidelineId: screening.id,
             name: screening.name,
             lastScheduled: screening.lastScheduled ?? undefined,
             isRecurring: screening.isRecurring,
             screeningType: screening.screeningType,
-            defaultFrequencyMonths: screening.defaultFrequencyMonths,
+            recommendedFrequency: screening.recommendedFrequency,
             description: screening.description,
             cost: screening.cost,
             delivery: screening.delivery,
@@ -112,10 +112,42 @@ export default function HealthScreenings() {
       })
   }, [])
 
+  // Fetch timeline items from backend
+  const fetchTimelineItems = async () => {
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/scheduled`);
+      const data = await res.json();
+      console.log("DATA", data);
+      // Map backend data to TimelineItem[]
+      setTimelineItems(
+        Array.isArray(data)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ? data.map((item: any) => ({
+              id: item.scheduledScreeningId,
+              guidelineId: item.guidelineId,
+              name: item.guidelineName,
+              dueDate: item.scheduledDate,
+              month: new Date(item.scheduledDate).toLocaleString("default", { month: "long" }),
+              status: getScreeningStatus(
+                item.scheduledDate,
+                item.recommendedFrequency
+              ) ?? "upcoming",
+            }))
+          : []
+      );
+    } catch {
+      setTimelineItems([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchTimelineItems();
+  }, []);
+
   // Filter out hidden screenings for visible list
   const screenings = allScreenings.filter(
     (screening) =>
-      !hiddenScreenings.some((hidden) => hidden.GuidelineId === screening.GuidelineId) &&
+      !hiddenScreenings.some((hidden) => hidden.guidelineId === screening.guidelineId) &&
       (selectedType === "allcategories" || (screening.screeningType?.toLowerCase().replace(/\s+/g, "") === selectedType))
   )
 
@@ -139,102 +171,57 @@ export default function HealthScreenings() {
   }
 
   // Handle removing a timeline item
-  const handleRemoveTimelineItem = (id: string) => {
-    setTimelineItems((prev) => {
-      const itemToRemove = prev.find(item => item.id === id)
-      if (!itemToRemove) return prev
-      const screeningId = itemToRemove.id.split("-")[0]
-      const removedDate = itemToRemove.dueDate
-      const now = new Date()
-      const removedDateObj = new Date(removedDate)
-      // Remove the date from scheduledDates
-      setScheduledDates((dates) => {
-        const updated = { ...dates }
-        if (updated[screeningId]) {
-          updated[screeningId] = updated[screeningId].filter(date => date !== removedDate)
-          // If the removed date is in the future, update lastScheduled
-          if (removedDateObj > now) {
-            const latest = updated[screeningId].length > 0
-              ? updated[screeningId][updated[screeningId].length - 1]
-              : undefined
-            setAllScreenings((screenings) =>
-              screenings.map(s =>
-                s.GuidelineId === screeningId
-                  ? { ...s, lastScheduled: latest }
-                  : s
-              )
-            )
-          }
-        }
-        return updated
-      })
-      // Remove the timeline item
-      return prev.filter(item => item.id !== id)
-    })
-  }
+  const handleRemoveTimelineItem = async (id: string) => {
+    try {
+      // Call backend API to remove the scheduled screening
+      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/schedule/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        setErrorMessage("Failed to remove scheduled screening.");
+        return;
+      }
+      setErrorMessage("");
+
+      // After removal, fetch updated timeline items from backend
+      await fetchTimelineItems();
+    } catch {
+      setErrorMessage("Failed to remove scheduled screening.");
+    }
+  };
 
   // Handle date selection and add/update timeline
-  const handleDateSelect = () => {
-    if (!selectedDate) return
+  const handleDateSelect = async () => {
+    if (!selectedDate) return;
 
     if (datePickerOpen.timelineItemId) {
-      // Editing an existing timeline item
-      setTimelineItems((prev) =>
-        prev.map((item) =>
-          item.id === datePickerOpen.timelineItemId
-            ? {
-                ...item,
-                dueDate: selectedDate,
-                month: new Date(selectedDate).toLocaleString("default", { month: "long" }),
-                status: (getScreeningStatus(selectedDate, allScreenings.find(s => s.GuidelineId === item.id.split("-")[0])?.defaultFrequencyMonths) ?? "upcoming"),
-              }
-            : item
-        )
-      )
-      setDatePickerOpen({ open: false })
-      setSelectedDate("")
-    }
-    // Scheduling a new screening
-    else if (datePickerOpen.screening) {
-      const screeningId = datePickerOpen.screening.GuidelineId
-      const dueDate = selectedDate
-      const status = getScreeningStatus(dueDate, datePickerOpen.screening.defaultFrequencyMonths)
-      const month = new Date(dueDate).toLocaleString("default", { month: "long" })
-      const newId = screeningId + "-" + dueDate
+      // Editing an existing timeline item (implement edit endpoint if needed)
+      setDatePickerOpen({ open: false });
+      setSelectedDate("");
+    } else if (datePickerOpen.screening) {
+      const screeningId = datePickerOpen.screening.guidelineId;
+      const dueDate = selectedDate;
 
-      setTimelineItems((prev) => {
-        if (prev.some((item) => item.id === newId)) {
-          setErrorMessage("This screening is already scheduled for this date.")
-          return prev
+      try {
+        // Call backend API to schedule the screening
+        const res = await fetch(
+          `${apiBaseUrl}/api/UserScreenings/schedule?guidelineId=${screeningId}&scheduledDate=${dueDate}`,
+          { method: "POST" }
+        );
+        if (!res.ok) {
+          setErrorMessage("Failed to schedule screening.");
+          return;
         }
-        setErrorMessage("")
-        // Update scheduledDates history
-        setScheduledDates((dates) => {
-          const updated = { ...dates }
-          updated[screeningId] = [...(updated[screeningId] || []), dueDate].sort()
-          // Update lastScheduled in allScreenings
-          setAllScreenings((screenings) =>
-            screenings.map(s =>
-              s.GuidelineId === screeningId
-                ? { ...s, lastScheduled: updated[screeningId][updated[screeningId].length - 1] }
-                : s
-            )
-          )
-          return updated
-        })
-        return [
-          ...prev,
-          {
-            id: newId,
-            name: datePickerOpen.screening!.name,
-            dueDate,
-            month,
-            status: status ?? "upcoming",
-          }
-        ]
-      })
-      setDatePickerOpen({ open: false })
-      setSelectedDate("")
+        setErrorMessage("");
+
+        // After scheduling, fetch updated timeline items from backend
+        await fetchTimelineItems();
+      } catch {
+        setErrorMessage("Failed to schedule screening.");
+      }
+
+      setDatePickerOpen({ open: false });
+      setSelectedDate("");
     }
   }
 
@@ -245,7 +232,7 @@ export default function HealthScreenings() {
 
   // Unhide a screening
   const handleUnhideScreening = (screening: ScreeningItem) => {
-    setHiddenScreenings((prev) => prev.filter((item) => item.GuidelineId !== screening.GuidelineId))
+    setHiddenScreenings((prev) => prev.filter((item) => item.guidelineId !== screening.guidelineId))
   }
 
   // Unhide all hidden screenings
@@ -286,12 +273,12 @@ export default function HealthScreenings() {
                             .map((item: { guideline: ScreeningItem }) => item.guideline)
                             .filter((g: ScreeningItem | undefined): g is ScreeningItem => !!g)
                             .map((screening: ScreeningItem) => ({
-                            GuidelineId: screening.GuidelineId,
+                            guidelineId: screening.guidelineId,
                             name: screening.name,
                             lastScheduled: screening.lastScheduled ?? undefined,
                             isRecurring: screening.isRecurring,
                             screeningType: screening.screeningType,
-                            defaultFrequencyMonths: screening.defaultFrequencyMonths,
+                            recommendedFrequency: screening.recommendedFrequency,
                             description: screening.description,
                             cost: screening.cost,
                             delivery: screening.delivery,
@@ -343,7 +330,7 @@ export default function HealthScreenings() {
                 <div className="text-center text-slate-500 py-8">No screenings to show.</div>
               )}
               {screenings.map((screening) => (
-                <Card key={screening.GuidelineId} className="p-2 rounded">
+                <Card key={screening.guidelineId} className="p-2 rounded">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center h-12 w-12 rounded-full bg-slate-100">
@@ -364,8 +351,8 @@ export default function HealthScreenings() {
                         {screening.description && (
                           <div className="text-xs text-gray-500 mt-1">{screening.description}</div>
                         )}
-                        {screening.defaultFrequencyMonths && (
-                          <div className="text-xs text-gray-500 mt-1">Recommended frequency: {screening.defaultFrequencyMonths}</div>
+                        {screening.recommendedFrequency && (
+                          <div className="text-xs text-gray-500 mt-1">Recommended frequency: {screening.recommendedFrequency}</div>
                         )}
                         {screening.cost && (
                           <div className="text-xs text-gray-500 mt-1">Cost: {screening.cost}</div>
@@ -401,7 +388,7 @@ export default function HealthScreenings() {
                 <div className="text-center text-slate-500 py-8">No hidden screenings.</div>
               )}
               {hiddenScreenings.map((screening) => (
-                <Card key={screening.GuidelineId} className="p-2 rounded bg-slate-50">
+                <Card key={screening.guidelineId} className="p-2 rounded bg-slate-50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center h-12 w-12 rounded-full bg-slate-200">
@@ -420,7 +407,7 @@ export default function HealthScreenings() {
                           )}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          <span className="ml-2">Frequency: {screening.defaultFrequencyMonths}</span>
+                          <span className="ml-2">Frequency: {screening.recommendedFrequency}</span>
                         </div>
                         {screening.description && (
                           <div className="text-xs text-gray-500 mt-1">{screening.description}</div>

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using IoTM.Models;
 using IoTM.Services;
 using Microsoft.AspNetCore.Authorization;
+using IoTM.Dtos;
 
 namespace IoTM.Controllers
 {
@@ -40,46 +41,37 @@ namespace IoTM.Controllers
         }
 
         // Schedule a screening
-        [Authorize]
+        // [Authorize]
         [HttpPost("schedule")]
-        public ActionResult<UserScreening> ScheduleScreening([FromBody] UserScreening screening)
+        public async Task<IActionResult> ScheduleScreening(Guid guidelineId, DateOnly scheduledDate)
         {
             // TODO: Replace with authenticated user ID when available
             Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-
-            // You should add a method in the service layer for adding a screening
-            // For now, you can use the db context if you haven't implemented it in the service
-            // _context.UserScreenings.Add(screening);
-            // await _context.SaveChangesAsync();
-            // return CreatedAtAction(nameof(GetUserScreenings), new { }, screening);
-
-            // Or, if you add a method in the service:
-            // var createdScreening = await _userScreeningsService.AddScreeningForUserAsync(screening);
-            // return CreatedAtAction(nameof(GetUserScreenings), new { }, createdScreening);
-
-            return BadRequest("Not implemented in service layer yet.");
+            await _userScreeningsService.ScheduleScreening(userId, guidelineId, scheduledDate);
+            return Ok("Screening scheduled.");
         }
 
         // Edit a scheduled screening
-        [Authorize]
-        [HttpPut("schedule/{screeningId}")]
-        public IActionResult EditScheduledScreening(Guid screeningId, [FromBody] UserScreening updated)
+        //[Authorize]
+        [HttpPut("schedule/{scheduledScreeningId}")]
+        public async Task<IActionResult> EditScheduledScreening(Guid scheduledScreeningId, DateOnly newDate)
         {
             // TODO: Replace with authenticated user ID when available
             Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-
-            return BadRequest("Not implemented in service layer yet.");
+            await _userScreeningsService.EditScheduledScreening(scheduledScreeningId, newDate);
+            return Ok("Scheduled screening updated.");
         }
 
         // Remove a scheduled screening
-        [Authorize]
-        [HttpDelete("schedule/{screeningId}")]
-        public IActionResult RemoveScheduledScreening(Guid screeningId)
+        //[Authorize]
+        [HttpDelete("schedule/{scheduledScreeningId}")]
+        public async Task<IActionResult> RemoveScheduledScreening(Guid scheduledScreeningId)
         {
             // TODO: Replace with authenticated user ID when available
             Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
-            return BadRequest("Not implemented in service layer yet.");
+            await _userScreeningsService.CancelScheduledScreening(scheduledScreeningId);
+            return Ok("Scheduled screening removed.");
         }
 
         /// <summary>
@@ -97,6 +89,26 @@ namespace IoTM.Controllers
             var newScreenings = await _userScreeningsService.GetNewScreeningsForUserAsync(userId);
             var dto = _userScreeningsService.MapToDto(newScreenings);
             return Ok(dto);
+        }
+
+        // Get all scheduled screenings for the user
+        [HttpGet("scheduled")]
+        public async Task<ActionResult<IEnumerable<ScheduledScreeningDto>>> GetScheduledScreenings()
+        {
+            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111"); // Replace with authenticated user
+            var scheduledScreenings = await _userScreeningsService.GetScheduledScreenings(userId);
+            return Ok(scheduledScreenings);
+        }
+
+        // Archive a scheduled screening (mark as inactive)
+        [HttpPut("archive/{scheduledScreeningId}")]
+        public async Task<IActionResult> ArchiveScheduledScreening(Guid scheduledScreeningId)
+        {
+            // TODO: Replace with authenticated user ID when available
+            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+            await _userScreeningsService.ArchiveScheduledScreening(scheduledScreeningId);
+            return Ok("Scheduled screening archived.");
         }
     }
 }

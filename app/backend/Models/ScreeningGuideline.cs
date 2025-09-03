@@ -35,8 +35,7 @@ namespace IoTM.Models
         [StringLength(200)]
         public string ScreeningType { get; set; } = string.Empty;
 
-        [Required]
-        //TODO: make sure this is only required if IsRecurring is true
+        //TODO: make sure this is only required if IsRecurring is true.
         public int DefaultFrequencyMonths { get; set; }
 
         [Required]
