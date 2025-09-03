@@ -282,9 +282,19 @@ export default function HealthScreenings() {
   };
 
   // Unhide all hidden screenings
-  const handleUnhideAll = () => {
-    setHiddenScreenings([])
-    setShowHidden(false)
+  const handleUnhideAll = async () => {
+    try {
+      // Unhide each hidden screening via backend
+      await Promise.all(
+        hiddenScreenings.map(screening =>
+          fetch(`${apiBaseUrl}/api/UserScreenings/unhide/${screening.guidelineId}`, { method: "PUT" })
+        )
+      );
+      await fetchAllScreenings();
+      setShowHidden(false);
+    } catch {
+      setErrorMessage("Failed to unhide all screenings.");
+    }
   }
 
   return (
