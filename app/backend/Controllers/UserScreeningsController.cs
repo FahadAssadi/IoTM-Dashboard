@@ -110,5 +110,21 @@ namespace IoTM.Controllers
             await _userScreeningsService.ArchiveScheduledScreening(scheduledScreeningId);
             return Ok("Scheduled screening archived.");
         }
+
+        [HttpPut("hide/{guidelineId}")]
+        public async Task<IActionResult> HideScreening(Guid guidelineId)
+        {
+            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+            await _userScreeningsService.HideScreening(userId, guidelineId);
+            return Ok("Screening hidden.");
+        }
+
+        [HttpPut("unhide/{guidelineId}")]
+        public async Task<IActionResult> UnhideScreening(Guid guidelineId)
+        {
+            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+            await _userScreeningsService.UnhideScreening(userId, guidelineId);
+            return Ok("Screening unhidden.");
+        }
     }
 }

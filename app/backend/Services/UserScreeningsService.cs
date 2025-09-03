@@ -16,6 +16,8 @@ namespace IoTM.Services
         Task EditScheduledScreening(Guid screeningId, DateOnly newDate);
         Task CancelScheduledScreening(Guid screeningId);
         Task ArchiveScheduledScreening(Guid screeningId);
+        Task HideScreening(Guid userId, Guid guidelineId);
+        Task UnhideScreening(Guid userId, Guid guidelineId);
     }
 
     public class UserScreeningsService : IUserScreeningsService
@@ -45,8 +47,6 @@ namespace IoTM.Services
                     .Include(us => us.Guideline)
                     .Include(us => us.ScheduledScreenings)
                     .Where(us => us.UserId == userId);
-
-                query = query.Where(us => us.Status != ScreeningStatus.skipped);
 
                 if (page.HasValue && pageSize.HasValue)
                 {
@@ -268,5 +268,30 @@ namespace IoTM.Services
             }
         }
 
+        public async Task HideScreening(Guid userId, Guid guidelineId)
+        {
+            var screening = await _context.UserScreenings
+                .FirstOrDefaultAsync(us => us.UserId == userId && us.GuidelineId == guidelineId);
+
+            if (screening != null)
+            {
+                screening.Status = ScreeningStatus.skipped;
+                screening.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task UnhideScreening(Guid userId, Guid guidelineId)
+        {
+            var screening = await _context.UserScreenings
+                .FirstOrDefaultAsync(us => us.UserId == userId && us.GuidelineId == guidelineId);
+
+            if (screening != null)
+            {
+                screening.Status = ScreeningStatus.pending;
+                screening.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+        }
     }
 }

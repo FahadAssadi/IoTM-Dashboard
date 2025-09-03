@@ -15,7 +15,7 @@ export interface ScreeningItem {
   guidelineId: string
   name: string
   lastScheduled?: string
-  status?: "due-soon" | "overdue" | undefined
+  status?: string
   isRecurring: boolean
   screeningType?: string
   recommendedFrequency?: string
@@ -75,6 +75,8 @@ export default function HealthScreenings() {
 
   const [allScreenings, setAllScreenings] = useState<ScreeningItem[]>([])
 
+  const [visibleScreenings, setVisibleScreenings] = useState<ScreeningItem[]>([]);
+
   const [feedbackMessage, setFeedbackMessage] = useState<string>("") // feedback message for fetching new screenings
 
   // Fetch timeline items from backend
@@ -82,7 +84,6 @@ export default function HealthScreenings() {
     try {
       const res = await fetch(`${apiBaseUrl}/api/UserScreenings/scheduled`);
       const data = await res.json();
-      console.log("DATA", data);
       // Map backend data to TimelineItem[]
       setTimelineItems(
         Array.isArray(data)
@@ -114,26 +115,34 @@ export default function HealthScreenings() {
     try {
       const res = await fetch(`${apiBaseUrl}/api/UserScreenings/`);
       const data = await res.json();
-      setAllScreenings(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        data.map((item: any) => ({
-          screeningId: item.screeningId,
-          guidelineId: item.guidelineId,
-          name: item.guideline?.name ?? "",
-          lastScheduled: item.lastScheduledDate ?? undefined,
-          isRecurring: item.guideline?.isRecurring ?? false,
-          screeningType: item.guideline?.screeningType,
-          recommendedFrequency: item.guideline?.recommendedFrequency,
-          description: item.guideline?.description,
-          cost: item.guideline?.cost,
-          delivery: item.guideline?.delivery,
-          link: item.guideline?.link,
-          scheduledScreenings: item.scheduledScreenings ?? [],
-          status: item.status,
-          completedDate: item.completedDate,
-          nextDueDate: item.nextDueDate,
-          reminderSent: item.reminderSent,
-        }))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const screenings = data.map((item: any) => ({
+        screeningId: item.screeningId,
+        guidelineId: item.guidelineId,
+        name: item.guideline?.name ?? "",
+        lastScheduled: item.lastScheduledDate ?? undefined,
+        isRecurring: item.guideline?.isRecurring ?? false,
+        screeningType: item.guideline?.screeningType,
+        recommendedFrequency: item.guideline?.recommendedFrequency,
+        description: item.guideline?.description,
+        cost: item.guideline?.cost,
+        delivery: item.guideline?.delivery,
+        link: item.guideline?.link,
+        scheduledScreenings: item.scheduledScreenings ?? [],
+        status: item.status,
+        completedDate: item.completedDate,
+        nextDueDate: item.nextDueDate,
+        reminderSent: item.reminderSent,
+      }));
+
+      console.log("Screenings:", screenings);
+
+      setAllScreenings(screenings);
+      setHiddenScreenings(
+        screenings.filter((s: ScreeningItem) => s.status === "skipped")
+      );
+      setVisibleScreenings(
+        screenings.filter((s: ScreeningItem) => s.status !== "skipped")
       );
     } catch (err) {
       console.error("Failed to fetch screenings", err);
@@ -145,10 +154,11 @@ export default function HealthScreenings() {
   }, []);
 
   // Filter out hidden screenings for visible list
-  const screenings = allScreenings.filter(
+  // Visible screenings: status !== "skipped"
+  const screenings = visibleScreenings.filter(
     (screening) =>
-      !hiddenScreenings.some((hidden) => hidden.guidelineId === screening.guidelineId) &&
-      (selectedType === "allcategories" || (screening.screeningType?.toLowerCase().replace(/\s+/g, "") === selectedType))
+      selectedType === "allcategories" ||
+      (screening.screeningType?.toLowerCase().replace(/\s+/g, "") === selectedType)
   )
 
   const screeningTypes: string[] = [
@@ -195,10 +205,23 @@ export default function HealthScreenings() {
     if (!selectedDate) return;
 
     if (datePickerOpen.timelineItemId) {
-      // Editing an existing timeline item (implement edit endpoint if needed)
-      // After editing, refetch timeline and all screenings
-      await fetchTimelineItems();
-      await fetchAllScreenings();
+      // Editing an existing timeline item
+      try {
+        const res = await fetch(
+          `${apiBaseUrl}/api/UserScreenings/schedule/${datePickerOpen.timelineItemId}?newDate=${selectedDate}`,
+          { method: "PUT" }
+        );
+        if (!res.ok) {
+          setErrorMessage("Failed to update scheduled screening.");
+          return;
+        }
+        setErrorMessage("");
+        // Refetch timeline and all screenings to update lastScheduled
+        await fetchTimelineItems();
+        await fetchAllScreenings();
+      } catch {
+        setErrorMessage("Failed to update scheduled screening.");
+      }
       setDatePickerOpen({ open: false });
       setSelectedDate("");
     } else if (datePickerOpen.screening) {
@@ -229,14 +252,24 @@ export default function HealthScreenings() {
   }
 
   // Hide a screening
-  const handleHideScreening = (screening: ScreeningItem) => {
-    setHiddenScreenings((prev) => [...prev, screening])
-  }
+  const handleHideScreening = async (screening: ScreeningItem) => {
+    try {
+      await fetch(`${apiBaseUrl}/api/UserScreenings/hide/${screening.guidelineId}`, { method: "PUT" });
+      await fetchAllScreenings();
+    } catch {
+      setErrorMessage("Failed to hide screening.");
+    }
+  };
 
   // Unhide a screening
-  const handleUnhideScreening = (screening: ScreeningItem) => {
-    setHiddenScreenings((prev) => prev.filter((item) => item.guidelineId !== screening.guidelineId))
-  }
+  const handleUnhideScreening = async (screening: ScreeningItem) => {
+    try {
+      await fetch(`${apiBaseUrl}/api/UserScreenings/unhide/${screening.guidelineId}`, { method: "PUT" });
+      await fetchAllScreenings();
+    } catch {
+      setErrorMessage("Failed to unhide screening.");
+    }
+  };
 
   // Unhide all hidden screenings
   const handleUnhideAll = () => {
@@ -269,25 +302,7 @@ export default function HealthScreenings() {
                         setFeedbackMessage("No new screenings available.")
                       } else {
                         setFeedbackMessage(`${data.length} new screening${data.length > 1 ? "s" : ""} added.`)
-                        
-                          setAllScreenings(prev => [
-                          ...prev,
-                          ...data
-                            .map((item: { guideline: ScreeningItem }) => item.guideline)
-                            .filter((g: ScreeningItem | undefined): g is ScreeningItem => !!g)
-                            .map((screening: ScreeningItem) => ({
-                            guidelineId: screening.guidelineId,
-                            name: screening.name,
-                            lastScheduled: screening.lastScheduled ?? undefined,
-                            isRecurring: screening.isRecurring,
-                            screeningType: screening.screeningType,
-                            recommendedFrequency: screening.recommendedFrequency,
-                            description: screening.description,
-                            cost: screening.cost,
-                            delivery: screening.delivery,
-                            link: screening.link,
-                            }))
-                        ])
+                        await fetchAllScreenings();
                       }
                     } catch {
                       setFeedbackMessage("Failed to check for new screenings.")
@@ -454,7 +469,6 @@ export default function HealthScreenings() {
               variant="outline"
               className="w-full border-teal-700 text-teal-800 hover:bg-teal-50"
               onClick={() => setShowHidden(true)}
-              disabled={hiddenScreenings.length === 0}
             >
               View Hidden Screenings
             </Button>
