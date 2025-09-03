@@ -4,8 +4,8 @@ type HealthConnectNative = {
   isAvailable: () => Promise<boolean>;
   hasRequiredPermissions: () => Promise<boolean>;
   requestPermissions: () => Promise<void>;
-  dumpLast7DaysJson: () => Promise<string>; // returns JSON string
-
+  getLast7DaysHeartRateJson: () => Promise<string>;
+  writeLast7DaysHeartRateToFile: () => Promise<string>;
 };
 
 const native = NativeModules.HealthConnectModule as Partial<HealthConnectNative> | undefined;
@@ -26,11 +26,15 @@ export const Health: HealthConnectNative = {
     }
     return native.requestPermissions();
   },
-  async dumpLast7DaysJson() {
-    if (Platform.OS !== "android" || !native?.dumpLast7DaysJson) {
+  async getLast7DaysHeartRateJson() {
+    if (Platform.OS !== "android" || !native?.getLast7DaysHeartRateJson) {
       throw new Error("HealthConnectModule not available");
     }
-    return native.dumpLast7DaysJson();
+    return native.getLast7DaysHeartRateJson();
+  },
+  async writeLast7DaysHeartRateToFile() {
+    if (Platform.OS !== "android" || !native?.writeLast7DaysHeartRateToFile) throw new Error("HealthConnectModule not available");
+    return native.writeLast7DaysHeartRateToFile();
   },
 
 };

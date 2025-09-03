@@ -1,85 +1,117 @@
 import React, { useCallback, useRef } from "react";
 import { Alert, SafeAreaView, StyleSheet, View, Pressable, Text } from "react-native";
 import WebView, { WebViewMessageEvent } from "react-native-webview";
-import { Health } from "../lib/health"; 
+import * as FileSystem from "expo-file-system";
+import { Health } from "../lib/health";
 
-const WEB_URL = "http://192.168.1.112:3000"; 
+const WEB_URL = "http://192.168.1.112:3000/?embedded=rn"; 
 
 export default function Screen() {
   const webRef = useRef<WebView>(null);
 
   const postToWeb = useCallback((type: string, payload?: any) => {
-    webRef.current?.postMessage(JSON.stringify({ type, payload }));
+    webRef.current?.postMessage(JSON.stringify({ type, ...(payload ? { payload } : {}) }));
   }, []);
 
-  // ---- Buttons (call native) ----
-  const onCheckAvailable = useCallback(async () => {
+  // Native actions exposed to the web
+  const doCheckAvailable = useCallback(async () => {
     try {
       const ok = await Health.isAvailable();
-      Alert.alert("Health Connect available?", String(ok));
       postToWeb("HC_AVAILABLE", { ok });
+      return ok;
     } catch (e) {
-      Alert.alert("HC available error", String(e));
       postToWeb("HC_AVAILABLE_ERROR", { error: String(e) });
+      throw e;
     }
   }, [postToWeb]);
 
-  const onHasPerms = useCallback(async () => {
+  const doCheckPerms = useCallback(async () => {
     try {
       const has = await Health.hasRequiredPermissions();
-      Alert.alert("Has required permissions?", String(has));
       postToWeb("HC_HAS_PERMS", { has });
+      return has;
     } catch (e) {
-      Alert.alert("Has perms error", String(e));
       postToWeb("HC_HAS_PERMS_ERROR", { error: String(e) });
+      throw e;
     }
   }, [postToWeb]);
 
-  const onRequestPerms = useCallback(async () => {
+  const doRequestPerms = useCallback(async () => {
     try {
-      await Health.requestPermissions(); // Step 0/1 stubs will reject; that's expected
-      Alert.alert("Permissions", "Granted");
+      await Health.requestPermissions();
       postToWeb("HC_PERMS_GRANTED");
+      return true;
     } catch (e) {
-      Alert.alert("Permissions error", String(e));
       postToWeb("HC_PERMS_ERROR", { error: String(e) });
+      throw e;
     }
   }, [postToWeb]);
 
-  const onDump = useCallback(async () => {
+  const doFetchHeartRate7Days = useCallback(async () => {
     try {
-      const json = await Health.dumpLast7DaysJson(); // Step 0/1 returns stub JSON
+      const available = await Health.isAvailable();
+      if (!available) {
+        postToWeb("HC_UNAVAILABLE");
+        return;
+      }
+      const has = await Health.hasRequiredPermissions();
+      if (!has) await Health.requestPermissions();
+
+      const json = await Health.getLast7DaysHeartRateJson();
       let payload: any;
       try { payload = JSON.parse(json); } catch { payload = json; }
-      Alert.alert("Dump", typeof payload === "string" ? payload : "JSON received");
-      postToWeb("HEALTH_DUMP_READY", payload);
+      postToWeb("HR_7D_READY", { records: payload?.records ?? payload });
     } catch (e) {
-      Alert.alert("Dump error", String(e));
       postToWeb("HEALTH_DUMP_ERROR", { error: String(e) });
     }
   }, [postToWeb]);
 
-  // ---- Handle web → RN requests (optional) ----
-  const onMessage = useCallback(async (e: WebViewMessageEvent) => {
+  const doWriteFile = useCallback(async () => {
     try {
-      const msg = JSON.parse(e.nativeEvent.data);
-      if (msg?.type === "REQUEST_HEALTH_DUMP") {
-        await onDump();
+      if (!(await Health.isAvailable())) {
+        postToWeb("HC_UNAVAILABLE");
+        return;
       }
-    } catch {}
-  }, [onDump]);
+      if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
+
+      const fileUri = await Health.writeLast7DaysHeartRateToFile(); // returns "file://..."
+      const info = await FileSystem.getInfoAsync(fileUri);
+      postToWeb("HR_FILE_READY", { fileUri, size: info.exists ? info.size ?? 0 : 0 });
+    } catch (e) {
+      postToWeb("HR_FILE_ERROR", { error: String(e) });
+    }
+  }, [postToWeb]);
+
+  // Web -> RN bridge
+  const onMessage = useCallback(async (e: WebViewMessageEvent) => {
+    let msg: any;
+    try { msg = JSON.parse(e.nativeEvent.data); } catch { return; }
+
+    switch (msg.type) {
+      case "CHECK_AVAILABLE":
+        await doCheckAvailable();
+        break;
+      case "CHECK_PERMISSIONS":
+        await doCheckPerms();
+        break;
+      case "REQUEST_PERMISSIONS":
+        await doRequestPerms();
+        break;
+      case "REQUEST_HR_7D":
+        await doFetchHeartRate7Days();
+        break;
+      case "WRITE_HR_FILE":
+        await doWriteFile();
+        break;
+      default:
+        // ignore unknown
+        break;
+    }
+  }, [doCheckAvailable, doCheckPerms, doRequestPerms, doFetchHeartRate7Days, doWriteFile]);
 
   return (
     <SafeAreaView style={styles.container}>
       <WebView ref={webRef} source={{ uri: WEB_URL }} onMessage={onMessage} />
-      <View style={styles.debug}>
-        <Row>
-          <Btn label="isAvailable" onPress={onCheckAvailable} />
-          <Btn label="hasPerms" onPress={onHasPerms} />
-          <Btn label="requestPerms" onPress={onRequestPerms} />
-          <Btn label="dump7d" onPress={onDump} />
-        </Row>
-      </View>
     </SafeAreaView>
   );
 }

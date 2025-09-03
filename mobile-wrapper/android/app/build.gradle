@@ -152,6 +152,7 @@ dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
     implementation ("androidx.health.connect:connect-client:1.2.0-alpha01")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";
