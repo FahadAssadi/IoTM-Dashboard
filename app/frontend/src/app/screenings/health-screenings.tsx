@@ -160,6 +160,45 @@ export default function HealthScreenings() {
     fetchAllScreenings();
   }, [page]);
 
+  // Fetch hidden screenings
+  const fetchHiddenScreenings = async () => {
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/hidden`);
+      const data = await res.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const screenings = data.map((item: any) => ({
+        screeningId: item.screeningId,
+        guidelineId: item.guidelineId,
+        name: item.guideline?.name ?? "",
+        lastScheduled: formatDateDDMMYYYY(item.lastScheduledDate),
+        isRecurring: item.guideline?.isRecurring ?? false,
+        screeningType: item.guideline?.screeningType,
+        recommendedFrequency: item.guideline?.recommendedFrequency,
+        description: item.guideline?.description,
+        cost: item.guideline?.cost,
+        delivery: item.guideline?.delivery,
+        link: item.guideline?.link,
+        scheduledScreenings: item.scheduledScreenings ?? [],
+        status: item.status,
+        completedDate: item.completedDate,
+        nextDueDate: item.nextDueDate,
+        reminderSent: item.reminderSent,
+      }));
+      setHiddenScreenings(screenings);
+    } catch (err) {
+      setHiddenScreenings([]);
+      console.error("Failed to fetch hidden screenings", err);
+    }
+  };
+
+  useEffect(() => {
+    if (showHidden) {
+      fetchHiddenScreenings();
+    } else {
+      fetchAllScreenings();
+    }
+  }, [showHidden, page]);
+
   // Filter out hidden screenings for visible list
   // Visible screenings: status !== "skipped"
   const screenings = visibleScreenings.filter(

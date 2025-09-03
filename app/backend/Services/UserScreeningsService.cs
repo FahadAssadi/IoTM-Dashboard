@@ -18,6 +18,7 @@ namespace IoTM.Services
         Task ArchiveScheduledScreening(Guid screeningId);
         Task HideScreening(Guid userId, Guid guidelineId);
         Task UnhideScreening(Guid userId, Guid guidelineId);
+        Task<List<UserScreening>> GetHiddenScreeningsForUserAsync(Guid userId);
     }
 
     public class UserScreeningsService : IUserScreeningsService
@@ -292,6 +293,15 @@ namespace IoTM.Services
                 screening.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task<List<UserScreening>> GetHiddenScreeningsForUserAsync(Guid userId)
+        {
+            return await _context.UserScreenings
+                .Include(us => us.Guideline)
+                .Include(us => us.ScheduledScreenings)
+                .Where(us => us.UserId == userId && us.Status == ScreeningStatus.skipped)
+                .ToListAsync();
         }
     }
 }

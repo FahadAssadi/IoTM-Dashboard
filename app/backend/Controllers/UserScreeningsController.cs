@@ -126,5 +126,14 @@ namespace IoTM.Controllers
             await _userScreeningsService.UnhideScreening(userId, guidelineId);
             return Ok("Screening unhidden.");
         }
+
+        [HttpGet("hidden")]
+        public async Task<ActionResult<IEnumerable<UserScreeningDto>>> GetHiddenScreenings()
+        {
+            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111"); // Replace with authenticated user
+            var screenings = await _userScreeningsService.GetHiddenScreeningsForUserAsync(userId);
+            var dto = _userScreeningsService.MapToDto(screenings);
+            return Ok(dto);
+        }
     }
 }
