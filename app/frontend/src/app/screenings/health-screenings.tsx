@@ -55,12 +55,19 @@ function getScreeningStatus(lastScheduled?: string, recommendedFrequency?: strin
 }
 
 function formatDateForInput(dateStr?: string) {
-  if (!dateStr) return ""
-  const date = new Date(dateStr)
-  if (isNaN(date.getTime())) return ""
-  const offset = date.getTimezoneOffset()
-  const localDate = new Date(date.getTime() - offset * 60 * 1000)
-  return localDate.toISOString().slice(0, 10)
+  if (!dateStr) return "";
+  // Handle dd/mm/yyyy format
+  const parts = dateStr.split("/");
+  if (parts.length === 3) {
+    const [day, month, year] = parts;
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  }
+  // Fallback for ISO or other formats
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "";
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - offset * 60 * 1000);
+  return localDate.toISOString().slice(0, 10);
 }
 
 function formatDateDDMMYYYY(dateStr?: string) {
