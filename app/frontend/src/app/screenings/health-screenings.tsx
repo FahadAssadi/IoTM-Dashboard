@@ -71,47 +71,11 @@ export default function HealthScreenings() {
   const [showHidden, setShowHidden] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string>("")
 
-  // Add this state to track scheduled dates for each screening
-  // TODO: ignore error for now, won't need this state once backend is connected
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [scheduledDates, setScheduledDates] = useState<Record<string, string[]>>({})
-
   const [selectedType, setSelectedType] = useState<string>("allcategories")
 
   const [allScreenings, setAllScreenings] = useState<ScreeningItem[]>([])
 
   const [feedbackMessage, setFeedbackMessage] = useState<string>("") // feedback message for fetching new screenings
-
-  useEffect(() => {
-    fetch(`${apiBaseUrl}/api/UserScreenings/`)
-      .then(res => res.json())
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .then((data: any[]) => {
-        setAllScreenings(
-          data.map((item) => ({
-            screeningId: item.screeningId,
-            guidelineId: item.guidelineId,
-            name: item.guideline?.name ?? "",
-            lastScheduled: item.lastScheduledDate ?? undefined,
-            isRecurring: item.guideline?.isRecurring ?? false,
-            screeningType: item.guideline?.screeningType,
-            recommendedFrequency: item.guideline?.recommendedFrequency,
-            description: item.guideline?.description,
-            cost: item.guideline?.cost,
-            delivery: item.guideline?.delivery,
-            link: item.guideline?.link,
-            scheduledScreenings: item.scheduledScreenings ?? [],
-            status: item.status,
-            completedDate: item.completedDate,
-            nextDueDate: item.nextDueDate,
-            reminderSent: item.reminderSent,
-          }))
-        )
-      })
-      .catch(err => {
-        console.error("Failed to fetch screenings", err)
-      })
-  }, [])
 
   // Fetch timeline items from backend
   const fetchTimelineItems = async () => {
@@ -145,6 +109,41 @@ export default function HealthScreenings() {
     fetchTimelineItems();
   }, []);
 
+  // Fetch all screenings
+  const fetchAllScreenings = async () => {
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/`);
+      const data = await res.json();
+      setAllScreenings(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data.map((item: any) => ({
+          screeningId: item.screeningId,
+          guidelineId: item.guidelineId,
+          name: item.guideline?.name ?? "",
+          lastScheduled: item.lastScheduledDate ?? undefined,
+          isRecurring: item.guideline?.isRecurring ?? false,
+          screeningType: item.guideline?.screeningType,
+          recommendedFrequency: item.guideline?.recommendedFrequency,
+          description: item.guideline?.description,
+          cost: item.guideline?.cost,
+          delivery: item.guideline?.delivery,
+          link: item.guideline?.link,
+          scheduledScreenings: item.scheduledScreenings ?? [],
+          status: item.status,
+          completedDate: item.completedDate,
+          nextDueDate: item.nextDueDate,
+          reminderSent: item.reminderSent,
+        }))
+      );
+    } catch (err) {
+      console.error("Failed to fetch screenings", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllScreenings();
+  }, []);
+
   // Filter out hidden screenings for visible list
   const screenings = allScreenings.filter(
     (screening) =>
@@ -174,7 +173,6 @@ export default function HealthScreenings() {
   // Handle removing a timeline item
   const handleRemoveTimelineItem = async (id: string) => {
     try {
-      // Call backend API to remove the scheduled screening
       const res = await fetch(`${apiBaseUrl}/api/UserScreenings/schedule/${id}`, {
         method: "DELETE",
       });
@@ -184,8 +182,9 @@ export default function HealthScreenings() {
       }
       setErrorMessage("");
 
-      // After removal, fetch updated timeline items from backend
+      // Refetch timeline and all screenings to update lastScheduled
       await fetchTimelineItems();
+      await fetchAllScreenings();
     } catch {
       setErrorMessage("Failed to remove scheduled screening.");
     }
@@ -197,6 +196,9 @@ export default function HealthScreenings() {
 
     if (datePickerOpen.timelineItemId) {
       // Editing an existing timeline item (implement edit endpoint if needed)
+      // After editing, refetch timeline and all screenings
+      await fetchTimelineItems();
+      await fetchAllScreenings();
       setDatePickerOpen({ open: false });
       setSelectedDate("");
     } else if (datePickerOpen.screening) {
@@ -204,7 +206,6 @@ export default function HealthScreenings() {
       const dueDate = selectedDate;
 
       try {
-        // Call backend API to schedule the screening
         const res = await fetch(
           `${apiBaseUrl}/api/UserScreenings/schedule?guidelineId=${screeningId}&scheduledDate=${dueDate}`,
           { method: "POST" }
@@ -215,8 +216,9 @@ export default function HealthScreenings() {
         }
         setErrorMessage("");
 
-        // After scheduling, fetch updated timeline items from backend
+        // Refetch timeline and all screenings to update lastScheduled
         await fetchTimelineItems();
+        await fetchAllScreenings();
       } catch {
         setErrorMessage("Failed to schedule screening.");
       }
