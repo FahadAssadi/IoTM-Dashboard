@@ -63,6 +63,16 @@ function formatDateForInput(dateStr?: string) {
   return localDate.toISOString().slice(0, 10)
 }
 
+function formatDateDDMMYYYY(dateStr?: string) {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
 export default function HealthScreenings() {
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([])
   const [datePickerOpen, setDatePickerOpen] = useState<{ open: boolean; screening?: ScreeningItem; timelineItemId?: string }>({ open: false })
@@ -120,7 +130,7 @@ export default function HealthScreenings() {
         screeningId: item.screeningId,
         guidelineId: item.guidelineId,
         name: item.guideline?.name ?? "",
-        lastScheduled: item.lastScheduledDate ?? undefined,
+        lastScheduled: formatDateDDMMYYYY(item.lastScheduledDate),
         isRecurring: item.guideline?.isRecurring ?? false,
         screeningType: item.guideline?.screeningType,
         recommendedFrequency: item.guideline?.recommendedFrequency,
