@@ -87,28 +87,29 @@ export default function HealthScreenings() {
       .then(res => res.json())
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((data: any[]) => {
-        // Extract only the guideline object from each user screening
-        const guidelines = data
-          .map(item => item.guideline)
-          .filter(g => !!g); // Remove any undefined/null guidelines
-
         setAllScreenings(
-          guidelines.map((screening) => ({
-            guidelineId: screening.id,
-            name: screening.name,
-            lastScheduled: screening.lastScheduled ?? undefined,
-            isRecurring: screening.isRecurring,
-            screeningType: screening.screeningType,
-            recommendedFrequency: screening.recommendedFrequency,
-            description: screening.description,
-            cost: screening.cost,
-            delivery: screening.delivery,
-            link: screening.link,
+          data.map((item) => ({
+            screeningId: item.screeningId,
+            guidelineId: item.guidelineId,
+            name: item.guideline?.name ?? "",
+            lastScheduled: item.lastScheduledDate ?? undefined,
+            isRecurring: item.guideline?.isRecurring ?? false,
+            screeningType: item.guideline?.screeningType,
+            recommendedFrequency: item.guideline?.recommendedFrequency,
+            description: item.guideline?.description,
+            cost: item.guideline?.cost,
+            delivery: item.guideline?.delivery,
+            link: item.guideline?.link,
+            scheduledScreenings: item.scheduledScreenings ?? [],
+            status: item.status,
+            completedDate: item.completedDate,
+            nextDueDate: item.nextDueDate,
+            reminderSent: item.reminderSent,
           }))
         )
       })
       .catch(err => {
-        console.error("Failed to fetch guidelines", err)
+        console.error("Failed to fetch screenings", err)
       })
   }, [])
 

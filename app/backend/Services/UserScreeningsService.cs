@@ -43,6 +43,7 @@ namespace IoTM.Services
             {
                 var query = _context.UserScreenings
                     .Include(us => us.Guideline)
+                    .Include(us => us.ScheduledScreenings)
                     .Where(us => us.UserId == userId);
 
                 query = query.Where(us => us.Status != ScreeningStatus.skipped);
