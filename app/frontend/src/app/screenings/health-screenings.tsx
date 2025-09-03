@@ -28,28 +28,19 @@ export interface ScreeningItem {
   link?: string
 }
 
-function getScreeningStatus(lastScheduled?: string, recommendedFrequency?: string): "due-soon" | "overdue" | "upcoming" | undefined {
-  if (!lastScheduled || !recommendedFrequency) return undefined
+function getTimelineStatus(scheduledDate?: string, recommendedFrequency?: number): "due-soon" | "overdue" | "upcoming" | undefined {
+  if (!scheduledDate || !recommendedFrequency) return undefined
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const last = new Date(lastScheduled)
-  last.setHours(0, 0, 0, 0)
+  const target = new Date(scheduledDate)
+  target.setHours(0, 0, 0, 0)
 
-  const nextDue = new Date(last)
-  if (recommendedFrequency.includes("year")) {
-    const years = parseInt(recommendedFrequency.replace(/\D/g, "")) || 1
-    nextDue.setFullYear(last.getFullYear() + years)
-  } else if (recommendedFrequency.includes("month")) {
-    const months = parseInt(recommendedFrequency.replace(/\D/g, "")) || 6
-    nextDue.setMonth(last.getMonth() + months)
-  }
-
-  if (nextDue < today) return "overdue"
+  if (target < today) return "overdue"
 
   const twoWeeksFromNow = new Date(today)
   twoWeeksFromNow.setDate(today.getDate() + 14)
 
-  if (nextDue >= today && nextDue <= twoWeeksFromNow) return "due-soon"
+  if (target >= today && target <= twoWeeksFromNow) return "due-soon"
 
   return "upcoming"
 }
@@ -107,9 +98,9 @@ export default function HealthScreenings() {
               name: item.guidelineName,
               dueDate: item.scheduledDate,
               month: new Date(item.scheduledDate).toLocaleString("default", { month: "long" }),
-              status: getScreeningStatus(
+              status: getTimelineStatus(
                 item.scheduledDate,
-                item.recommendedFrequency
+                item.defaultFrequencyMonths
               ) ?? "upcoming",
             }))
           : []
@@ -158,6 +149,7 @@ export default function HealthScreenings() {
 
   useEffect(() => {
     fetchAllScreenings();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   // Filter out hidden screenings for visible list
