@@ -10,9 +10,10 @@ const ICalendarLinkAny = ICalendarLink as unknown as React.FC<
 >
 
 export interface TimelineItem {
-  id: string
-  name: string
-  dueDate: string
+  scheduledScreeningId: string
+  guidelineName: string
+  guidelineId: string
+  scheduledDate: string
   month: string
   status: "due-soon" | "overdue" | "upcoming"
 }
@@ -29,13 +30,30 @@ type ICalEvent = {
 interface HealthScreeningTimelineProps {
   timelineItems: TimelineItem[]
   onEdit?: (item: TimelineItem) => void
-  onRemove?: (id: string) => void
+  onRemove?: (scheduledScreeningId: string) => void
   timezone?: string // user-selectable, defaults to AEST
 }
 
 function getMonthYear(dateStr: string) {
   const date = new Date(dateStr)
   return `${date.toLocaleString("default", { month: "long" })} ${date.getFullYear()}`
+}
+
+export function getTimelineStatus(scheduledDate?: string): "due-soon" | "overdue" | "upcoming" | undefined {
+  if (!scheduledDate) return undefined
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const target = new Date(scheduledDate)
+  target.setHours(0, 0, 0, 0)
+
+  if (target < today) return "overdue"
+
+  const twoWeeksFromNow = new Date(today)
+  twoWeeksFromNow.setDate(today.getDate() + 14)
+
+  if (target >= today && target <= twoWeeksFromNow) return "due-soon"
+
+  return "upcoming"
 }
 
 export default function HealthScreeningTimeline({
@@ -47,7 +65,7 @@ export default function HealthScreeningTimeline({
   // Group timeline items by month and year
   const groupedItems: Record<string, TimelineItem[]> = {}
   ;(timelineItems ?? []).forEach((item) => {
-    const groupKey = getMonthYear(item.dueDate)
+    const groupKey = getMonthYear(item.scheduledDate)
     if (!groupedItems[groupKey]) {
       groupedItems[groupKey] = []
     }
@@ -74,7 +92,7 @@ export default function HealthScreeningTimeline({
         <div className="space-y-6">
           {sortedGroupKeys.map((groupKey) => {
             const items = groupedItems[groupKey].slice().sort((a, b) =>
-              new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+              new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()
             )
             return (
               <div key={groupKey} className="relative">
@@ -88,12 +106,12 @@ export default function HealthScreeningTimeline({
                 <div className="space-y-4 pl-4 ml-4 border-l border-dashed">
                   {items.map((item) => {
                     // Prepare event object for react-icalendar-link
-                    const startDate = new Date(item.dueDate)
-                    const endDate = new Date(item.dueDate)
+                    const startDate = new Date(item.scheduledDate)
+                    const endDate = new Date(item.scheduledDate)
                     endDate.setHours(endDate.getHours() + 1) // 1 hour event by default
 
                     const event: ICalEvent = {
-                      title: item.name,
+                      title: item.guidelineName,
                       description: "Health screening reminder",
                       startTime: startDate.toISOString(),
                       endTime: endDate.toISOString(),
@@ -102,13 +120,13 @@ export default function HealthScreeningTimeline({
                     }
 
                     return (
-                      <div key={item.id} className="relative">
+                      <div key={item.scheduledScreeningId} className="relative">
                         <div className="absolute -left-[22px] top-6 w-3 h-3 rounded-full border-2 border-primary bg-white"></div>
                         <div className="pl-6 p-2 border border-gray-300 rounded">
                           <div className="flex items-center justify-between">
                             <div>
                               <div className="flex items-center gap-2">
-                                <h3 className="font-medium">{item.name}</h3>
+                                <h3 className="font-medium">{item.guidelineName}</h3>
                                 {item.status === "due-soon" ? (
                                   <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
                                     Due Soon
@@ -122,7 +140,7 @@ export default function HealthScreeningTimeline({
                               <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                                 <CalendarClock className="h-3.5 w-3.5" />
                                 <span>
-                                  Due: {new Date(item.dueDate).toLocaleDateString("en-US", {
+                                  Due: {new Date(item.scheduledDate).toLocaleDateString("en-US", {
                                     year: "numeric",
                                     month: "long",
                                     day: "numeric"
@@ -137,7 +155,7 @@ export default function HealthScreeningTimeline({
                                 </Button>
                               )}
                               {onRemove && (
-                                <Button variant="ghost" size="icon" aria-label="Remove" onClick={() => onRemove(item.id)}>
+                                <Button variant="ghost" size="icon" aria-label="Remove" onClick={() => onRemove(item.scheduledScreeningId)}>
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               )}

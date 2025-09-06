@@ -5,7 +5,7 @@ import { Calendar, CalendarClock, Eye, EyeOff, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import HealthScreeningTimeline, { TimelineItem } from "./health-screenings-timeline"
+import HealthScreeningTimeline, { getTimelineStatus, TimelineItem } from "./health-screenings-timeline"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -26,32 +26,6 @@ export interface ScreeningItem {
   cost?: string
   delivery?: string
   link?: string
-}
-
-function getScreeningStatus(lastScheduled?: string, recommendedFrequency?: string): "due-soon" | "overdue" | "upcoming" | undefined {
-  if (!lastScheduled || !recommendedFrequency) return undefined
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const last = new Date(lastScheduled)
-  last.setHours(0, 0, 0, 0)
-
-  const nextDue = new Date(last)
-  if (recommendedFrequency.includes("year")) {
-    const years = parseInt(recommendedFrequency.replace(/\D/g, "")) || 1
-    nextDue.setFullYear(last.getFullYear() + years)
-  } else if (recommendedFrequency.includes("month")) {
-    const months = parseInt(recommendedFrequency.replace(/\D/g, "")) || 6
-    nextDue.setMonth(last.getMonth() + months)
-  }
-
-  if (nextDue < today) return "overdue"
-
-  const twoWeeksFromNow = new Date(today)
-  twoWeeksFromNow.setDate(today.getDate() + 14)
-
-  if (nextDue >= today && nextDue <= twoWeeksFromNow) return "due-soon"
-
-  return "upcoming"
 }
 
 function formatDateForInput(dateStr?: string) {
@@ -107,16 +81,14 @@ export default function HealthScreenings() {
       // Map backend data to TimelineItem[]
       setTimelineItems(
         Array.isArray(data)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ? data.map((item: any) => ({
-              id: item.scheduledScreeningId,
+          ? data.map((item: TimelineItem) => ({
+              scheduledScreeningId: item.scheduledScreeningId,
               guidelineId: item.guidelineId,
-              name: item.guidelineName,
-              dueDate: item.scheduledDate,
+              guidelineName: item.guidelineName,
+              scheduledDate: item.scheduledDate,
               month: new Date(item.scheduledDate).toLocaleString("default", { month: "long" }),
-              status: getScreeningStatus(
-                item.scheduledDate,
-                item.recommendedFrequency
+              status: getTimelineStatus(
+                item.scheduledDate
               ) ?? "upcoming",
             }))
           : []
@@ -131,7 +103,7 @@ export default function HealthScreenings() {
   }, []);
 
   // Fetch all screenings
-  const fetchAllScreenings = async () => {
+  const fetchAllScreenings = React.useCallback(async () => {
     try {
       const res = await fetch(`${apiBaseUrl}/api/UserScreenings/?page=${page}&pageSize=${pageSize}`);
       const data = await res.json();
@@ -161,10 +133,11 @@ export default function HealthScreenings() {
     } catch (err) {
       console.error("Failed to fetch screenings", err);
     }
-  };
+  }, [page, pageSize]);
 
   useEffect(() => {
     fetchAllScreenings();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   // Fetch hidden screenings
@@ -204,7 +177,7 @@ export default function HealthScreenings() {
     } else {
       fetchAllScreenings();
     }
-  }, [showHidden, page]);
+  }, [showHidden, page, fetchAllScreenings]);
 
   // Filter out hidden screenings for visible list
   // Visible screenings: status !== "skipped"
@@ -229,8 +202,8 @@ export default function HealthScreenings() {
   // Handle editing a timeline item
   const handleEditTimelineItem = (item: TimelineItem) => {
     setErrorMessage("")
-    setDatePickerOpen({ open: true, timelineItemId: item.id })
-    setSelectedDate(formatDateForInput(item.dueDate))
+    setDatePickerOpen({ open: true, timelineItemId: item.scheduledScreeningId })
+    setSelectedDate(formatDateForInput(item.scheduledDate))
   }
 
   // Handle removing a timeline item
