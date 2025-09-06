@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { ReactNode, useState } from "react"
 import {
   Activity,
   Calendar,
@@ -213,7 +213,7 @@ type VitalCardProps = {
   unit?: string;
   status: "normal" | "good" | "warning" | "alert" | string;
   change?: string;
-  icon?: unknown;
+  icon?: ReactNode;
 };
 
 function VitalCard({ title, value, unit, status, change, icon }: VitalCardProps) {
@@ -240,7 +240,7 @@ function VitalCard({ title, value, unit, status, change, icon }: VitalCardProps)
       <CardContent className="p-6">
         <div className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-slate-800">{title}</CardTitle>
-          {"This should be 'icon' but I changed it to bypass the linter "} {/* This was icon but the types were weird*/}
+          {icon} {/* This was icon but the types were weird*/}
         </div>
 
         <div className="flex items-end gap-1">
