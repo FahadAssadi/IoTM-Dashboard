@@ -2,13 +2,8 @@ namespace IoTM.Config
 {
     public class HealthThresholds
     {
-        public required GeneralThresholds General { get; set; }
+        public required BPMThresholds BPM { get; set; }
         public required BloodPressureThresholds BloodPressure { get; set; }
-    }
-
-    public class GeneralThresholds
-    {
-        public required List<HeartRateCategory> HeartRateCategories { get; set; }
     }
 
     public class BloodPressureThresholds
@@ -18,6 +13,13 @@ namespace IoTM.Config
         public required List<DeviationCategory> OuterDeviation { get; set; }
     }
 
+    public class BPMThresholds
+    {
+        public required List<HeartRateCategory> Categories { get; set; }
+        public required double MinSegmentDuration { get; set; }
+        public required double MaxSegmentDuration { get; set; }
+        public required double StdDevThreshold { get; set; }
+    }
     public class HeartRateCategory
     {
         public required string Name { get; set; }
@@ -37,7 +39,7 @@ namespace IoTM.Config
     public class DeviationCategory
     {
         public required string Name { get; set; }
-        public double? Min { get; set; }  // nullable so we can omit for "Low"
-        public double? Max { get; set; }  // nullable so we can omit for "High"
+        public double Min { get; set; }  // nullable so we can omit for "Low"
+        public double Max { get; set; }  // nullable so we can omit for "High"
     }
 }
