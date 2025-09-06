@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
 namespace IoTM.Models
@@ -10,8 +11,6 @@ namespace IoTM.Models
     }
 
     [Table("user_screenings")]
-    [Index(nameof(UserId), nameof(DueDate), Name = "idx_user_due_date")]
-    [Index(nameof(Status), nameof(DueDate), Name = "idx_status_due")]
     public class UserScreening
     {
         [Key]
@@ -20,18 +19,13 @@ namespace IoTM.Models
 
         [ForeignKey("User")]
         public Guid UserId { get; set; }
+
         public virtual User User { get; set; } = null!;
 
         [ForeignKey("Guideline")]
         public Guid GuidelineId { get; set; }
         public virtual ScreeningGuideline Guideline { get; set; } = null!;
-
-        [Required]
-        public DateOnly DueDate { get; set; }
-
         public ScreeningStatus Status { get; set; } = ScreeningStatus.pending;
-
-        public DateOnly? ScheduledDate { get; set; }
         public DateOnly? CompletedDate { get; set; }
 
         [StringLength(200)]
@@ -39,18 +33,26 @@ namespace IoTM.Models
 
         [StringLength(20)]
         public string? ProviderPhone { get; set; }
-
         public string? Results { get; set; }
         public string? Notes { get; set; }
-
         public DateOnly? NextDueDate { get; set; }
-
         public bool ReminderSent { get; set; } = false;
-
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation property
         public virtual ICollection<HealthAlert> HealthAlerts { get; set; } = new List<HealthAlert>();
+        public virtual ICollection<ScheduledScreening> ScheduledScreenings { get; set; } = new List<ScheduledScreening>();
+
+        [NotMapped]
+        public DateOnly? LastScheduledDate
+        {
+            get
+            {
+                return ScheduledScreenings
+                    .OrderByDescending(ss => ss.ScheduledDate)
+                    .FirstOrDefault()?.ScheduledDate;
+            }
+        }
     }
 }

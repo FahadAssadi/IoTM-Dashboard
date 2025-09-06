@@ -2,14 +2,12 @@
 
 import { useState } from "react"
 import { useForm } from "react-hook-form"
-import { ArrowRight, AlertCircle } from "lucide-react"
+import { Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import GoogleButton from "./google-button"
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from "next/navigation"
-import { toast } from "react-toastify"
-import { ErrorAlert, PasswordInput, ShowPasswordButton } from "@/components/form-components"
 
 type SignUpFormProps = {
     setTab: (tab: string) => void;
@@ -56,15 +54,19 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
         })
 
         if (error) {
+            TODO: // Determine what errors can occur and create appropriate responses
             setError("email", {
                 type: "manual",
-                message: "An error has occured: " + error.message
+                message: "This user has already been registered"
             })
+            console.error(error)
         } else {
-            toast.success("An authentication link has been sent to your email")
+            // console.log(data)
+            TODO: // Create a notification for succesful signin
             router.refresh() // refresh to update server-side session
-            switchToLoginForm();
+            router.push("/")
         }
+        switchToLoginForm();
     };
 
     
@@ -99,7 +101,13 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
                                     <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500" />
                                 )}
                             </div>
-                            <ErrorAlert error={errors.firstName}/>
+                            <div>
+                                {errors.firstName && 
+                                <p className="mt-1 text-sm text-red-700 flex items-center">
+                                    <AlertCircle className="h-3 w-3 mr-1" /> 
+                                    {errors.firstName.message}
+                                </p>}
+                            </div>
                         </div>
                         <div className="flex flex-col">
                             <label 
@@ -121,7 +129,14 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
                                     <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500" />
                                 )}
                             </div>
-                            <ErrorAlert error={errors.lastName}/>
+                            
+                            <div>
+                                {errors.lastName && 
+                                <p className="mt-1 text-sm text-red-700 flex items-center">
+                                    <AlertCircle className="h-3 w-3 mr-1" /> 
+                                    {errors.lastName.message}
+                                </p>}
+                            </div>
                         </div>
                     </div>
                     <div className="space-y-2">
@@ -145,7 +160,13 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
                                 <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500" />
                             )}
                         </div>
-                        <ErrorAlert error={errors.email}/>
+                        <div>
+                            {errors.email && 
+                            <p className="mt-1 text-sm text-red-700 flex items-center">
+                                <AlertCircle className="h-3 w-3 mr-1" /> 
+                                {errors.email.message}
+                            </p>}
+                        </div>
                     </div>
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
@@ -155,24 +176,48 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
                             >
                                 Password
                             </label>
-                            <button type="button" onClick={switchToForgotPasswordForm} className="text-sm text-teal-600 hover:text-teal-500">
+                            <button onClick={switchToForgotPasswordForm} className="text-sm text-teal-600 hover:text-teal-500">
                                 Forgot password?
                             </button>
                         </div>
                         <div className="relative">
-                            <PasswordInput 
+                            <Input
                                 id="password"
-                                showPassword={showPassword}
-                                passwordError={errors.password}
-                                registerFunc={register}
-                                name="password"
+                                type={showPassword ? "text" : "password"}
+                                {...register("password", { required: "Password is required", minLength: { value: 8, message: "Password must be at least 8 characters" } })}
+                                autoCapitalize="none"
+                                className={`${errors.password ? 'border-red-500 focus:border-red-500' : 'border-gray-300'}`}
+                                autoComplete="current-password"
+                                autoCorrect="off"
                             />
-                            <ShowPasswordButton
-                             setShowPassword={setShowPassword}
-                             showPassword={showPassword}
-                            />
+                            {errors.password && (
+                                <AlertCircle className="absolute right-9 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500" />
+                            )}
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? (
+                                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                ) : (
+                                <Eye className="h-4 w-4 text-muted-foreground" />
+                                )}
+                                <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                            </Button>
                         </div>
-                        <ErrorAlert error={errors.password} defaultMessage="Password must be at least 8 characters long"/>
+                        <div>
+                            {errors.password ? (
+                                <p className="mt-1 text-sm text-red-700 flex items-center">
+                                    <AlertCircle className="h-3 w-3 mr-1" /> 
+                                    {errors.password.message}
+                                </p>
+                                ) : (
+                                <span className="text-sm text-gray-500 pt-1">Password must be at least 8 characters long</span>
+                            )}
+                        </div>
                     </div>
                     <label className="flex items-center space-x-2 pt-3">
                         <Input
@@ -183,16 +228,20 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
                         />
                         { errors.terms ? ( 
                             <span className="text-sm text-red-500">I agree to the{' '}
-                            <button type="button" className="text-teal-800 hover:text-teal-600">Terms of Service</button> and{' '}
-                            <button type="button" className="text-teal-800 hover:text-teal-600"> Privacy Policy</button></span>
+                            <button className="text-teal-800 hover:text-teal-600">Terms of Service</button> and{' '}
+                            <button className="text-teal-800 hover:text-teal-600"> Privacy Policy</button></span>
                             ) : (
                             <span className="text-sm text-gray-700">I agree to the{' '}
-                            <button type="button" className="text-teal-800 hover:text-teal-600">Terms of Service</button> and{' '}
-                            <button type="button" className="text-teal-800 hover:text-teal-600"> Privacy Policy</button></span>
+                            <button className="text-teal-800 hover:text-teal-600">Terms of Service</button> and{' '}
+                            <button className="text-teal-800 hover:text-teal-600"> Privacy Policy</button></span>
                         )}
                     </label>
                     <div className="py-1">
-                        <ErrorAlert error={errors.terms} />
+                        {errors.terms && 
+                        <p className="mt-1 text-sm text-red-700 flex items-center">
+                                <AlertCircle className="h-3 w-3 mr-1" /> 
+                                You must accept the terms and conditions
+                            </p>}
                     </div>
                     <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700">
                         Sign Up <ArrowRight className="ml-2 h-4 w-4" />
@@ -209,7 +258,7 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
                 <GoogleButton/>
                 <div className="text-center text-sm">
                     Already have an account?{" "}
-                    <button type="button" onClick={switchToLoginForm} className="text-teal-600 hover:text-teal-500">
+                    <button onClick={switchToLoginForm} className="text-teal-600 hover:text-teal-500">
                     Log in
                     </button>
                 </div>

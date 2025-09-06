@@ -51,5 +51,16 @@ namespace IoTM.Models
         public virtual ICollection<HealthMetric> HealthMetrics { get; set; } = new List<HealthMetric>();
         public virtual ICollection<UserScreening> UserScreenings { get; set; } = new List<UserScreening>();
         public virtual ICollection<HealthAlert> HealthAlerts { get; set; } = new List<HealthAlert>();
+
+        public int? Age()
+        {
+            if (!DateOfBirth.HasValue)
+                return null;
+            var today = DateTime.Today;
+            var birthDate = DateOfBirth.Value.ToDateTime(TimeOnly.MinValue);
+            var age = today.Year - birthDate.Year;
+            if (birthDate > today.AddYears(-age)) age--;
+            return age;
+        }
     }
 }

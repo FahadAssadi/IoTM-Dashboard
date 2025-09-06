@@ -3,6 +3,7 @@ using System;
 using IoTM.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IoTM.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250827002715_UpdateScreeningGuidelineAndFrequencyRule")]
+    partial class UpdateScreeningGuidelineAndFrequencyRule
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -164,7 +167,7 @@ namespace IoTM.Migrations
                     b.Property<int?>("MinAge")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("PregnancyApplicable")
+                    b.Property<int>("PregnancyApplicable")
                         .HasColumnType("integer");
 
                     b.Property<Guid?>("ScreeningGuidelineGuidelineId")
@@ -433,34 +436,6 @@ namespace IoTM.Migrations
                     b.ToTable("NewsArticles");
                 });
 
-            modelBuilder.Entity("IoTM.Models.ScheduledScreening", b =>
-                {
-                    b.Property<Guid>("ScheduledScreeningId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateOnly>("ScheduledDate")
-                        .HasColumnType("date");
-
-                    b.Property<Guid>("ScreeningId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("ScheduledScreeningId");
-
-                    b.HasIndex("ScreeningId");
-
-                    b.ToTable("ScheduledScreenings");
-                });
-
             modelBuilder.Entity("IoTM.Models.ScreeningGuideline", b =>
                 {
                     b.Property<Guid>("GuidelineId")
@@ -504,9 +479,6 @@ namespace IoTM.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsRecurring")
-                        .HasColumnType("boolean");
-
                     b.Property<DateOnly>("LastUpdated")
                         .HasColumnType("date");
 
@@ -543,6 +515,9 @@ namespace IoTM.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<bool>("isRecurring")
+                        .HasColumnType("boolean");
+
                     b.HasKey("GuidelineId");
 
                     b.ToTable("screening_guidelines");
@@ -551,36 +526,62 @@ namespace IoTM.Migrations
             modelBuilder.Entity("IoTM.Models.User", b =>
                 {
                     b.Property<Guid>("UserId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("CountryCode")
+                        .IsRequired()
                         .HasMaxLength(3)
                         .HasColumnType("character varying(3)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateOnly?>("DateOfBirth")
+                    b.Property<bool>("DataSharingConsent")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateOnly>("DateOfBirth")
                         .HasColumnType("date");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<bool>("EmailVerified")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.Property<string>("PhoneNumber")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<bool>("PrivacyConsent")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Sex")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Timezone")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
@@ -635,9 +636,6 @@ namespace IoTM.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int?>("PregnancyStatus")
-                        .HasColumnType("integer");
-
                     b.Property<string>("PrimaryDoctorName")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -679,6 +677,9 @@ namespace IoTM.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date");
+
                     b.Property<Guid>("GuidelineId")
                         .HasColumnType("uuid");
 
@@ -702,6 +703,9 @@ namespace IoTM.Migrations
                     b.Property<string>("Results")
                         .HasColumnType("text");
 
+                    b.Property<DateOnly?>("ScheduledDate")
+                        .HasColumnType("date");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
@@ -716,7 +720,9 @@ namespace IoTM.Migrations
 
                     b.HasIndex("GuidelineId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex(new[] { "Status", "DueDate" }, "idx_status_due");
+
+                    b.HasIndex(new[] { "UserId", "DueDate" }, "idx_user_due_date");
 
                     b.ToTable("user_screenings");
                 });
@@ -823,17 +829,6 @@ namespace IoTM.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("IoTM.Models.ScheduledScreening", b =>
-                {
-                    b.HasOne("IoTM.Models.UserScreening", "UserScreening")
-                        .WithMany("ScheduledScreenings")
-                        .HasForeignKey("ScreeningId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("UserScreening");
-                });
-
             modelBuilder.Entity("IoTM.Models.UserMedicalProfile", b =>
                 {
                     b.HasOne("IoTM.Models.User", "User")
@@ -900,8 +895,6 @@ namespace IoTM.Migrations
             modelBuilder.Entity("IoTM.Models.UserScreening", b =>
                 {
                     b.Navigation("HealthAlerts");
-
-                    b.Navigation("ScheduledScreenings");
                 });
 #pragma warning restore 612, 618
         }

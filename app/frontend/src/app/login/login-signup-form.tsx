@@ -21,8 +21,8 @@ export default function LoginSignUpForm({ tabProp }: LoginSignUpFormProps) {
     <div className="mx-auto w-full max-w-md">
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-300">
-          <TabsTrigger value="login">Login</TabsTrigger>
-          <TabsTrigger value="signup" >Sign Up</TabsTrigger>
+          <TabsTrigger value="login" className="data-[state=active]:bg-white">Login</TabsTrigger>
+          <TabsTrigger value="signup" className="data-[state=active]:bg-white">Sign Up</TabsTrigger>
         </TabsList>
           <div className="rounded-lg border bg-white p-6 shadow-sm">
             <TabsContent value="login">

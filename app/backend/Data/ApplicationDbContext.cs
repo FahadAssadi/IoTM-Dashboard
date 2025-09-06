@@ -18,6 +18,7 @@ namespace IoTM.Data
         public DbSet<Allergy> Allergies { get; set; }
         public DbSet<ConnectedDevice> ConnectedDevices { get; set; }
         public DbSet<HealthMetric> HealthMetrics { get; set; }
+        public DbSet<ScheduledScreening> ScheduledScreenings { get; set; }
         public DbSet<ScreeningGuideline> ScreeningGuidelines { get; set; }
         public DbSet<UserScreening> UserScreenings { get; set; }
         public DbSet<HealthAlert> HealthAlerts { get; set; }
