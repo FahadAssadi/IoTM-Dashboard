@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using IoTM.Data; // This is the new namespace for your DbContext
 using DotNetEnv;
+using IoTM.Config;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,10 @@ if (string.IsNullOrEmpty(connectionString))
 // Register EF Core DbContext with Npgsql using Supabase connection string
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
+
+// Config stuff
+builder.Services.Configure<HealthThresholds>(
+    builder.Configuration.GetSection("HealthThresholds"));
 
 // Add services to the container.
 builder.Services.AddControllers();
