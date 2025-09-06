@@ -98,21 +98,41 @@ namespace IoTM.Services
             {
                 var allGuidelines = new List<ScreeningGuideline>();
 
-                // Get all .json files in the scrapers folder
-                var jsonFiles = Directory.GetFiles(scrapersFolderPath, "*.json");
+                // Load only top-level JSON files, skip overrides by name/pattern
+                var jsonFiles = Directory.GetFiles(scrapersFolderPath, "*.json", SearchOption.TopDirectoryOnly)
+                    .Where(f => !string.Equals(Path.GetFileName(f), "overrides.json", StringComparison.OrdinalIgnoreCase)
+                             && !f.EndsWith(".overrides.json", StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+                };
 
                 foreach (var jsonFile in jsonFiles)
                 {
-                    var json = await File.ReadAllTextAsync(jsonFile);
-                    var importedGuidelines = JsonSerializer.Deserialize<List<ScreeningGuideline>>(json, new JsonSerializerOptions
+                    try
                     {
-                        PropertyNameCaseInsensitive = true,
-                        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
-                    });
+                        var json = await File.ReadAllTextAsync(jsonFile);
 
-                    if (importedGuidelines != null)
+                        // Guard: only deserialize files whose root is a JSON array
+                        using var doc = JsonDocument.Parse(json);
+                        if (doc.RootElement.ValueKind != JsonValueKind.Array)
+                        {
+                            _logger.LogInformation("Skipping {File} because root JSON is not an array.", jsonFile);
+                            continue;
+                        }
+
+                        var importedGuidelines = JsonSerializer.Deserialize<List<ScreeningGuideline>>(json, jsonOptions);
+                        if (importedGuidelines != null)
+                        {
+                            allGuidelines.AddRange(importedGuidelines);
+                        }
+                    }
+                    catch (Exception ex)
                     {
-                        allGuidelines.AddRange(importedGuidelines);
+                        _logger.LogWarning(ex, "Skipping invalid guideline JSON file {File}", jsonFile);
                     }
                 }
 
@@ -131,7 +151,6 @@ namespace IoTM.Services
                         existing.Category = imported.Category;
                         existing.SexApplicable = imported.SexApplicable;
                         existing.PregnancyApplicable = imported.PregnancyApplicable;
-                        existing.FrequencyRules = imported.FrequencyRules;
                         existing.Description = imported.Description;
                         existing.Cost = imported.Cost;
                         existing.Delivery = imported.Delivery;
@@ -139,7 +158,8 @@ namespace IoTM.Services
                         existing.IsActive = imported.IsActive;
                         existing.LastUpdated = imported.LastUpdated;
                         existing.IsRecurring = imported.IsRecurring;
-                        // Update frequency rules
+
+                        // Replace frequency rules
                         existing.FrequencyRules.Clear();
                         foreach (var rule in imported.FrequencyRules)
                         {
