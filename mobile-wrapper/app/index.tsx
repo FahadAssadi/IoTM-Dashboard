@@ -111,6 +111,45 @@ export default function Screen() {
     }
   }, [postToWeb]);
 
+  const doExtractBaseline = useCallback(async () => {
+    try {
+      if (!(await Health.isAvailable())) return postToWeb("HC_UNAVAILABLE");
+      if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
+
+      await Health.extractBaselineAndStoreToken();
+      postToWeb("BASELINE_OK", { dirHint: "files/health_data" });
+    } catch (e) {
+      postToWeb("BASELINE_ERROR", { error: String(e) });
+    }
+  }, [postToWeb]);
+
+  const doScheduleSync = useCallback(
+    async (hours = 1) => {
+      try {
+        if (!(await Health.isAvailable())) return postToWeb("HC_UNAVAILABLE");
+        if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
+
+        await Health.schedulePeriodicHealthSync(hours);
+        postToWeb("SCHEDULED_OK", { hours });
+      } catch (e) {
+        postToWeb("HC_SYNC_ERROR", { error: String(e) });
+      }
+    },
+    [postToWeb]
+  );
+
+  const doRunSyncNow = useCallback(async () => {
+    try {
+      if (!(await Health.isAvailable())) return postToWeb("HC_UNAVAILABLE");
+      if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
+
+      await Health.runHealthSyncNow();
+      postToWeb("RUN_NOW_OK");
+    } catch (e) {
+      postToWeb("HC_SYNC_ERROR", { error: String(e) });
+    }
+  }, [postToWeb]);
+
   // Web -> RN bridge
   const onMessage = useCallback(async (e: WebViewMessageEvent) => {
     let msg: any;
@@ -138,11 +177,20 @@ export default function Screen() {
       case "WRITE_SPO2_FILE":
         await fetchSPO27d();
         break;
+      case "EXTRACT_BASELINE":
+        await doExtractBaseline();
+        break;
+      case "SCHEDULE_SYNC":
+        await doScheduleSync(msg.hours ?? 1);
+        break;
+      case "RUN_SYNC_NOW":
+        await doRunSyncNow();
+        break;
       default:
         // ignore unknown
         break;
     }
-  }, [doCheckAvailable, doCheckPerms, doRequestPerms, doWriteFile, fetchHrAgg7d, fetchBPA7d, fetchSPO27d]);
+  }, [doCheckAvailable, doCheckPerms, doRequestPerms, doWriteFile, fetchHrAgg7d, fetchBPA7d, fetchSPO27d, doExtractBaseline, doScheduleSync, doRunSyncNow]);
 
   return (
     <SafeAreaView style={styles.container}>

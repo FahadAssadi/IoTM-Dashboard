@@ -34,6 +34,15 @@ function EmbeddedToolbar() {
       case "SPO2_FILE_READY":
         alert(`Saved SPO2 JSON \nPath: ${msg.payload?.fileUri}\nSize: ${msg.payload?.size} bytes`);
         break;
+      case "BASELINE_OK":
+        alert("Baseline extracted + token stored.\nFiles under app external files /health_data");
+        break;
+      case "SCHEDULED_OK":
+        alert(`Periodic sync scheduled (every ${msg.payload?.hours ?? 1}h).`);
+        break;
+      case "RUN_NOW_OK":
+        alert("One-time sync enqueued. Check Logcat for WorkManager run.");
+        break;
       case "HC_AVAILABLE_ERROR":
       case "HC_PERMS_ERROR":
       case "HEALTH_DUMP_ERROR":
@@ -45,6 +54,10 @@ function EmbeddedToolbar() {
         break;
       case "SPO2_FILE_ERROR":
         alert(`SpO2 error: ${msg.payload?.error ?? "Unknown error"}`);
+        break;
+      case "BASELINE_ERROR":
+      case "HC_SYNC_ERROR":
+        alert(`Error: ${msg.payload?.error ?? "Unknown error"}`);
         break;
       default:
         break;
@@ -80,6 +93,9 @@ function EmbeddedToolbar() {
         <Button onClick={() => post("WRITE_HR_AGGREGATE_FILE")}>Save aggregate HR to File</Button>
         <Button onClick={() => post("WRITE_BP_FILE")}>Save BP to File</Button>
         <Button onClick={() => post("WRITE_SPO2_FILE")}>Save SPO2 to File</Button>
+        <Button onClick={() => post("EXTRACT_BASELINE")}>Extract baseline + token</Button>
+        <Button onClick={() => post("SCHEDULE_SYNC", { hours: 1 })}>Schedule hourly sync</Button>
+        <Button onClick={() => post("RUN_SYNC_NOW")}>Run sync now</Button>
       </div>
     </div>
   );

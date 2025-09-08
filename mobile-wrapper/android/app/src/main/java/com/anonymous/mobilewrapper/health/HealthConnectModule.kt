@@ -19,7 +19,7 @@ import kotlinx.coroutines.cancel
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.connect.client.request.AggregateRequest
-import java.time.Instant
+import androidx.health.connect.client.request.ChangesTokenRequest
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
@@ -35,6 +35,19 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
   override fun getName() = "HealthConnectModule"
 
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+  private companion object {
+    const val DATA_DIR = "health_data"
+    const val FILE_BP  = "blood_pressure_data.json"
+    const val FILE_HR  = "heart_rate_data.json"
+    const val FILE_SPO2 = "spo2_data.json"
+  }
+
+  private fun dataDir(): File {
+    val dir = reactContext.getExternalFilesDir(DATA_DIR) ?: reactContext.filesDir
+    if (!dir.exists()) dir.mkdirs()
+    return dir
+  }
 
   override fun onCatalystInstanceDestroy() {
     super.onCatalystInstanceDestroy()
@@ -361,6 +374,104 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
           promise.reject("SPO2_FILE_ERROR", t.message, t)
         }
       }
+    }
+  }
+
+  @ReactMethod
+  fun extractBaselineAndStoreToken(promise: Promise) {
+    scope.launch {
+      try {
+        val status = HealthConnectClient.getSdkStatus(reactContext)
+        if (status != HealthConnectClient.SDK_AVAILABLE) throw IllegalStateException("Health Connect not available")
+
+        val hc = HealthConnectClient.getOrCreate(reactContext)
+        val required = setOf(
+          HealthPermission.getReadPermission(HeartRateRecord::class),
+          HealthPermission.getReadPermission(BloodPressureRecord::class),
+          HealthPermission.getReadPermission(OxygenSaturationRecord::class),
+        )
+        val granted = hc.permissionController.getGrantedPermissions()
+        if (!granted.containsAll(required)) throw SecurityException("Permissions not granted")
+        
+        val existing = HcTokenStore.getToken(reactContext)
+        val stillValid = existing != null && !HcTokenStore.isTokenExpired(reactContext)
+
+        if (stillValid) {
+          // Ensure periodic job is running; this is idempotent (won't create duplicates)
+          HealthConnectSyncWorker.schedule(reactContext, 1L)
+
+          // (Optional) kick a single immediate sync so user sees updates right away
+          HealthConnectSyncWorker.enqueueOneTime(reactContext)
+
+          withContext(Dispatchers.Main) { promise.resolve(true) }
+          return@launch
+        }
+
+        // 1) get & store changes token immediately (cheap)
+        val token = hc.getChangesToken(
+          ChangesTokenRequest(setOf(
+            HeartRateRecord::class,
+            BloodPressureRecord::class,
+            OxygenSaturationRecord::class
+          ))
+        )
+        HcTokenStore.saveToken(reactContext, token)
+
+        // 2) define 7 day window and seed JSON with ONLY ONE page (pageSize=1000)
+        val now = ZonedDateTime.now(ZoneOffset.UTC).toInstant()
+        val start = now.minus(30, ChronoUnit.DAYS)
+        val tr = TimeRangeFilter.between(start, now)
+        HcTokenStore.setBaselineRange(reactContext, start.toString(), now.toString())
+
+        val outDir = reactContext.getExternalFilesDir("health_dumps") ?: reactContext.filesDir
+        if (!outDir.exists()) outDir.mkdirs()
+
+        val bpFile = File(outDir, "blood_pressure_data.json")
+        val hrFile = File(outDir, "heart_rate_data.json")
+        val spo2File = File(outDir, "spo2_data.json")
+
+        val bpNext = HealthJsonWriters.writeFirstPageBloodPressure(hc, tr, bpFile, pageSize = 1000)
+        val hrNext = HealthJsonWriters.writeFirstPageHeartRate(hc, tr, hrFile, pageSize = 1000)
+        val spNext = HealthJsonWriters.writeFirstPageSpo2(hc, tr, spo2File, pageSize = 1000)
+
+        HcTokenStore.setNextPage(reactContext, "bp", bpNext)
+        HcTokenStore.setNextPage(reactContext, "hr", hrNext)
+        HcTokenStore.setNextPage(reactContext, "spo2", spNext)
+
+        val inProgress = (bpNext != null) || (hrNext != null) || (spNext != null)
+        HcTokenStore.setBaselineInProgress(reactContext, inProgress)
+        HcTokenStore.saveLastSyncNow(reactContext)
+
+        // 3) start worker (periodic scheduled )
+        HealthConnectSyncWorker.schedule(reactContext, 1L)
+        HealthConnectSyncWorker.enqueueOneTime(reactContext)
+
+        withContext(Dispatchers.Main) { promise.resolve(true) }
+      } catch (e: Exception) {
+        HcTokenStore.clear(reactContext)
+        withContext(Dispatchers.Main) { promise.reject("BASELINE_ERROR", e.message, e) }
+      }
+    }
+  }
+
+  /** Schedules the periodic HC sync worker (default: hourly) */
+  @ReactMethod
+  fun schedulePeriodicHealthSync(hours: Int, promise: Promise) {
+    try {
+      HealthConnectSyncWorker.schedule(reactContext, hours.toLong().coerceAtLeast(1L))
+      promise.resolve(true)
+    } catch (t: Throwable) {
+      promise.reject("SCHEDULE_ERROR", t.message, t)
+    }
+  }
+
+  @ReactMethod
+  fun runHealthSyncNow(promise: Promise) {
+    try {
+      HealthConnectSyncWorker.enqueueOneTime(reactContext)
+      promise.resolve(true)
+    } catch (t: Throwable) {
+      promise.reject("RUN_NOW_ERROR", t.message, t)
     }
   }
 

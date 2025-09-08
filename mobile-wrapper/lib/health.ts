@@ -8,6 +8,9 @@ type HealthConnectNative = {
   writeLast7DaysHeartRateAggregateJson: () => Promise<string>;
   writeLast7DaysBloodPressureToFile: () => Promise<string>;
   writeLast7DaysOxygenSaturationToFile: () => Promise<string>;
+  extractBaselineAndStoreToken: () => Promise<boolean>;
+  schedulePeriodicHealthSync: (hours: number) => Promise<boolean>;
+  runHealthSyncNow: () => Promise<boolean>;
 };
 
 const native = NativeModules.HealthConnectModule as Partial<HealthConnectNative> | undefined;
@@ -47,6 +50,21 @@ export const Health: HealthConnectNative = {
     if (Platform.OS !== "android" || !native?.writeLast7DaysOxygenSaturationToFile)
       throw new Error("HealthConnectModule not available");
     return native.writeLast7DaysOxygenSaturationToFile();
+  },
+  async extractBaselineAndStoreToken() {
+    if (Platform.OS !== "android" || !native?.extractBaselineAndStoreToken)
+      throw new Error("HealthConnectModule not available");
+    return native.extractBaselineAndStoreToken();
+  },
+  async schedulePeriodicHealthSync(hours: number) {
+    if (Platform.OS !== "android" || !native?.schedulePeriodicHealthSync)
+      throw new Error("HealthConnectModule not available");
+    return native.schedulePeriodicHealthSync(hours);
+  },
+  async runHealthSyncNow() {
+    if (Platform.OS !== "android" || !native?.runHealthSyncNow)
+      throw new Error("HealthConnectModule not available");
+    return native.runHealthSyncNow();
   },
 
 };
