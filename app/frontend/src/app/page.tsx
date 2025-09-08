@@ -1,13 +1,15 @@
-"use client"
-
-import { Calendar, Clock, Heart, ArrowRight } from "lucide-react"
+import {
+  Calendar,
+  Clock,
+  Heart,
+  ArrowRight,
+} from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { TimelineItem } from "./screenings/health-screenings-timeline"
 import timelineData from "./screenings/timeline-data.json"
 import { devices as importedDevices, Device } from "./devices/device-data"
-import { useRouter } from "next/navigation"
 
 const timelineItems: TimelineItem[] = timelineData as TimelineItem[]
 
@@ -83,16 +85,10 @@ function DeviceCard({ device }: { device: Device }) {
 
 export default function DashboardPage() {
 
-  const router = useRouter();
-
   const deviceList: Device[] = importedDevices.map(device => ({
     ...device,
     status: device.status === "active" ? "active" : "inactive"
   }))
-
-  const redirect = ( page: string ) => {
-    router.push(page);
-  }
 
   return (
     <main className="flex flex-col gap-4 p-4 md:gap-8 md:p-6 w-full bg-slate-50">
@@ -143,12 +139,9 @@ export default function DashboardPage() {
           ))}
         </CardContent>
         <CardFooter>
-          <Button variant="outline"
-            className="w-full border-teal-700 text-teal-800 hover:bg-teal-50"
-            onClick={() => redirect("screenings")}
-            >
+          <Button variant="outline" className="w-full border-teal-700 text-teal-800 hover:bg-teal-50">
             View All Screenings
-            <ArrowRight className="ml-2 h-4 w-4"/>
+            <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </CardFooter>
       </Card>
@@ -167,10 +160,7 @@ export default function DashboardPage() {
           ))}
         </CardContent>
         <CardFooter>
-          <Button variant="outline" 
-            className="w-full border-teal-700 text-teal-800 hover:bg-teal-50"
-            onClick={() => redirect("devices")}
-            >
+          <Button variant="outline" className="w-full border-teal-700 text-teal-800 hover:bg-teal-50">
             Connect New Device
           </Button>
         </CardFooter>
