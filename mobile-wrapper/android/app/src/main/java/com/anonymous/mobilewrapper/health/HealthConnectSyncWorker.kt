@@ -86,7 +86,7 @@ class HealthConnectSyncWorker(
         HcTokenStore.saveToken(applicationContext, newToken)
       }
 
-      // advance token to now (cheap) without inspecting pages deeply
+      // advance token to now without inspecting pages deeply
       var token = HcTokenStore.getToken(applicationContext)!!
       var page = hc.getChanges(token)
       while (true) {
@@ -96,9 +96,9 @@ class HealthConnectSyncWorker(
         page = hc.getChanges(token)
       }
 
-      // OPTIONAL: refresh the last-24h JSONs with a single page each (1000 cap)
+      // refresh the last-30d JSONs with a single page each (1000 cap)
       val now = ZonedDateTime.now(ZoneOffset.UTC).toInstant()
-      val start = now.minus(1, ChronoUnit.DAYS)
+      val start = now.minus(30, ChronoUnit.DAYS)
       val tr24 = TimeRangeFilter.between(start, now)
 
       val bpFile = File(outDir, "blood_pressure_data.json")
@@ -113,7 +113,7 @@ class HealthConnectSyncWorker(
       HcTokenStore.saveLastSyncNow(applicationContext)
       return Result.success()
     } catch (e: Exception) {
-      // backoff and try later (covers transient rate limiting)
+      // backoff and try later to covers transient rate limiting
       return Result.retry()
     }
   }

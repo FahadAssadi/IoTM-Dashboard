@@ -12,7 +12,6 @@ import java.io.File
 
 object HealthJsonWriters {
 
-  // --- utilities ---
   private fun loadOrCreate(rangeStart: String, rangeEnd: String, file: File): JSONObject {
     val obj = if (file.exists()) JSONObject(file.readText()) else JSONObject()
     if (!obj.has("range")) {
@@ -25,7 +24,7 @@ object HealthJsonWriters {
     file.writeText(json.toString(), Charsets.UTF_8)
   }
 
-  // --- FIRST PAGE (seed, single call) ---
+  // FIRST PAGE (seed, single call)
   suspend fun writeFirstPageHeartRate(
     hc: HealthConnectClient,
     tr: TimeRangeFilter,
@@ -111,7 +110,7 @@ object HealthJsonWriters {
     return resp.pageToken
   }
 
-  // --- APPEND NEXT PAGE (one call each run) ---
+  // APPEND NEXT PAGE (one call each run)
   suspend fun appendNextPageHeartRate(
     hc: HealthConnectClient,
     tr: TimeRangeFilter,

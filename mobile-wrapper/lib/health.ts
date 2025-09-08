@@ -4,12 +4,7 @@ type HealthConnectNative = {
   isAvailable: () => Promise<boolean>;
   hasRequiredPermissions: () => Promise<boolean>;
   requestPermissions: () => Promise<void>;
-  writeLast7DaysHeartRateToFile: () => Promise<string>;
-  writeLast7DaysHeartRateAggregateJson: () => Promise<string>;
-  writeLast7DaysBloodPressureToFile: () => Promise<string>;
-  writeLast7DaysOxygenSaturationToFile: () => Promise<string>;
   extractBaselineAndStoreToken: () => Promise<boolean>;
-  schedulePeriodicHealthSync: (hours: number) => Promise<boolean>;
   runHealthSyncNow: () => Promise<boolean>;
 };
 
@@ -31,35 +26,10 @@ export const Health: HealthConnectNative = {
     }
     return native.requestPermissions();
   },
-  async writeLast7DaysHeartRateToFile() {
-    if (Platform.OS !== "android" || !native?.writeLast7DaysHeartRateToFile) throw new Error("HealthConnectModule not available");
-    return native.writeLast7DaysHeartRateToFile();
-  },
-  async writeLast7DaysHeartRateAggregateJson() {
-    if (Platform.OS !== "android" || !native?.writeLast7DaysHeartRateAggregateJson) {
-      throw new Error("HealthConnectModule not available");
-    }
-    return native.writeLast7DaysHeartRateAggregateJson();
-  },
-  async writeLast7DaysBloodPressureToFile() {
-    if (Platform.OS !== "android" || !native?.writeLast7DaysBloodPressureToFile)
-      throw new Error("HealthConnectModule not available");
-    return native.writeLast7DaysBloodPressureToFile();
-  },
-  async writeLast7DaysOxygenSaturationToFile() {
-    if (Platform.OS !== "android" || !native?.writeLast7DaysOxygenSaturationToFile)
-      throw new Error("HealthConnectModule not available");
-    return native.writeLast7DaysOxygenSaturationToFile();
-  },
   async extractBaselineAndStoreToken() {
     if (Platform.OS !== "android" || !native?.extractBaselineAndStoreToken)
       throw new Error("HealthConnectModule not available");
     return native.extractBaselineAndStoreToken();
-  },
-  async schedulePeriodicHealthSync(hours: number) {
-    if (Platform.OS !== "android" || !native?.schedulePeriodicHealthSync)
-      throw new Error("HealthConnectModule not available");
-    return native.schedulePeriodicHealthSync(hours);
   },
   async runHealthSyncNow() {
     if (Platform.OS !== "android" || !native?.runHealthSyncNow)

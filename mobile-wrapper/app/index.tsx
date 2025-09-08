@@ -14,103 +14,6 @@ export default function Screen() {
   }, []);
 
   // Native actions exposed to the web
-  const doCheckAvailable = useCallback(async () => {
-    try {
-      const ok = await Health.isAvailable();
-      postToWeb("HC_AVAILABLE", { ok });
-      return ok;
-    } catch (e) {
-      postToWeb("HC_AVAILABLE_ERROR", { error: String(e) });
-      throw e;
-    }
-  }, [postToWeb]);
-
-  const doCheckPerms = useCallback(async () => {
-    try {
-      const has = await Health.hasRequiredPermissions();
-      postToWeb("HC_HAS_PERMS", { has });
-      return has;
-    } catch (e) {
-      postToWeb("HC_HAS_PERMS_ERROR", { error: String(e) });
-      throw e;
-    }
-  }, [postToWeb]);
-
-  const doRequestPerms = useCallback(async () => {
-    try {
-      await Health.requestPermissions();
-      postToWeb("HC_PERMS_GRANTED");
-      return true;
-    } catch (e) {
-      postToWeb("HC_PERMS_ERROR", { error: String(e) });
-      throw e;
-    }
-  }, [postToWeb]);
-
-  const doWriteFile = useCallback(async () => {
-    try {
-      if (!(await Health.isAvailable())) {
-        postToWeb("HC_UNAVAILABLE");
-        return;
-      }
-      if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
-
-      const fileUri = await Health.writeLast7DaysHeartRateToFile(); // returns "file://..."
-      const info = await FileSystem.getInfoAsync(fileUri);
-      postToWeb("HR_FILE_READY", { fileUri, size: info.exists ? info.size ?? 0 : 0 });
-    } catch (e) {
-      postToWeb("HR_FILE_ERROR", { error: String(e) });
-    }
-  }, [postToWeb]);
-
-  const fetchHrAgg7d = useCallback(async () => {
-    try {
-      if (!(await Health.isAvailable())) {
-        postToWeb("HC_UNAVAILABLE");
-        return;
-      }
-      if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
-
-      const fileUri = await Health.writeLast7DaysHeartRateAggregateJson(); // returns "file://..."
-      const info = await FileSystem.getInfoAsync(fileUri);
-      postToWeb("HR_FILE_READY", { fileUri, size: info.exists ? info.size ?? 0 : 0 });
-    } catch (e) {
-      postToWeb("HR_FILE_ERROR", { error: String(e) });
-    }
-  }, [postToWeb]);
-
-  const fetchBPA7d = useCallback(async () => {
-    try {
-      if (!(await Health.isAvailable())) {
-        postToWeb("HC_UNAVAILABLE");
-        return;
-      }
-      if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
-
-      const fileUri = await Health.writeLast7DaysBloodPressureToFile(); // returns "file://..."
-      const info = await FileSystem.getInfoAsync(fileUri);
-      postToWeb("BP_FILE_READY", { fileUri, size: info.exists ? info.size ?? 0 : 0 });
-    } catch (e) {
-      postToWeb("BP_FILE_ERROR", { error: String(e) });
-    }
-  }, [postToWeb]);
-
-  const fetchSPO27d = useCallback(async () => {
-    try {
-      if (!(await Health.isAvailable())) {
-        postToWeb("HC_UNAVAILABLE");
-        return;
-      }
-      if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
-
-      const fileUri = await Health.writeLast7DaysOxygenSaturationToFile(); // returns "file://..."
-      const info = await FileSystem.getInfoAsync(fileUri);
-      postToWeb("SPO2_FILE_READY", { fileUri, size: info.exists ? info.size ?? 0 : 0 });
-    } catch (e) {
-      postToWeb("SPO2_FILE_ERROR", { error: String(e) });
-    }
-  }, [postToWeb]);
-
   const doExtractBaseline = useCallback(async () => {
     try {
       if (!(await Health.isAvailable())) return postToWeb("HC_UNAVAILABLE");
@@ -123,20 +26,6 @@ export default function Screen() {
     }
   }, [postToWeb]);
 
-  const doScheduleSync = useCallback(
-    async (hours = 1) => {
-      try {
-        if (!(await Health.isAvailable())) return postToWeb("HC_UNAVAILABLE");
-        if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
-
-        await Health.schedulePeriodicHealthSync(hours);
-        postToWeb("SCHEDULED_OK", { hours });
-      } catch (e) {
-        postToWeb("HC_SYNC_ERROR", { error: String(e) });
-      }
-    },
-    [postToWeb]
-  );
 
   const doRunSyncNow = useCallback(async () => {
     try {
@@ -156,32 +45,8 @@ export default function Screen() {
     try { msg = JSON.parse(e.nativeEvent.data); } catch { return; }
 
     switch (msg.type) {
-      case "CHECK_AVAILABLE":
-        await doCheckAvailable();
-        break;
-      case "CHECK_PERMISSIONS":
-        await doCheckPerms();
-        break;
-      case "REQUEST_PERMISSIONS":
-        await doRequestPerms();
-        break;
-      case "WRITE_HR_FILE":
-        await doWriteFile();
-        break;
-      case "WRITE_HR_AGGREGATE_FILE":
-        await fetchHrAgg7d();
-        break;
-      case "WRITE_BP_FILE":
-        await fetchBPA7d();
-        break;
-      case "WRITE_SPO2_FILE":
-        await fetchSPO27d();
-        break;
       case "EXTRACT_BASELINE":
         await doExtractBaseline();
-        break;
-      case "SCHEDULE_SYNC":
-        await doScheduleSync(msg.hours ?? 1);
         break;
       case "RUN_SYNC_NOW":
         await doRunSyncNow();
@@ -190,7 +55,7 @@ export default function Screen() {
         // ignore unknown
         break;
     }
-  }, [doCheckAvailable, doCheckPerms, doRequestPerms, doWriteFile, fetchHrAgg7d, fetchBPA7d, fetchSPO27d, doExtractBaseline, doScheduleSync, doRunSyncNow]);
+  }, [doExtractBaseline, doRunSyncNow]);
 
   return (
     <SafeAreaView style={styles.container}>

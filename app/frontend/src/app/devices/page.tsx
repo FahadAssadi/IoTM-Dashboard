@@ -12,49 +12,18 @@ function EmbeddedToolbar() {
   const isEmbedded = useIsEmbeddedRN();
   const { post } = useRNBridge((msg) => {
     switch (msg.type) {
-      case "HC_AVAILABLE":
-        if (msg.payload?.ok) alert("Health Connect is available ");
-        else alert("Health Connect is not available ");
-        break;
-      case "HC_HAS_PERMS":
-        alert(`Permissions: ${msg.payload?.has ? "granted " : "not granted "}`);
-        break;
-      case "HC_PERMS_GRANTED":
-        alert("Permissions granted ");
-        break;
       case "HC_UNAVAILABLE":
         alert("Health Connect is not available on this device ");
         break;
-      case "HR_FILE_READY":
-        alert(`Saved heart rate JSON \nPath: ${msg.payload?.fileUri}\nSize: ${msg.payload?.size} bytes`);
-        break;
-      case "BP_FILE_READY":
-        alert(`Saved blood pressure JSON \nPath: ${msg.payload?.fileUri}\nSize: ${msg.payload?.size} bytes`);
-        break;
-      case "SPO2_FILE_READY":
-        alert(`Saved SPO2 JSON \nPath: ${msg.payload?.fileUri}\nSize: ${msg.payload?.size} bytes`);
-        break;
       case "BASELINE_OK":
-        alert("Baseline extracted + token stored.\nFiles under app external files /health_data");
-        break;
-      case "SCHEDULED_OK":
-        alert(`Periodic sync scheduled (every ${msg.payload?.hours ?? 1}h).`);
+        alert("Health Connect linked");
         break;
       case "RUN_NOW_OK":
-        alert("One-time sync enqueued. Check Logcat for WorkManager run.");
+        alert("Health Connect data synced successfully");
         break;
       case "HC_AVAILABLE_ERROR":
       case "HC_PERMS_ERROR":
       case "HEALTH_DUMP_ERROR":
-      case "HR_FILE_ERROR":
-        alert(`Error: ${msg.payload?.error ?? "Unknown error"}`);
-        break;
-      case "BP_FILE_ERROR":
-        alert(`BP error: ${msg.payload?.error ?? "Unknown error"}`);
-        break;
-      case "SPO2_FILE_ERROR":
-        alert(`SpO2 error: ${msg.payload?.error ?? "Unknown error"}`);
-        break;
       case "BASELINE_ERROR":
       case "HC_SYNC_ERROR":
         alert(`Error: ${msg.payload?.error ?? "Unknown error"}`);
@@ -86,16 +55,8 @@ function EmbeddedToolbar() {
         Android actions
       </div>
       <div className="flex flex-wrap gap-8">
-        <Button onClick={() => post("CHECK_AVAILABLE")}>Check Available</Button>
-        <Button onClick={() => post("CHECK_PERMISSIONS")}>Has Perms?</Button>
-        <Button onClick={() => post("REQUEST_PERMISSIONS")}>Request Perms</Button>
-        <Button onClick={() => post("WRITE_HR_FILE")}>Save HR to File</Button>
-        <Button onClick={() => post("WRITE_HR_AGGREGATE_FILE")}>Save aggregate HR to File</Button>
-        <Button onClick={() => post("WRITE_BP_FILE")}>Save BP to File</Button>
-        <Button onClick={() => post("WRITE_SPO2_FILE")}>Save SPO2 to File</Button>
-        <Button onClick={() => post("EXTRACT_BASELINE")}>Extract baseline + token</Button>
-        <Button onClick={() => post("SCHEDULE_SYNC", { hours: 1 })}>Schedule hourly sync</Button>
-        <Button onClick={() => post("RUN_SYNC_NOW")}>Run sync now</Button>
+        <Button onClick={() => post("EXTRACT_BASELINE")}>Link Health Connect</Button>
+        <Button onClick={() => post("RUN_SYNC_NOW")}>Sync Data</Button>
       </div>
     </div>
   );
