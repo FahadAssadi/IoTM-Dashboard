@@ -4,8 +4,10 @@ type HealthConnectNative = {
   isAvailable: () => Promise<boolean>;
   hasRequiredPermissions: () => Promise<boolean>;
   requestPermissions: () => Promise<void>;
-  getLast7DaysHeartRateJson: () => Promise<string>;
   writeLast7DaysHeartRateToFile: () => Promise<string>;
+  writeLast7DaysHeartRateAggregateJson: () => Promise<string>;
+  writeLast7DaysBloodPressureToFile: () => Promise<string>;
+  writeLast7DaysOxygenSaturationToFile: () => Promise<string>;
 };
 
 const native = NativeModules.HealthConnectModule as Partial<HealthConnectNative> | undefined;
@@ -26,15 +28,25 @@ export const Health: HealthConnectNative = {
     }
     return native.requestPermissions();
   },
-  async getLast7DaysHeartRateJson() {
-    if (Platform.OS !== "android" || !native?.getLast7DaysHeartRateJson) {
-      throw new Error("HealthConnectModule not available");
-    }
-    return native.getLast7DaysHeartRateJson();
-  },
   async writeLast7DaysHeartRateToFile() {
     if (Platform.OS !== "android" || !native?.writeLast7DaysHeartRateToFile) throw new Error("HealthConnectModule not available");
     return native.writeLast7DaysHeartRateToFile();
+  },
+  async writeLast7DaysHeartRateAggregateJson() {
+    if (Platform.OS !== "android" || !native?.writeLast7DaysHeartRateAggregateJson) {
+      throw new Error("HealthConnectModule not available");
+    }
+    return native.writeLast7DaysHeartRateAggregateJson();
+  },
+  async writeLast7DaysBloodPressureToFile() {
+    if (Platform.OS !== "android" || !native?.writeLast7DaysBloodPressureToFile)
+      throw new Error("HealthConnectModule not available");
+    return native.writeLast7DaysBloodPressureToFile();
+  },
+  async writeLast7DaysOxygenSaturationToFile() {
+    if (Platform.OS !== "android" || !native?.writeLast7DaysOxygenSaturationToFile)
+      throw new Error("HealthConnectModule not available");
+    return native.writeLast7DaysOxygenSaturationToFile();
   },
 
 };

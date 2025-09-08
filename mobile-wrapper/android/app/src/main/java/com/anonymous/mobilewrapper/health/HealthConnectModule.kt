@@ -8,7 +8,8 @@ import com.facebook.react.bridge.UiThreadUtil
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.HeartRateRecord
-import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.records.BloodPressureRecord
+import androidx.health.connect.client.records.OxygenSaturationRecord
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +18,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.cancel
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
+import androidx.health.connect.client.request.AggregateRequest
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -40,8 +42,9 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
   }
 
   private fun requiredPermissions(): Set<String> = setOf(
-    HealthPermission.getReadPermission(StepsRecord::class),
-    HealthPermission.getReadPermission(HeartRateRecord::class)
+    HealthPermission.getReadPermission(HeartRateRecord::class),
+    HealthPermission.getReadPermission(BloodPressureRecord::class),
+    HealthPermission.getReadPermission(OxygenSaturationRecord::class)
   )
 
   @ReactMethod
@@ -114,75 +117,6 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
     activity.startActivity(intent)
   }
 
-  @ReactMethod
-  fun getLast7DaysHeartRateJson(promise: Promise) {
-    scope.launch {
-      try {
-        // availability
-        val status = HealthConnectClient.getSdkStatus(reactContext)
-        if (status != HealthConnectClient.SDK_AVAILABLE) {
-          throw IllegalStateException("Health Connect not available")
-        }
-        // permissions
-        val granted = HealthConnectClient.getOrCreate(reactContext).permissionController.getGrantedPermissions()
-        if (!granted.containsAll(requiredPermissions())) {
-          throw SecurityException("Required Health Connect permissions not granted")
-        }
-
-        // build last-7-days UTC window
-        val now = ZonedDateTime.now(ZoneOffset.UTC)
-        val start = now.minusDays(7).truncatedTo(ChronoUnit.DAYS)
-        val tr = TimeRangeFilter.between(start.toInstant(), now.toInstant())
-        val MAX_POINTS = 1000
-
-        // HR records
-        val samplePreview = mutableListOf<Map<String, Any>>()  // raw [{time,bpm}, ...]
-        var totalPoints = 0
-        var pageToken: String? = null
-        do {
-          val resp = HealthConnectClient.getOrCreate(reactContext).readRecords(
-            ReadRecordsRequest(
-              recordType = HeartRateRecord::class,
-              timeRangeFilter = tr,
-              pageSize = 200,
-              pageToken = pageToken
-            )
-          )
-          resp.records.forEach { record ->
-            record.samples.forEach { s ->
-              totalPoints += 1
-              if (samplePreview.size < MAX_POINTS){
-                samplePreview += mapOf(
-                "time" to s.time.toString(),
-                "bpm"  to s.beatsPerMinute
-                )
-              }
-              
-            }
-          }
-          pageToken = resp.pageToken
-        } while (pageToken != null)
-
-        // Simple JSON payload with raw points
-        val json = JSONObject(
-          mapOf(
-            "range" to mapOf(
-              "start" to start.toInstant().toString(),
-              "end"   to now.toInstant().toString()
-            ),
-            "totalPoints" to totalPoints,
-            "returnedPoints" to samplePreview.size,
-            "points" to samplePreview
-          )
-        ).toString()
-        
-        withContext(Dispatchers.Main) { promise.resolve(json) }
-      } catch (e: Exception) {
-        withContext(Dispatchers.Main) { promise.reject("HR_7D_ERROR", e.message, e) }
-      }
-    }
-  }
-
   /** Stream full raw points to a file; return file:// URI */
   @ReactMethod
   fun writeLast7DaysHeartRateToFile(promise: Promise) {
@@ -243,5 +177,192 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
       }
     }
   }
+
+  @ReactMethod
+  fun writeLast7DaysHeartRateAggregateJson(promise: Promise) {
+      scope.launch {
+      try {
+        val status = HealthConnectClient.getSdkStatus(reactContext)
+        if (status != HealthConnectClient.SDK_AVAILABLE) throw IllegalStateException("Health Connect not available")
+
+        val hc = HealthConnectClient.getOrCreate(reactContext)
+        val granted = hc.permissionController.getGrantedPermissions()
+        val needed = setOf(HealthPermission.getReadPermission(HeartRateRecord::class))
+        if (!granted.containsAll(needed)) throw SecurityException("Heart rate permission not granted")
+
+        val now = ZonedDateTime.now(ZoneOffset.UTC)
+        val start = now.minusDays(7).truncatedTo(ChronoUnit.DAYS)
+        val tr = TimeRangeFilter.between(start.toInstant(), now.toInstant())
+
+        val result = hc.aggregate(
+          androidx.health.connect.client.request.AggregateRequest(
+            metrics = setOf(
+              HeartRateRecord.BPM_AVG,
+              HeartRateRecord.BPM_MIN,
+              HeartRateRecord.BPM_MAX,
+              HeartRateRecord.MEASUREMENTS_COUNT
+            ),
+            timeRangeFilter = tr
+          )
+        )
+
+        val json = org.json.JSONObject(
+          mapOf(
+            "range" to mapOf("start" to start.toInstant().toString(), "end" to now.toInstant().toString()),
+            "avgBpm" to (result[HeartRateRecord.BPM_AVG] ?: org.json.JSONObject.NULL),
+            "minBpm" to (result[HeartRateRecord.BPM_MIN] ?: org.json.JSONObject.NULL),
+            "maxBpm" to (result[HeartRateRecord.BPM_MAX] ?: org.json.JSONObject.NULL),
+            "count"  to (result[HeartRateRecord.MEASUREMENTS_COUNT] ?: 0L)
+          )
+        ).toString()
+
+        val outDir = reactContext.getExternalFilesDir("health_dumps") ?: reactContext.filesDir
+        if (!outDir.exists()) outDir.mkdirs()
+        val outFile = java.io.File(outDir, "hr_agg_7d_${System.currentTimeMillis()}.json")
+        outFile.writeText(json, Charsets.UTF_8)
+
+        val uri = "file://${outFile.absolutePath}"
+        withContext(Dispatchers.Main) { promise.resolve(uri) }
+      } catch (t: Throwable) {
+        withContext(Dispatchers.Main) { promise.reject("HR_AGG_FILE_ERROR", t.message, t) }
+      }
+    }
+  }
+
+  @ReactMethod
+  fun writeLast7DaysBloodPressureToFile(promise: Promise) {
+    scope.launch {
+      try {
+        // Availability + permission check
+        val status = HealthConnectClient.getSdkStatus(reactContext)
+        if (status != HealthConnectClient.SDK_AVAILABLE) {
+          throw IllegalStateException("Health Connect not available")
+        }
+        val hc = HealthConnectClient.getOrCreate(reactContext)
+        val needed = setOf(HealthPermission.getReadPermission(BloodPressureRecord::class))
+        val granted = hc.permissionController.getGrantedPermissions()
+        if (!granted.containsAll(needed)) {
+          throw SecurityException("Blood pressure permission not granted")
+        }
+
+        // Last 7 days window (UTC)
+        val now = ZonedDateTime.now(ZoneOffset.UTC)
+        val start = now.minusDays(7).truncatedTo(ChronoUnit.DAYS)
+        val tr = TimeRangeFilter.between(start.toInstant(), now.toInstant())
+
+        // Prepare output file (external app files dir; no runtime storage permissions required)
+        val outDir = reactContext.getExternalFilesDir("health_dumps") ?: reactContext.filesDir
+        if (!outDir.exists()) outDir.mkdirs()
+        val outFile = File(outDir, "blood_pressure_7d_${System.currentTimeMillis()}.json")
+
+        // Stream JSON to file to avoid large memory usage
+        val seen = HashSet<String>()
+        BufferedWriter(OutputStreamWriter(outFile.outputStream(), StandardCharsets.UTF_8)).use { w ->
+          w.write("{\"range\":{\"start\":\"$start\",\"end\":\"$now\"},\"points\":[")
+          var first = true
+          var token: String? = null
+          do {
+            val resp = hc.readRecords(
+              ReadRecordsRequest(
+                recordType = BloodPressureRecord::class,
+                timeRangeFilter = tr,
+                pageSize = 200,
+                pageToken = token
+              )
+            )
+            resp.records.forEach { r ->
+              val id = r.metadata.id ?: "${r.time}-${r.metadata.dataOrigin.packageName}"
+              if (!seen.add(id)) return@forEach
+              val sys = r.systolic.inMillimetersOfMercury
+              val dia = r.diastolic.inMillimetersOfMercury
+              val origin = r.metadata.dataOrigin.packageName
+              if (!first) w.write(",") else first = false
+              w.write("{\"id\":\"$id\",\"time\":\"${r.time}\",\"sys\":$sys,\"dia\":$dia,\"origin\":\"$origin\"}")
+            }
+            token = resp.pageToken
+            w.flush()
+          } while (token != null)
+          w.write("]}")
+        }
+
+        val uri = "file://${outFile.absolutePath}"
+        withContext(Dispatchers.Main) {
+          promise.resolve(uri)
+        }
+      } catch (t: Throwable) {
+        withContext(Dispatchers.Main) {
+          promise.reject("BP_FILE_ERROR", t.message, t)
+        }
+      }
+    }
+  }
+
+  @ReactMethod
+  fun writeLast7DaysOxygenSaturationToFile(promise: Promise) {
+    scope.launch {
+      try {
+        val status = HealthConnectClient.getSdkStatus(reactContext)
+        if (status != HealthConnectClient.SDK_AVAILABLE) {
+          throw IllegalStateException("Health Connect not available")
+        }
+        val hc = HealthConnectClient.getOrCreate(reactContext)
+        val needed = setOf(HealthPermission.getReadPermission(OxygenSaturationRecord::class))
+        val granted = hc.permissionController.getGrantedPermissions()
+        if (!granted.containsAll(needed)) {
+          throw SecurityException("Oxygen saturation permission not granted")
+        }
+
+        val now = ZonedDateTime.now(ZoneOffset.UTC)
+        val start = now.minusDays(7).truncatedTo(ChronoUnit.DAYS)
+        val tr = TimeRangeFilter.between(start.toInstant(), now.toInstant())
+
+        val outDir = reactContext.getExternalFilesDir("health_dumps") ?: reactContext.filesDir
+        if (!outDir.exists()) outDir.mkdirs()
+        val outFile = File(outDir, "spo2_7d_${System.currentTimeMillis()}.json")
+
+        BufferedWriter(OutputStreamWriter(outFile.outputStream(), StandardCharsets.UTF_8)).use { w ->
+          w.write("{\"range\":{")
+          w.write("\"start\":\"${start.toInstant()}\",\"end\":\"${now.toInstant()}\"},")
+          w.write("\"points\":[")
+
+          var first = true
+          var pageToken: String? = null
+          do {
+            val resp = hc.readRecords(
+              ReadRecordsRequest(
+                recordType = OxygenSaturationRecord::class,
+                timeRangeFilter = tr,
+                pageSize = 200,
+                pageToken = pageToken
+              )
+            )
+
+            resp.records.forEach { r ->
+              val pct = r.percentage.value            // value in 0..100 (percent)
+              val timeIso = r.time.toString()
+
+              if (!first) w.write(",") else first = false
+              w.write("{\"time\":\"$timeIso\",\"percentage\":$pct}")
+            }
+
+            pageToken = resp.pageToken
+            w.flush()
+          } while (pageToken != null)
+
+          w.write("]}")
+        }
+
+        val uri = "file://${outFile.absolutePath}"
+        withContext(Dispatchers.Main) {
+          promise.resolve(uri)
+        }
+      } catch (t: Throwable) {
+        withContext(Dispatchers.Main) {
+          promise.reject("SPO2_FILE_ERROR", t.message, t)
+        }
+      }
+    }
+  }
+
 
 }

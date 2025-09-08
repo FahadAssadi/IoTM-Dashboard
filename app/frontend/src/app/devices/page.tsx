@@ -25,17 +25,26 @@ function EmbeddedToolbar() {
       case "HC_UNAVAILABLE":
         alert("Health Connect is not available on this device ");
         break;
-      case "HR_7D_READY":
-        alert("Fetched heart rate records for last 7 days ");
-        break;
       case "HR_FILE_READY":
         alert(`Saved heart rate JSON \nPath: ${msg.payload?.fileUri}\nSize: ${msg.payload?.size} bytes`);
+        break;
+      case "BP_FILE_READY":
+        alert(`Saved blood pressure JSON \nPath: ${msg.payload?.fileUri}\nSize: ${msg.payload?.size} bytes`);
+        break;
+      case "SPO2_FILE_READY":
+        alert(`Saved SPO2 JSON \nPath: ${msg.payload?.fileUri}\nSize: ${msg.payload?.size} bytes`);
         break;
       case "HC_AVAILABLE_ERROR":
       case "HC_PERMS_ERROR":
       case "HEALTH_DUMP_ERROR":
       case "HR_FILE_ERROR":
         alert(`Error: ${msg.payload?.error ?? "Unknown error"}`);
+        break;
+      case "BP_FILE_ERROR":
+        alert(`BP error: ${msg.payload?.error ?? "Unknown error"}`);
+        break;
+      case "SPO2_FILE_ERROR":
+        alert(`SpO2 error: ${msg.payload?.error ?? "Unknown error"}`);
         break;
       default:
         break;
@@ -67,8 +76,10 @@ function EmbeddedToolbar() {
         <Button onClick={() => post("CHECK_AVAILABLE")}>Check Available</Button>
         <Button onClick={() => post("CHECK_PERMISSIONS")}>Has Perms?</Button>
         <Button onClick={() => post("REQUEST_PERMISSIONS")}>Request Perms</Button>
-        <Button onClick={() => post("REQUEST_HR_7D")}>Fetch HR (7d)</Button>
         <Button onClick={() => post("WRITE_HR_FILE")}>Save HR to File</Button>
+        <Button onClick={() => post("WRITE_HR_AGGREGATE_FILE")}>Save aggregate HR to File</Button>
+        <Button onClick={() => post("WRITE_BP_FILE")}>Save BP to File</Button>
+        <Button onClick={() => post("WRITE_SPO2_FILE")}>Save SPO2 to File</Button>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import WebView, { WebViewMessageEvent } from "react-native-webview";
 import * as FileSystem from "expo-file-system";
 import { Health } from "../lib/health";
 
-const WEB_URL = "http://192.168.1.112:3000/?embedded=rn"; 
+const WEB_URL = "http://192.168.1.109:3000/?embedded=rn"; 
 
 export default function Screen() {
   const webRef = useRef<WebView>(null);
@@ -47,25 +47,6 @@ export default function Screen() {
     }
   }, [postToWeb]);
 
-  const doFetchHeartRate7Days = useCallback(async () => {
-    try {
-      const available = await Health.isAvailable();
-      if (!available) {
-        postToWeb("HC_UNAVAILABLE");
-        return;
-      }
-      const has = await Health.hasRequiredPermissions();
-      if (!has) await Health.requestPermissions();
-
-      const json = await Health.getLast7DaysHeartRateJson();
-      let payload: any;
-      try { payload = JSON.parse(json); } catch { payload = json; }
-      postToWeb("HR_7D_READY", { records: payload?.records ?? payload });
-    } catch (e) {
-      postToWeb("HEALTH_DUMP_ERROR", { error: String(e) });
-    }
-  }, [postToWeb]);
-
   const doWriteFile = useCallback(async () => {
     try {
       if (!(await Health.isAvailable())) {
@@ -79,6 +60,54 @@ export default function Screen() {
       postToWeb("HR_FILE_READY", { fileUri, size: info.exists ? info.size ?? 0 : 0 });
     } catch (e) {
       postToWeb("HR_FILE_ERROR", { error: String(e) });
+    }
+  }, [postToWeb]);
+
+  const fetchHrAgg7d = useCallback(async () => {
+    try {
+      if (!(await Health.isAvailable())) {
+        postToWeb("HC_UNAVAILABLE");
+        return;
+      }
+      if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
+
+      const fileUri = await Health.writeLast7DaysHeartRateAggregateJson(); // returns "file://..."
+      const info = await FileSystem.getInfoAsync(fileUri);
+      postToWeb("HR_FILE_READY", { fileUri, size: info.exists ? info.size ?? 0 : 0 });
+    } catch (e) {
+      postToWeb("HR_FILE_ERROR", { error: String(e) });
+    }
+  }, [postToWeb]);
+
+  const fetchBPA7d = useCallback(async () => {
+    try {
+      if (!(await Health.isAvailable())) {
+        postToWeb("HC_UNAVAILABLE");
+        return;
+      }
+      if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
+
+      const fileUri = await Health.writeLast7DaysBloodPressureToFile(); // returns "file://..."
+      const info = await FileSystem.getInfoAsync(fileUri);
+      postToWeb("BP_FILE_READY", { fileUri, size: info.exists ? info.size ?? 0 : 0 });
+    } catch (e) {
+      postToWeb("BP_FILE_ERROR", { error: String(e) });
+    }
+  }, [postToWeb]);
+
+  const fetchSPO27d = useCallback(async () => {
+    try {
+      if (!(await Health.isAvailable())) {
+        postToWeb("HC_UNAVAILABLE");
+        return;
+      }
+      if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
+
+      const fileUri = await Health.writeLast7DaysOxygenSaturationToFile(); // returns "file://..."
+      const info = await FileSystem.getInfoAsync(fileUri);
+      postToWeb("SPO2_FILE_READY", { fileUri, size: info.exists ? info.size ?? 0 : 0 });
+    } catch (e) {
+      postToWeb("SPO2_FILE_ERROR", { error: String(e) });
     }
   }, [postToWeb]);
 
@@ -97,17 +126,23 @@ export default function Screen() {
       case "REQUEST_PERMISSIONS":
         await doRequestPerms();
         break;
-      case "REQUEST_HR_7D":
-        await doFetchHeartRate7Days();
-        break;
       case "WRITE_HR_FILE":
         await doWriteFile();
+        break;
+      case "WRITE_HR_AGGREGATE_FILE":
+        await fetchHrAgg7d();
+        break;
+      case "WRITE_BP_FILE":
+        await fetchBPA7d();
+        break;
+      case "WRITE_SPO2_FILE":
+        await fetchSPO27d();
         break;
       default:
         // ignore unknown
         break;
     }
-  }, [doCheckAvailable, doCheckPerms, doRequestPerms, doFetchHeartRate7Days, doWriteFile]);
+  }, [doCheckAvailable, doCheckPerms, doRequestPerms, doWriteFile, fetchHrAgg7d, fetchBPA7d, fetchSPO27d]);
 
   return (
     <SafeAreaView style={styles.container}>
