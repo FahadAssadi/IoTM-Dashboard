@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import GoogleButton from "./google-button"
 import { useRouter } from "next/navigation"
 import { supabase } from '@/lib/supabase/client'
+import { toast } from "react-toastify"
 
 type LoginFormProps = {
     setTab: (tab: string) => void;
@@ -35,13 +36,13 @@ export default function LoginForm({ setTab }: LoginFormProps){
       })
 
       if (error) {
-        TODO: // add additional error message for other server errors
-        setError("password", {
-          type: "manual",
-          message: "Incorrect email or password"
-        });
+        setError("email", {
+                type: "manual",
+                message: "An error has occured: " + error.message
+        })
         console.error(error)
       } else {
+        toast.success("Login Successful")
         router.refresh() // Refresh to update server-side session
         router.push("/");
       }   
@@ -102,7 +103,7 @@ export default function LoginForm({ setTab }: LoginFormProps){
                     >
                       Password
                     </label>
-                    <button onClick={switchToForgotPasswordForm} className="text-sm text-teal-600 hover:text-teal-500">
+                    <button type="button" onClick={switchToForgotPasswordForm} className="text-sm text-teal-600 hover:text-teal-500">
                       Forgot password?
                     </button>
                   </div>
@@ -158,7 +159,7 @@ export default function LoginForm({ setTab }: LoginFormProps){
               <GoogleButton/>
               <div className="text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <button onClick={switchToSignUpForm} className="text-teal-600 hover:text-teal-500">
+                <button type="button" onClick={switchToSignUpForm} className="text-teal-600 hover:text-teal-500">
                   Sign up
                 </button>
               </div>
