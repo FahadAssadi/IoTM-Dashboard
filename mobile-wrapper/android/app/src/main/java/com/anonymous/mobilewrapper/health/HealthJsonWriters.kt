@@ -20,11 +20,13 @@ object HealthJsonWriters {
     }
     return obj
   }
+
   private fun save(file: File, json: JSONObject) {
     file.writeText(json.toString(), Charsets.UTF_8)
   }
 
   // FIRST PAGE (seed, single call)
+
   suspend fun writeFirstPageHeartRate(
     hc: HealthConnectClient,
     tr: TimeRangeFilter,
@@ -41,11 +43,26 @@ object HealthJsonWriters {
     )
     val json = loadOrCreate(tr.startTime.toString(), tr.endTime.toString(), file)
     val points = json.getJSONArray("points")
+
     resp.records.forEach { r ->
+      val meta = r.metadata
+      val recordId = meta.id
+      val origin = meta.dataOrigin.packageName
+      val recMethod = meta.recordingMethod?.toString()
+
       r.samples.forEach { s ->
-        points.put(JSONObject().put("time", s.time.toString()).put("bpm", s.beatsPerMinute))
+        // store per-sample with parent record metadata
+        points.put(
+          JSONObject()
+            .put("time", s.time.toString())
+            .put("bpm", s.beatsPerMinute)
+            .put("recordId", recordId)
+            .put("origin", origin)
+            .put("recordingMethod", recMethod)
+        )
       }
     }
+
     json.put("partial", resp.pageToken != null)
     json.put("nextPageToken", resp.pageToken ?: JSONObject.NULL)
     save(file, json)
@@ -68,17 +85,24 @@ object HealthJsonWriters {
     )
     val json = loadOrCreate(tr.startTime.toString(), tr.endTime.toString(), file)
     val points = json.getJSONArray("points")
+
     resp.records.forEach { r ->
-      val id = r.metadata.id ?: "${r.time}-${r.metadata.dataOrigin.packageName}"
+      val meta = r.metadata
+      val id = meta.id ?: "${r.time}-${meta.dataOrigin.packageName}"
+      val origin = meta.dataOrigin.packageName
+      val recMethod = meta.recordingMethod?.toString()
+
       points.put(
         JSONObject()
           .put("id", id)
           .put("time", r.time.toString())
           .put("sys", r.systolic.inMillimetersOfMercury)
           .put("dia", r.diastolic.inMillimetersOfMercury)
-          .put("origin", r.metadata.dataOrigin.packageName)
+          .put("origin", origin)
+          .put("recordingMethod", recMethod)
       )
     }
+
     json.put("partial", resp.pageToken != null)
     json.put("nextPageToken", resp.pageToken ?: JSONObject.NULL)
     save(file, json)
@@ -101,9 +125,23 @@ object HealthJsonWriters {
     )
     val json = loadOrCreate(tr.startTime.toString(), tr.endTime.toString(), file)
     val points = json.getJSONArray("points")
+
     resp.records.forEach { r ->
-      points.put(JSONObject().put("time", r.time.toString()).put("percentage", r.percentage.value))
+      val meta = r.metadata
+      val recordId = meta.id
+      val origin = meta.dataOrigin.packageName
+      val recMethod = meta.recordingMethod?.toString()
+
+      points.put(
+        JSONObject()
+          .put("time", r.time.toString())
+          .put("percentage", r.percentage.value)
+          .put("recordId", recordId)
+          .put("origin", origin)
+          .put("recordingMethod", recMethod)
+      )
     }
+
     json.put("partial", resp.pageToken != null)
     json.put("nextPageToken", resp.pageToken ?: JSONObject.NULL)
     save(file, json)
@@ -111,6 +149,7 @@ object HealthJsonWriters {
   }
 
   // APPEND NEXT PAGE (one call each run)
+
   suspend fun appendNextPageHeartRate(
     hc: HealthConnectClient,
     tr: TimeRangeFilter,
@@ -128,17 +167,39 @@ object HealthJsonWriters {
     )
     val json = loadOrCreate(tr.startTime.toString(), tr.endTime.toString(), file)
     val points = json.getJSONArray("points")
+
+    // Build a set of compound keys to avoid collisions across origins/records at the same timestamp
     val seen = HashSet<String>().apply {
-      for (i in 0 until points.length()) add(points.getJSONObject(i).getString("time"))
+      for (i in 0 until points.length()) {
+        val o = points.getJSONObject(i)
+        val t = o.optString("time")
+        val origin = o.optString("origin")
+        val recId = o.optString("recordId")
+        add("$t|$origin|$recId")
+      }
     }
+
     resp.records.forEach { r ->
+      val meta = r.metadata
+      val recordId = meta.id
+      val origin = meta.dataOrigin.packageName
+      val recMethod = meta.recordingMethod?.toString()
+
       r.samples.forEach { s ->
-        val key = s.time.toString()
+        val key = "${s.time}|$origin|$recordId"
         if (seen.add(key)) {
-          points.put(JSONObject().put("time", key).put("bpm", s.beatsPerMinute))
+          points.put(
+            JSONObject()
+              .put("time", s.time.toString())
+              .put("bpm", s.beatsPerMinute)
+              .put("recordId", recordId)
+              .put("origin", origin)
+              .put("recordingMethod", recMethod)
+          )
         }
       }
     }
+
     json.put("partial", resp.pageToken != null)
     json.put("nextPageToken", resp.pageToken ?: JSONObject.NULL)
     save(file, json)
@@ -162,25 +223,41 @@ object HealthJsonWriters {
     )
     val json = loadOrCreate(tr.startTime.toString(), tr.endTime.toString(), file)
     val points = json.getJSONArray("points")
+
     val seen = HashSet<String>().apply {
       for (i in 0 until points.length()) {
         val obj = points.getJSONObject(i)
-        if (obj.has("id")) add(obj.getString("id")) else add(obj.getString("time"))
+        when {
+          obj.has("id") -> add(obj.getString("id"))
+          else -> {
+            // legacy fallback
+            val t = obj.optString("time")
+            val origin = obj.optString("origin")
+            add("$t|$origin")
+          }
+        }
       }
     }
+
     resp.records.forEach { r ->
-      val id = r.metadata.id ?: "${r.time}-${r.metadata.dataOrigin.packageName}"
+      val meta = r.metadata
+      val id = meta.id ?: "${r.time}-${meta.dataOrigin.packageName}"
       if (seen.add(id)) {
+        val origin = meta.dataOrigin.packageName
+        val recMethod = meta.recordingMethod?.toString()
+
         points.put(
           JSONObject()
             .put("id", id)
             .put("time", r.time.toString())
             .put("sys", r.systolic.inMillimetersOfMercury)
             .put("dia", r.diastolic.inMillimetersOfMercury)
-            .put("origin", r.metadata.dataOrigin.packageName)
+            .put("origin", origin)
+            .put("recordingMethod", recMethod)
         )
       }
     }
+
     json.put("partial", resp.pageToken != null)
     json.put("nextPageToken", resp.pageToken ?: JSONObject.NULL)
     save(file, json)
@@ -204,15 +281,40 @@ object HealthJsonWriters {
     )
     val json = loadOrCreate(tr.startTime.toString(), tr.endTime.toString(), file)
     val points = json.getJSONArray("points")
+
     val seen = HashSet<String>().apply {
-      for (i in 0 until points.length()) add(points.getJSONObject(i).getString("time"))
-    }
-    resp.records.forEach { r ->
-      val key = r.time.toString()
-      if (seen.add(key)) {
-        points.put(JSONObject().put("time", key).put("percentage", r.percentage.value))
+      for (i in 0 until points.length()) {
+        val o = points.getJSONObject(i)
+        val recId = o.optString("recordId", "")
+        if (recId.isNotEmpty()) {
+          add(recId)
+        } else {
+          val t = o.optString("time")
+          val origin = o.optString("origin")
+          add("$t|$origin")
+        }
       }
     }
+
+    resp.records.forEach { r ->
+      val meta = r.metadata
+      val recordId = meta.id
+      val origin = meta.dataOrigin.packageName
+      val recMethod = meta.recordingMethod?.toString()
+
+      val key = recordId ?: "${r.time}|$origin"
+      if (seen.add(key)) {
+        points.put(
+          JSONObject()
+            .put("time", r.time.toString())
+            .put("percentage", r.percentage.value)
+            .put("recordId", recordId)
+            .put("origin", origin)
+            .put("recordingMethod", recMethod)
+        )
+      }
+    }
+
     json.put("partial", resp.pageToken != null)
     json.put("nextPageToken", resp.pageToken ?: JSONObject.NULL)
     save(file, json)
