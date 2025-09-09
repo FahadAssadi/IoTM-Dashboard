@@ -1,8 +1,11 @@
+import os
 import requests
 from bs4 import BeautifulSoup
 import re
 from urllib.parse import urljoin
 import json
+
+OVERRIDES_PATH = os.getenv("SCREENING_OVERRIDES_PATH", "app/backend/Scrapers/overrides.json")
 
 def fetch_html(url):
     resp = requests.get(url)
@@ -33,20 +36,67 @@ def infer_screening_type(name, description=None):
     desc_lower = (description or "").lower()
 
     if "cancer" in name_lower:
-        return "cancer screening"
+        return "Cancer"
     if "newborn" in name_lower:
-        return "newborn screening"
+        return "Newborn"
 
     # If not found in name, check description for keywords
     if description:
         if "cancer" in desc_lower:
-            return "cancer screening"
+            return "Cancer"
         if "newborn" in desc_lower:
-            return "newborn screening"
+            return "Newborn"
 
-    return "general"
+    return "General"
 
-def extract_screening_info(program):
+def load_overrides():
+    """
+    Load overrides from JSON file if it exists. Overrides merge known fields into the scraped data.
+    """
+    try:
+        with open(OVERRIDES_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+    except Exception as e:
+        print(f"Warning: failed to load overrides: {e}")
+        return {}
+
+def program_key(program: dict) -> str:
+    """
+    Stable key for overrides. Prefer explicit program['id'], otherwise normalized URL.
+    """
+    if "id" in program and program["id"]:
+        return str(program["id"]).strip().lower()
+    url = (program.get("main_url") or "").strip().lower().rstrip("/")
+    return url
+
+def deep_merge(base: dict, override: dict) -> dict:
+    """
+    Deep-merge override into base. Lists are replaced by default.
+    """
+    for k, v in override.items():
+        if isinstance(v, dict) and isinstance(base.get(k), dict):
+            base[k] = deep_merge(base[k], v)
+        else:
+            # Replace lists/scalars entirely
+            base[k] = v
+    return base
+
+def normalize_pregnancy(value: str) -> str:
+    """
+    Ensure consistency with backend enum: not_pregnant | pregnant | postpartum
+    """
+    v = (value or "").strip().lower()
+    if v in {"not_pregnant", "notpregnant", "not-pregnant"}:
+        return "not_pregnant"
+    if v in {"pregnant"}:
+        return "pregnant"
+    if v in {"postpartum", "post-partum", "post partum"}:
+        return "postpartum"
+    return "not_pregnant"
+
+def extract_screening_info(program, overrides=None):
     main_url = program['main_url']
 
     main_soup = fetch_html(main_url)
@@ -101,9 +151,9 @@ def extract_screening_info(program):
 
     # Extract gender criteria
     if re.search(r"\bwomen\b|\bfemale\b", pooled_text, re.IGNORECASE):
-        eligibility['gender'] = ["women"]
+        eligibility['gender'] = ["female"]
     elif re.search(r"\bmen\b|\bmale\b", pooled_text, re.IGNORECASE):
-        eligibility['gender'] = ["men"]
+        eligibility['gender'] = ["male"]
 
     # Extract pregnancy criteria
     if re.search(r"\bpregnant\b|\bpregnancy\b", pooled_text, re.IGNORECASE):
@@ -141,7 +191,7 @@ def extract_screening_info(program):
     elif eligibility.get("pregnant", False):
         pregnancy_applicable = "pregnant"
 
-    return {
+    data = {
         "ScreeningType": screening_type,
         "Name": name,
         "DefaultFrequencyMonths": (
@@ -155,10 +205,10 @@ def extract_screening_info(program):
         "MinAge": eligibility.get("age", {}).get("min"),
         "MaxAge": eligibility.get("age", {}).get("max"),
         "SexApplicable": eligibility.get("gender", ["both"])[0] if "gender" in eligibility else "both",
-        "PregnancyApplicable": pregnancy_applicable,
-        "ConditionsRequired": None,  # TODO: implement logic to extract this
-        "ConditionsExcluded": None,  # TODO: implement logic to extract this
-        "RiskFactors": None,         # TODO: implement logic to extract this
+        "PregnancyApplicable": normalize_pregnancy(pregnancy_applicable),
+        "ConditionsRequired": None,
+        "ConditionsExcluded": None,
+        "RiskFactors": None,
         "Description": description,
         "CountrySpecific": "AUS",
         "LastUpdated": "2025-08-25",
@@ -171,10 +221,10 @@ def extract_screening_info(program):
                 "MinAge": rule["conditions"].get("age", {}).get("min"),
                 "MaxAge": rule["conditions"].get("age", {}).get("max"),
                 "SexApplicable": rule["conditions"].get("gender", ["both"])[0] if "gender" in rule["conditions"] else "both",
-                "PregnancyApplicable": (
+                "PregnancyApplicable": normalize_pregnancy(
                     "postpartum" if "newborn" in (name or "").lower() or "newborn" in (description or "").lower()
                     else "pregnant" if rule["conditions"].get("pregnant", False)
-                    else "notPregnant"
+                    else "not_pregnant"
                 ),
                 "FrequencyMonths": (
                     int(re.search(r"\d+", rule["frequency"]).group()) * 12
@@ -187,23 +237,35 @@ def extract_screening_info(program):
             for rule in frequency_rules
         ]
     }
-    
+
+    # Apply overrides if provided
+    if overrides:
+        key = program_key(program)
+        ov = overrides.get(key)
+        if ov:
+            data = deep_merge(data, ov)
+
+    return data
+
 if __name__ == "__main__":
     programs = [
-        {"main_url": "https://www.health.gov.au/our-work/national-bowel-cancer-screening-program"},
-        {"main_url": "https://www.health.gov.au/our-work/national-cervical-screening-program"},
-        {"main_url": "https://www.health.gov.au/our-work/breastscreen-australia-program"},
-        {"main_url": "https://www.health.gov.au/our-work/newborn-bloodspot-screening"},
-        {"main_url": "https://www.health.gov.au/resources/publications/national-framework-for-newborn-hearing-screening"},
+        # You can add an explicit 'id' for stable overrides:
+        {"id": "bowel-cancer", "main_url": "https://www.health.gov.au/our-work/national-bowel-cancer-screening-program"},
+        {"id": "cervical-screening", "main_url": "https://www.health.gov.au/our-work/national-cervical-screening-program"},
+        {"id": "breastscreen", "main_url": "https://www.health.gov.au/our-work/breastscreen-australia-program"},
+        {"id": "newborn-bloodspot", "main_url": "https://www.health.gov.au/our-work/newborn-bloodspot-screening"},
+        {"id": "newborn-hearing", "main_url": "https://www.health.gov.au/resources/publications/national-framework-for-newborn-hearing-screening"},
+        {"id": "nlcsp", "main_url": "https://www.health.gov.au/our-work/nlcsp"}
     ]
+
+    overrides = load_overrides()
 
     all_data = []
     for program in programs:
-        data = extract_screening_info(program)
+        data = extract_screening_info(program, overrides=overrides)
         all_data.append(data)
         print(f"Scraped: {data['Name']}\n", json.dumps(data, indent=4, ensure_ascii=False), "\n")
 
-    # Write all_data to a JSON file
     output_path = "app/backend/Scrapers/health-screenings.json"
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(all_data, f, indent=2, ensure_ascii=False)

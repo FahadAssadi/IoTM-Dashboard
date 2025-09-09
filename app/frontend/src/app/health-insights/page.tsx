@@ -7,7 +7,7 @@ import {
   Clock,
   Download,
   Heart,
-  LineChart as LineChartIcon,
+  // LineChart as LineChartIcon, - ES-Lint Error
   Trees as Lungs,
   Share2,
   Footprints as Shoe,
@@ -177,7 +177,7 @@ export default function HealthInsightsPage() {
                   <div>
                     <h4 className="text-sm font-medium">Consistent Sleep Schedule</h4>
                     <p className="text-sm text-muted-foreground mt-1">
-                      You've maintained a consistent sleep schedule for 14 days. This regularity benefits your overall
+                      You&apos;ve maintained a consistent sleep schedule for 14 days. This regularity benefits your overall
                       health.
                     </p>
                   </div>
@@ -192,7 +192,7 @@ export default function HealthInsightsPage() {
                   <div>
                     <h4 className="text-sm font-medium">Activity Pattern</h4>
                     <p className="text-sm text-muted-foreground mt-1">
-                      You're most active on Thursdays and Saturdays. Consider adding light activity on your less active
+                      You&apos;re most active on Thursdays and Saturdays. Consider adding light activity on your less active
                       days.
                     </p>
                   </div>
@@ -231,6 +231,9 @@ function VitalCard({ title, value, unit, status, change, icon }: VitalCardProps)
         return "text-teal-700"
     }
   }
+
+  // FIX THIS
+  console.log("Fix the problem with icon: ", icon)
 
   return (
     <Card>

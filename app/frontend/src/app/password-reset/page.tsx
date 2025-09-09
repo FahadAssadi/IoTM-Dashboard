@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { Eye, EyeOff, AlertCircle, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { toast } from "react-toastify"
 
 type FormData = {
         password1: string;
@@ -37,15 +38,18 @@ export default function PasswordResetPage(){
             password: formData.password1
         })
         if (error) {
-            TODO: // Catch errors here
+            // Notification error
+            toast.error("An error occurred: " + error.message)
+            // Error appears in the UI
             setError("password2", {
                 type: "manual",
-                message: "An Error has occured"
+                message: "An Error has occured" + error.message
             })
             console.error(error);
         } else {
-            TODO: // Create a notification for succesful login
-            router.push("/login")
+            // Success notification
+            toast.success("Password Changed Succesfully")
+            router.push("/")
         }
     };
 

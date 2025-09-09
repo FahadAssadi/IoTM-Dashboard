@@ -1,6 +1,6 @@
 [
   {
-    "screeningType": "general",
+    "screeningType": "General",
     "name": "Yearly Health Check",
     "defaultFrequencyMonths": 12,
     "category": "checkup",
@@ -15,7 +15,7 @@
     "lastUpdated": "2025-08-25"
   },
   {
-    "screeningType": "dental",
+    "screeningType": "Dental",
     "name": "Dental Check-up",
     "defaultFrequencyMonths": 6,
     "category": "checkup",
@@ -30,7 +30,7 @@
     "lastUpdated": "2025-08-25"
   },
   {
-    "screeningType": "eyes",
+    "screeningType": "Eyes",
     "name": "Eye test",
     "defaultFrequencyMonths": 24,
     "category": "checkup",
@@ -45,7 +45,7 @@
     "lastUpdated": "2025-08-25"
   },
   {
-    "screeningType": "hearing",
+    "screeningType": "Hearing",
     "name": "Hearing check",
     "defaultFrequencyMonths": 24,
     "category": "checkup",

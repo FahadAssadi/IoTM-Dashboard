@@ -23,21 +23,21 @@ namespace IoTM.Controllers
         /// <returns></returns>
         //[Authorize]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserScreeningDto>>> GetUserScreenings([FromQuery] int page = 1, [FromQuery] int pageSize = 4)
+        public async Task<ActionResult<PagedResult<UserScreeningDto>>> GetUserScreenings([FromQuery] int page = 1, [FromQuery] int pageSize = 4)
         {
-            // // Get userId from authentication context (claims)
-            // var userIdClaim = User.FindFirst("sub") ?? User.FindFirst("userId");
-            // if (userIdClaim == null)
-            //     return Unauthorized();
+            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111"); // TODO: replace with auth user
+            var (items, total) = await _userScreeningsService.GetVisibleScreeningsForUserPagedAsync(userId, page, pageSize);
+            var itemDtos = _userScreeningsService.MapToDto(items);
 
-            // Guid userId = Guid.Parse(userIdClaim.Value);
+            var result = new PagedResult<UserScreeningDto>
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = total,
+                Items = itemDtos
+            };
 
-            // TODO: Replace with authenticated user ID when available
-            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-
-            var screenings = await _userScreeningsService.GetExistingScreeningsForUserAsync(userId, page, pageSize);
-            var dto = _userScreeningsService.MapToDto(screenings);
-            return Ok(dto);
+            return Ok(result);
         }
 
         // Schedule a screening
