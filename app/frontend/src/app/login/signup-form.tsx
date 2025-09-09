@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import GoogleButton from "./google-button"
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from "next/navigation"
+import { toast } from "react-toastify"
 
 type SignUpFormProps = {
     setTab: (tab: string) => void;
@@ -35,6 +35,11 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
         return;
     }
 
+    function switchToForgotPasswordForm () {
+        setTab("forgotPassword");
+        return;
+    }
+
     const onSubmit = async (formData: FormData) => {
         console.log("Form submitted:", formData);
         const { error } = await supabase.auth.signUp({
@@ -42,25 +47,22 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
             password: formData.password,
             options: {
                 data: {
-                    full_name: formData.firstName + " " + formData.lastName
+                    full_name: formData.firstName + " " + formData.lastName,
+                    first_name: formData.firstName,
+                    last_name: formData.lastName
                 }
             }
         })
 
         if (error) {
-            TODO: // Determine what errors can occur and create appropriate responses
             setError("email", {
                 type: "manual",
-                message: "This user has already been registered"
+                message: "An error has occured: " + error.message
             })
-            console.error(error)
         } else {
-            // console.log(data)
-            TODO: // Create a notification for succesful signin
+            toast.success("An authentication link has been sent to your email")
             router.refresh() // refresh to update server-side session
-            router.push("/")
         }
-        switchToLoginForm();
     };
 
     
@@ -170,9 +172,9 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
                             >
                                 Password
                             </label>
-                            <Link href="#" className="text-sm text-teal-600 hover:text-teal-500">
+                            <button type="button" onClick={switchToForgotPasswordForm} className="text-sm text-teal-600 hover:text-teal-500">
                                 Forgot password?
-                            </Link>
+                            </button>
                         </div>
                         <div className="relative">
                             <Input
@@ -222,12 +224,12 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
                         />
                         { errors.terms ? ( 
                             <span className="text-sm text-red-500">I agree to the{' '}
-                            <button className="text-teal-800 hover:text-teal-600">Terms of Service</button> and{' '}
-                            <button className="text-teal-800 hover:text-teal-600"> Privacy Policy</button></span>
+                            <button type="button" className="text-teal-800 hover:text-teal-600">Terms of Service</button> and{' '}
+                            <button type="button" className="text-teal-800 hover:text-teal-600"> Privacy Policy</button></span>
                             ) : (
                             <span className="text-sm text-gray-700">I agree to the{' '}
-                            <button className="text-teal-800 hover:text-teal-600">Terms of Service</button> and{' '}
-                            <button className="text-teal-800 hover:text-teal-600"> Privacy Policy</button></span>
+                            <button type="button" className="text-teal-800 hover:text-teal-600">Terms of Service</button> and{' '}
+                            <button type="button" className="text-teal-800 hover:text-teal-600"> Privacy Policy</button></span>
                         )}
                     </label>
                     <div className="py-1">
@@ -252,7 +254,7 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
                 <GoogleButton/>
                 <div className="text-center text-sm">
                     Already have an account?{" "}
-                    <button onClick={switchToLoginForm} className="text-teal-600 hover:text-teal-500">
+                    <button type="button" onClick={switchToLoginForm} className="text-teal-600 hover:text-teal-500">
                     Log in
                     </button>
                 </div>

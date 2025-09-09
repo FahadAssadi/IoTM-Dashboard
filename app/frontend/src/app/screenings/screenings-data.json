@@ -1,17 +1,44 @@
 [
-    {
-        "id": "1",
-        "name": "Cervical Cancer Screening",
-        "dueDate": "June 3, 2025"
+  {
+    "id": "1",
+    "screening_type": "General",
+    "name": "Cervical Cancer Screening",
+    "last_scheduled": "2020-06-03",
+    "recommended_frequency": "Every 5 years",
+    "description": "A test to detect abnormal cells in the cervix that may lead to cervical cancer.",
+    "eligibility": {
+      "age": { "min": 25, "max": 74 },
+      "gender": ["women"]
     },
-    {
-        "id": "2",
-        "name": "Eye Examination",
-        "dueDate": "August 12, 2025"
-    },
-    {
-        "id": "3",
-        "name": "Dental Checkup",
-        "dueDate": "September 5, 2025"
-    }
+    "cost": "Free for eligible Australians",
+    "delivery": "General practitioner or clinic",
+    "link": "https://www.health.gov.au/our-work/national-cervical-screening-program",
+    "recurring": true
+  },
+  {
+    "id": "2",
+    "screening_type": "Vision",
+    "name": "Eye Examination",
+    "last_scheduled": null,
+    "recommended_frequency": "Every 2 years",
+    "description": "Comprehensive assessment of vision and eye health.",
+    "eligibility": {},
+    "cost": "Usually covered by Medicare or private insurance",
+    "delivery": "Optometrist",
+    "link": null,
+    "recurring": true
+  },
+  {
+    "id": "3",
+    "screening_type": "Dental",
+    "name": "Dental Checkup",
+    "last_scheduled": "2025-09-05",
+    "recommended_frequency": "Every 6 months",
+    "description": "Regular dental check to maintain oral health.",
+    "eligibility": {},
+    "cost": "Varies by provider",
+    "delivery": "Dentist clinic",
+    "link": null,
+    "recurring": true
+  }
 ]

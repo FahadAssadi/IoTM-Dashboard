@@ -1,0 +1,58 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
+
+namespace IoTM.Models
+{
+    public enum ScreeningStatus
+    {
+        pending, scheduled, completed, overdue, skipped
+    }
+
+    [Table("user_screenings")]
+    public class UserScreening
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public Guid ScreeningId { get; set; }
+
+        [ForeignKey("User")]
+        public Guid UserId { get; set; }
+
+        public virtual User User { get; set; } = null!;
+
+        [ForeignKey("Guideline")]
+        public Guid GuidelineId { get; set; }
+        public virtual ScreeningGuideline Guideline { get; set; } = null!;
+        public ScreeningStatus Status { get; set; } = ScreeningStatus.pending;
+        public DateOnly? CompletedDate { get; set; }
+
+        [StringLength(200)]
+        public string? ProviderName { get; set; }
+
+        [StringLength(20)]
+        public string? ProviderPhone { get; set; }
+        public string? Results { get; set; }
+        public string? Notes { get; set; }
+        public DateOnly? NextDueDate { get; set; }
+        public bool ReminderSent { get; set; } = false;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation property
+        public virtual ICollection<HealthAlert> HealthAlerts { get; set; } = new List<HealthAlert>();
+        public virtual ICollection<ScheduledScreening> ScheduledScreenings { get; set; } = new List<ScheduledScreening>();
+
+        [NotMapped]
+        public DateOnly? LastScheduledDate
+        {
+            get
+            {
+                return ScheduledScreenings
+                    .OrderByDescending(ss => ss.ScheduledDate)
+                    .FirstOrDefault()?.ScheduledDate;
+            }
+        }
+    }
+}
