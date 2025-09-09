@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { TimelineItem } from "./screenings/health-screenings-timeline"
 import timelineData from "./screenings/timeline-data.json"
-import { devices as importedDevices, Device } from "./devices/device-data"
 
 const timelineItems: TimelineItem[] = timelineData as TimelineItem[]
 
@@ -63,32 +62,8 @@ function HealthScreeningCard({
   )
 }
 
-function DeviceCard({ device }: { device: Device }) {
-  const Icon = device.icon
-  return (
-    <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
-      <div className="flex items-center gap-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-100">
-          <Icon className="h-5 w-5 text-teal-600" />
-        </div>
-        <div>
-          <p className="font-medium text-slate-800">{device.name}</p>
-          <p className="text-sm text-slate-600">Last synced: {device.lastSync}</p>
-        </div>
-      </div>
-      <Badge variant="outline" className={device.connected ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-gray-100 text-gray-400 border-gray-200"}>
-        {device.connected ? "Connected" : "Disconnected"}
-      </Badge>
-    </div>
-  )
-}
 
 export default function DashboardPage() {
-
-  const deviceList: Device[] = importedDevices.map(device => ({
-    ...device,
-    status: device.status === "active" ? "active" : "inactive"
-  }))
 
   return (
     <main className="flex flex-col gap-4 p-4 md:gap-8 md:p-6 w-full bg-slate-50">
@@ -146,25 +121,6 @@ export default function DashboardPage() {
         </CardFooter>
       </Card>
 
-      {/* Connected Devices */}
-      <Card className="border-slate-200">
-        <CardHeader>
-          <CardTitle className="text-slate-800">Connected Health Devices</CardTitle>
-          <CardDescription className="text-slate-600">
-            Devices currently syncing data with your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {deviceList.map(device => (
-            <DeviceCard key={device.id} device={device} />
-          ))}
-        </CardContent>
-        <CardFooter>
-          <Button variant="outline" className="w-full border-teal-700 text-teal-800 hover:bg-teal-50">
-            Connect New Device
-          </Button>
-        </CardFooter>
-      </Card>
     </main>
   )
 }

@@ -1,10 +1,9 @@
 import React, { useCallback, useRef } from "react";
 import { Alert, SafeAreaView, StyleSheet, View, Pressable, Text } from "react-native";
 import WebView, { WebViewMessageEvent } from "react-native-webview";
-import * as FileSystem from "expo-file-system";
 import { Health } from "../lib/health";
 
-const WEB_URL = "http://192.168.1.109:3000/?embedded=rn"; 
+const WEB_URL = "https://previe-ten.vercel.app/"; 
 
 export default function Screen() {
   const webRef = useRef<WebView>(null);
