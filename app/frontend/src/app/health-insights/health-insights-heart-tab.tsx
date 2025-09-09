@@ -1,7 +1,47 @@
+"use client"
+
 import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
-import { LineChart } from "@/components/ui/chart"
+import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase/client"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } from "recharts";
+
+type BPMDataPoint = {
+  start: string;                // ISO datetime string
+  end: string;                  // ISO datetime string
+  points: number;
+  averageBpm: number;
+  standardDeviation: number;
+  durationHours: number;
+};
 
 export default function HealthInsightsHeartTab () {
+
+  const [bpmData, setBpmData ] = useState<BPMDataPoint[]>([]);
+
+  useEffect(() => {
+    async function loadBPM() {
+      const { data: { user }, } = await supabase.auth.getUser();
+      if (!user){
+        console.error("Unable to retrieve userId");
+        return;
+      }
+      try {
+        const response = await fetch(`http://localhost:5225/api/HealthConnect/${user.id}`);
+        if (response.status === 404){
+          console.warn("No BPM data found");
+          setBpmData([]); // keep empty chart
+          return;
+        }
+        const BPM_json = await response.json();
+        console.log("Fetched BPM data:", BPM_json);
+        setBpmData(BPM_json)
+      } catch (err) {
+        console.error("Error fetching BPM data:", err);
+      }
+    }
+    // Function calls
+    loadBPM()
+  }, [])
     return (
         <div className="grid gap-6 md:grid-cols-2">
             <Card className="md:col-span-2">
@@ -10,7 +50,7 @@ export default function HealthInsightsHeartTab () {
                     <CardDescription>Comprehensive view of your heart rate patterns</CardDescription>
                 </CardHeader>
                 <CardContent className="h-[400px]">
-                    <HeartRateDetailedChart />
+                    <HeartRateDetailedChart bpmData={bpmData}/>
                 </CardContent>
             </Card>
 
@@ -38,47 +78,44 @@ export default function HealthInsightsHeartTab () {
     )
 }
 
-function HeartRateDetailedChart() {
-  // More detailed heart rate data
-  const data = [
-    { time: "12 AM", resting: 62, active: null },
-    { time: "1 AM", resting: 60, active: null },
-    { time: "2 AM", resting: 58, active: null },
-    { time: "3 AM", resting: 58, active: null },
-    { time: "4 AM", resting: 60, active: null },
-    { time: "5 AM", resting: 62, active: null },
-    { time: "6 AM", resting: 65, active: null },
-    { time: "7 AM", resting: 68, active: null },
-    { time: "8 AM", resting: null, active: 110 },
-    { time: "9 AM", resting: null, active: 115 },
-    { time: "10 AM", resting: 75, active: null },
-    { time: "11 AM", resting: 72, active: null },
-    { time: "12 PM", resting: 70, active: null },
-    { time: "1 PM", resting: 68, active: null },
-    { time: "2 PM", resting: 70, active: null },
-    { time: "3 PM", resting: null, active: 105 },
-    { time: "4 PM", resting: null, active: 112 },
-    { time: "5 PM", resting: 78, active: null },
-    { time: "6 PM", resting: 72, active: null },
-    { time: "7 PM", resting: 70, active: null },
-    { time: "8 PM", resting: 68, active: null },
-    { time: "9 PM", resting: 65, active: null },
-    { time: "10 PM", resting: 64, active: null },
-    { time: "11 PM", resting: 62, active: null },
-  ]
 
+function HeartRateDetailedChart({ bpmData }: { bpmData: BPMDataPoint[] }) {
+  // const testData = [
+  //   {
+  //     start: "2025-09-07T18:47:06Z", end: "2025-09-07T18:47:06Z",
+  //     points: 1, averageBpm: 110,
+  //     standardDeviation: 1, durationHours: 1
+  //   },
+  //   {
+  //     start: "2025-09-06T18:47:06Z", end: "2025-09-07T18:47:06Z",
+  //     points: 1, averageBpm: 120,
+  //     standardDeviation: 1, durationHours: 1
+  //   },
+  //   {
+  //     start: "2025-09-05T18:47:06Z", end: "2025-09-07T18:47:06Z",
+  //     points: 1, averageBpm: 100,
+  //     standardDeviation: 1, durationHours: 1
+  //   },
+  // ];
   return (
-    <LineChart
-      data={data}
-      categories={["resting", "active"]}
-      index="time"
-      colors={["#94a3b8", "#e11d48"]}
-      valueFormatter={(value) => (value ? `${value} bpm` : "N/A")}
-      showAnimation
-      showLegend
-      className="h-[400px]"
-    />
-  )
+    <div className="w-full h-96">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={bpmData}
+          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="start" 
+            tickFormatter={(value) => new Date(value).toLocaleDateString()} 
+          />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Line type="monotone" dataKey="averageBpm" stroke="#8884d8" />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
 }
 
 function RestingHeartRateChart() {
@@ -89,16 +126,21 @@ function RestingHeartRateChart() {
   }))
 
   return (
-    <LineChart
-      data={data}
-      categories={["value"]}
-      index="day"
-      colors={["#e11d48"]}
-      valueFormatter={(value) => `${value} bpm`}
-      showAnimation
-      showLegend={false}
-      className="h-[300px]"
-    />
+    <div className="w-full h-72">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={data}
+          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="day" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Line type="monotone" dataKey="value" stroke="#e11d48" />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   )
 }
 
@@ -110,16 +152,23 @@ function HeartRateVariabilityChart() {
   }))
 
   return (
-    <LineChart
-      data={data}
-      categories={["value"]}
-      index="day"
-      colors={["#8b5cf6"]}
-      valueFormatter={(value) => `${value} ms`}
-      showAnimation
-      showLegend={false}
-      className="h-[300px]"
-    />
+    <div className="w-full h-72">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={data}
+          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="day">
+            <Label value="X Axis Label" offset={-5} position="insideBottom" />
+          </XAxis>
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Line type="monotone" dataKey="value" stroke="#8b5cf6" />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   )
 }
 
