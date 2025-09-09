@@ -22,7 +22,7 @@ export default function LoginSignUpForm({ tabProp }: LoginSignUpFormProps) {
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-300">
           <TabsTrigger value="login">Login</TabsTrigger>
-          <TabsTrigger value="signup" >Sign Up</TabsTrigger>
+          <TabsTrigger value="signup">Sign Up</TabsTrigger>
         </TabsList>
           <div className="rounded-lg border bg-white p-6 shadow-sm">
             <TabsContent value="login">

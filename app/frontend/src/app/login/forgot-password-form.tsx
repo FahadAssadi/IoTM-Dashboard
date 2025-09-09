@@ -37,8 +37,8 @@ export default function ForgotPasswordForm({ setTab }: ForgotPasswordFormProps){
       if (error) {
         setError("email", {
                 type: "manual",
-                message: "An error has occured: " + error.message
-        })
+                message: "An error has occured" + error.message
+            })
         console.error(error)
       } else {
         toast.success("A password reset link has been sent to your email address")

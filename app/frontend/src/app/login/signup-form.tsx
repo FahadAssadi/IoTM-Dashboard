@@ -47,7 +47,9 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
             password: formData.password,
             options: {
                 data: {
-                    full_name: formData.firstName + " " + formData.lastName
+                    full_name: formData.firstName + " " + formData.lastName,
+                    first_name: formData.firstName,
+                    last_name: formData.lastName
                 }
             }
         })
@@ -60,7 +62,6 @@ export default function SignUpForm({ setTab }: SignUpFormProps){
         } else {
             toast.success("An authentication link has been sent to your email")
             router.refresh() // refresh to update server-side session
-            switchToLoginForm();
         }
     };
 

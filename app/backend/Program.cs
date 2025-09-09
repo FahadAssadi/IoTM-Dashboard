@@ -42,6 +42,8 @@ builder.Services.AddHttpClient<IoTM.Services.INewsService, IoTM.Services.NewsSer
 
 // Register custom services
 builder.Services.AddScoped<IoTM.Services.INewsService, IoTM.Services.NewsService>();
+builder.Services.AddScoped<IoTM.Services.IScreeningGuidelineService, IoTM.Services.ScreeningGuidelineService>();
+builder.Services.AddScoped<IoTM.Services.IUserScreeningsService, IoTM.Services.UserScreeningsService>();
 
 // Swagger setup
 builder.Services.AddEndpointsApiExplorer();

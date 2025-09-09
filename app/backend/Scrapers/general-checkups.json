@@ -1,0 +1,68 @@
+[
+  {
+    "screeningType": "General",
+    "name": "Yearly Health Check",
+    "defaultFrequencyMonths": 12,
+    "category": "checkup",
+    "sexApplicable": "both",
+    "pregnancyApplicable": "not_pregnant",
+    "frequencyRules": [],
+    "description": "Comprehensive health check to monitor overall wellbeing.",
+    "cost": "Usually covered by Medicare or private insurance",
+    "delivery": "General practitioner",
+    "link": null,
+    "isRecurring": true,
+    "lastUpdated": "2025-08-25"
+  },
+  {
+    "screeningType": "Dental",
+    "name": "Dental Check-up",
+    "defaultFrequencyMonths": 6,
+    "category": "checkup",
+    "sexApplicable": "both",
+    "pregnancyApplicable": "not_pregnant",
+    "frequencyRules": [],
+    "description": "Regular dental check to maintain oral health.",
+    "cost": "Varies by provider",
+    "delivery": "Dentist clinic",
+    "link": null,
+    "isRecurring": true,
+    "lastUpdated": "2025-08-25"
+  },
+  {
+    "screeningType": "Eyes",
+    "name": "Eye test",
+    "defaultFrequencyMonths": 24,
+    "category": "checkup",
+    "sexApplicable": "both",
+    "pregnancyApplicable": "not_pregnant",
+    "frequencyRules": [],
+    "description": "Comprehensive assessment of vision and eye health.",
+    "cost": "Usually covered by Medicare or private insurance",
+    "delivery": "Optometrist",
+    "link": null,
+    "isRecurring": true,
+    "lastUpdated": "2025-08-25"
+  },
+  {
+    "screeningType": "Hearing",
+    "name": "Hearing check",
+    "defaultFrequencyMonths": 24,
+    "category": "checkup",
+    "sexApplicable": "both",
+    "pregnancyApplicable": "not_pregnant",
+    "frequencyRules": [
+      {
+        "minAge": 50,
+        "frequencyMonths": 12
+      }
+    ],
+    "description": "Assessment of hearing ability and ear health.",
+    "cost": "Varies by provider",
+    "delivery": "Clinic",
+    "link": null,
+    "isRecurring": true,
+    "lastUpdated": "2025-08-25"
+  }
+]
+

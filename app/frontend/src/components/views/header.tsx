@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase/client"
 import { useSupabaseUser } from "@/lib/supabase/useSupabaseUser"
-
 import { useRouter } from "next/navigation"
 import { toast } from "react-toastify"
 
 export default function Header() {
-  const user = useSupabaseUser()
+
+  const user = useSupabaseUser();
   const router = useRouter()
 
   const logout = async () => {

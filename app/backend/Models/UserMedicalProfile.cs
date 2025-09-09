@@ -19,6 +19,10 @@ namespace IoTM.Models
     {
         sedentary, lightly_active, moderately_active, very_active, extremely_active
     }
+    public enum PregnancyStatus
+    {
+        not_pregnant, pregnant, postpartum
+    }
 
     [Table("user_medical_profiles")]
     public class UserMedicalProfile
@@ -41,6 +45,8 @@ namespace IoTM.Models
         public SmokingStatus SmokingStatus { get; set; } = Models.SmokingStatus.unknown;
         public AlcoholFrequency AlcoholFrequency { get; set; } = Models.AlcoholFrequency.unknown;
         public ActivityLevel ActivityLevel { get; set; } = Models.ActivityLevel.moderately_active;
+
+        public PregnancyStatus? PregnancyStatus { get; set; } = Models.PregnancyStatus.not_pregnant;
 
         [StringLength(100)]
         public string? Occupation { get; set; }
