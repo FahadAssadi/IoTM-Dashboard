@@ -8,6 +8,7 @@ import {
   Download,
   Heart,
   // LineChart as LineChartIcon, - ES-Lint Error
+  // LineChart as LineChartIcon, - ES-Lint Error
   Trees as Lungs,
   Share2,
   Footprints as Shoe,
