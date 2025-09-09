@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { TimelineItem } from "./screenings/health-screenings-timeline"
 import timelineData from "./screenings/timeline-data.json"
+import { useRouter } from "next/navigation"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const timelineItems: TimelineItem[] = timelineData as any[] // TODO: connect backend to get real scheduled screening data
@@ -62,6 +63,11 @@ function HealthScreeningCard({
 
 
 export default function DashboardPage() {
+
+  const router = useRouter();
+  const redirect = ( page: string ) => {
+    router.push(page);
+  }
 
   return (
     <main className="flex flex-col gap-4 p-4 md:gap-8 md:p-6 w-full bg-slate-50">
