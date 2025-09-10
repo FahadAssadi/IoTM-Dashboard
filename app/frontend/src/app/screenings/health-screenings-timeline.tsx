@@ -87,7 +87,7 @@ export default function HealthScreeningTimeline({
     <Card className="bg-white border border-gray-300 p-6 mb-6">
       <div className="mb-4">
         <h2 className="text-lg font-semibold">Health Screening Timeline</h2>
-        <p className="text-sm text-muted-foreground">Upcoming and recommended health screenings by date</p>
+        <p className="text-sm text-muted-foreground">Scheduled health screenings by date</p>
       </div>
 
       {hasItems ? (

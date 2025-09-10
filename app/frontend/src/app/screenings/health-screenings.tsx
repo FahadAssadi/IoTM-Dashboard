@@ -357,7 +357,10 @@ export default function HealthScreenings() {
             <div>
               <h2 className="text-lg font-semibold">Recommended Health Screenings</h2>
               <p className="text-sm text-muted-foreground">
-                Your personalised health screening timeline based on your profile
+                Your personalised health screening recommendations based on your profile. We try to keep this list up to date, but please check the official guidelines for the most current information.
+              </p>
+              <p className="text-sm text-muted-foreground italic">
+                Disclaimer: This is not intended to be a substitute for professional medical advice, diagnosis, or treatment.
               </p>
             </div>
             <div className="flex items-center gap-2">
