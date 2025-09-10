@@ -67,32 +67,39 @@ namespace IoTM.Services
         }
 
         /// <summary>
-        /// Get new screening programs for a specific user.
-        /// This is called when the user creates an account and when they request to fetch new screenings,
-        /// such as when a new screening program is introduced.
+        /// Ensure the user's screenings match current recommendations:
+        /// - Adds new UserScreenings for newly recommended guidelines.
+        /// - Removes UserScreenings that are no longer recommended (based on updated profile).
+        ///   Preserves completed screenings.
         /// </summary>
         public async Task<List<UserScreening>> GetNewScreeningsForUserAsync(Guid userId)
         {
             try
             {
-                // Fetch all recommended screening guidelines for the user
+                // Get current recommended guidelines for the user profile
                 var recommendedGuidelines = await _screeningGuidelineService.GetRecommendedScreeningGuidelines(userId);
+                var recommendedIds = recommendedGuidelines.Select(g => g.GuidelineId).ToHashSet();
 
-                // Fetch existing screenings for the user
+                // Load existing screenings for user
                 var existingScreenings = await _context.UserScreenings
                     .Where(us => us.UserId == userId)
                     .ToListAsync();
 
-                var existingGuidelineIds = existingScreenings
-                    .Select(us => us.GuidelineId)
-                    .ToHashSet();
-
-                // Find guidelines that are not yet in the user's screenings
+                // Determine which to add
+                var existingIds = existingScreenings.Select(us => us.GuidelineId).ToHashSet();
                 var newGuidelines = recommendedGuidelines
-                    .Where(g => !existingGuidelineIds.Contains(g.GuidelineId))
+                    .Where(g => !existingIds.Contains(g.GuidelineId))
                     .ToList();
 
-                // Create new UserScreening entries for missing guidelines
+                // Determine which to remove (no longer recommended). Keep completed items.
+                var screeningsToRemove = existingScreenings
+                    .Where(us => !recommendedIds.Contains(us.GuidelineId) && us.Status != ScreeningStatus.completed)
+                    .ToList();
+
+                // Apply changes transactionally
+                using var tx = await _context.Database.BeginTransactionAsync();
+
+                // Add new screenings
                 var newUserScreenings = newGuidelines.Select(g => new UserScreening
                 {
                     ScreeningId = Guid.NewGuid(),
@@ -103,18 +110,36 @@ namespace IoTM.Services
                     UpdatedAt = DateTime.UtcNow
                 }).ToList();
 
-                // Add new screenings to the database
                 if (newUserScreenings.Any())
                 {
                     _context.UserScreenings.AddRange(newUserScreenings);
-                    await _context.SaveChangesAsync();
                 }
+
+                // Remove screenings that no longer apply (and their scheduled entries)
+                if (screeningsToRemove.Any())
+                {
+                    var toRemoveIds = screeningsToRemove.Select(us => us.ScreeningId).ToList();
+
+                    // Remove scheduled screenings (active or archived) tied to these UserScreenings
+                    var scheduledToRemove = await _context.ScheduledScreenings
+                        .Where(ss => toRemoveIds.Contains(ss.ScreeningId))
+                        .ToListAsync();
+                    if (scheduledToRemove.Any())
+                    {
+                        _context.ScheduledScreenings.RemoveRange(scheduledToRemove);
+                    }
+
+                    _context.UserScreenings.RemoveRange(screeningsToRemove);
+                }
+
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
 
                 return newUserScreenings;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching new screenings for user {UserId}", userId);
+                _logger.LogError(ex, "Error reconciling screenings for user {UserId}", userId);
                 return new List<UserScreening>();
             }
         }

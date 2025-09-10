@@ -103,7 +103,7 @@ export default function HealthScreenings() {
   }, []);
 
   // Fetch visible (non-hidden) screenings with backend pagination
-  const fetchAllScreenings = React.useCallback(async () => {
+  const fetchAllScreenings = React.useCallback(async (): Promise<number> => {
     try {
       const res = await fetch(`${apiBaseUrl}/api/UserScreenings/?page=${page}&pageSize=${pageSize}`);
       const payload = await res.json(); // { items, totalCount, page, pageSize }
@@ -138,14 +138,16 @@ export default function HealthScreenings() {
       if (page > totalPages) {
         setPage(totalPages);
       } else if (screenings.length === 0 && page > 1) {
-        // defensive fallback if API returned empty page despite totalPages allowing it
         setPage(page - 1);
       }
+
+      return newTotal;
     } catch (err) {
       console.error("Failed to fetch screenings", err);
       setVisibleScreenings([]);
       setAllScreenings([]);
       setTotalCount(0);
+      return 0;
     }
   }, [page]);
 
@@ -369,18 +371,33 @@ export default function HealthScreenings() {
                   variant="outline"
                   aria-label="Check for new screenings"
                   onClick={async () => {
-                    setFeedbackMessage("")
+                    setFeedbackMessage("");
                     try {
-                      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/new-screenings`, { method: "POST" })
-                      const data = await res.json()
-                      if (!Array.isArray(data) || data.length === 0) {
-                        setFeedbackMessage("No new screenings available.")
+                      const prevTotal = totalCount;
+
+                      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/new-screenings`, { method: "POST" });
+                      const data = await res.json();
+                      const addedCount = Array.isArray(data) ? data.length : 0;
+
+                      // Refetch to get the latest total after adds/removals
+                      const newTotal = await fetchAllScreenings();
+
+                      // Refresh the timeline because removals may delete scheduled items
+                      await fetchTimelineItems();
+
+                      // removed = prev + added - new
+                      const removedCount = Math.max(0, prevTotal + addedCount - newTotal);
+
+                      if (addedCount === 0 && removedCount === 0) {
+                        setFeedbackMessage("No changes to your screenings.");
                       } else {
-                        setFeedbackMessage(`${data.length} new screening${data.length > 1 ? "s" : ""} added.`)
-                        await fetchAllScreenings();
+                        const parts: string[] = [];
+                        if (addedCount > 0) parts.push(`${addedCount} new screening${addedCount > 1 ? "s" : ""} added`);
+                        if (removedCount > 0) parts.push(`${removedCount} screening${removedCount > 1 ? "s" : ""} removed`);
+                        setFeedbackMessage(parts.join(", ") + ".");
                       }
                     } catch {
-                      setFeedbackMessage("Failed to check for new screenings.")
+                      setFeedbackMessage("Failed to check for new screenings.");
                     }
                   }}
                 >
