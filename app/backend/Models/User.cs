@@ -37,6 +37,7 @@ namespace IoTM.Models
 
         [StringLength(50)]
         public string? Timezone { get; set; } = "Australia/Sydney";
+        public string? AvatarUrl { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
