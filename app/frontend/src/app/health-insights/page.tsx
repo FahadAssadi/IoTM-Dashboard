@@ -232,10 +232,6 @@ function VitalCard({ title, value, unit, status, change, icon }: VitalCardProps)
         return "text-teal-700"
     }
   }
-
-  // FIX THIS
-  console.log("Fix the problem with icon: ", icon)
-
   return (
     <Card>
       <CardContent className="p-6">
