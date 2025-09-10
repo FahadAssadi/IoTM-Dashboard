@@ -31,9 +31,17 @@ public class HealthSegmenter
                 end++;
                 continue;
             }
+            if (duration > TimeSpan.FromHours(_thresholds.MaxSegmentDuration))
+            {
+                // We will create a segement from this
+                var longSegment = sortedPoints.GetRange(start, end - start);
+                segments.Add(CreateSegmentEntity(longSegment, userId));
+                // Reposition Partitions
+                start = end;
+                continue;
+            }
             // If it's larger then check the stdev
             var bpms = currentSegment.Select(p => p.Bpm).ToList();
-
             double average = bpms.Average();
             double stdDev = Math.Sqrt(bpms.Average(b => Math.Pow(b - average, 2)));
             //  if stDev exceeds is less than threshold, then continue

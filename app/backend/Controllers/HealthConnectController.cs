@@ -31,13 +31,14 @@ namespace IoTM.Controllers
 
             // Example: Assume UserId is passed in header or token
             // Guid userId = GetCurrentUserId(); // Replace with actual user logic
-            Guid userId = Guid.NewGuid(); // This is just to test
+            // Guid userId = Guid.NewGuid(); // This is just to test
+            Guid userId = Guid.Parse("60ac6d83-872d-46dc-a29b-537acc84853c");
 
             var segments = _segmenter.SegmentData(dataDto.Points, userId);
 
             // Save to DB (if needed)
-            // await _context.HealthSegments.AddRangeAsync(segments);
-            // await _context.SaveChangesAsync();
+            await _context.HealthSegmentBPMs.AddRangeAsync(segments);
+            await _context.SaveChangesAsync();
 
             return Ok(segments.Select(s => new
             {
