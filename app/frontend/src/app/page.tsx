@@ -1,17 +1,16 @@
-import {
-  Calendar,
-  Clock,
-  Heart,
-  ArrowRight,
-} from "lucide-react"
+"use client"
+
+import { Calendar, Clock, Heart, ArrowRight } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { TimelineItem } from "./screenings/health-screenings-timeline"
 import timelineData from "./screenings/timeline-data.json"
 import { devices as importedDevices, Device } from "./devices/device-data"
+import { useRouter } from "next/navigation"
 
-const timelineItems: TimelineItem[] = timelineData as TimelineItem[]
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const timelineItems: TimelineItem[] = timelineData as any[] // TODO: connect backend to get real scheduled screening data
 
 const BADGE_MAP: Record<TimelineItem["status"], { bg: string; text: string; border: string; label: string }> = {
   "upcoming": {
@@ -44,10 +43,10 @@ function HealthScreeningCard({
         <Calendar className="h-6 w-6 text-teal-600" />
       </div>
       <div className="flex-1 space-y-1">
-        <p className="font-medium text-slate-800">{item.name}</p>
+        <p className="font-medium text-slate-800">{item.guidelineName}</p>
         <div className="flex items-center text-sm text-slate-600">
           <Clock className="mr-1 h-4 w-4" />
-          <span>{item.dueDate}</span>
+          <span>{item.scheduledDate}</span>
         </div>
       </div>
       <Badge
@@ -85,10 +84,16 @@ function DeviceCard({ device }: { device: Device }) {
 
 export default function DashboardPage() {
 
+  const router = useRouter();
+
   const deviceList: Device[] = importedDevices.map(device => ({
     ...device,
     status: device.status === "active" ? "active" : "inactive"
   }))
+
+  const redirect = ( page: string ) => {
+    router.push(page);
+  }
 
   return (
     <main className="flex flex-col gap-4 p-4 md:gap-8 md:p-6 w-full bg-slate-50">
@@ -135,13 +140,16 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {timelineItems.slice(0, 2).map(item => (
-            <HealthScreeningCard key={item.id} item={item} />
+            <HealthScreeningCard key={item.scheduledScreeningId} item={item} />
           ))}
         </CardContent>
         <CardFooter>
-          <Button variant="outline" className="w-full border-teal-700 text-teal-800 hover:bg-teal-50">
+          <Button variant="outline"
+            className="w-full border-teal-700 text-teal-800 hover:bg-teal-50"
+            onClick={() => redirect("screenings")}
+            >
             View All Screenings
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <ArrowRight className="ml-2 h-4 w-4"/>
           </Button>
         </CardFooter>
       </Card>
@@ -160,7 +168,10 @@ export default function DashboardPage() {
           ))}
         </CardContent>
         <CardFooter>
-          <Button variant="outline" className="w-full border-teal-700 text-teal-800 hover:bg-teal-50">
+          <Button variant="outline" 
+            className="w-full border-teal-700 text-teal-800 hover:bg-teal-50"
+            onClick={() => redirect("devices")}
+            >
             Connect New Device
           </Button>
         </CardFooter>

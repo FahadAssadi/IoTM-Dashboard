@@ -1,22 +1,22 @@
 [
     {
-        "id": "1",
-        "name": "Flu Vaccine",
-        "dueDate": "Due: May 20, 2025",
+        "scheduledScreeningId": "1",
+        "guidelineName": "Flu Vaccine",
+        "scheduledDate": "Due: May 20, 2025",
         "month": "May 2025",
         "status": "due-soon"
     },
     {
-        "id": "2",
-        "name": "Annual Physical Examination",
-        "dueDate": "Due: June 20, 2025",
+        "scheduledScreeningId": "2",
+        "guidelineName": "Annual Physical Examination",
+        "scheduledDate": "Due: June 20, 2025",
         "month": "June 2025",
         "status": "upcoming"
     },
     {
-        "id": "3",
-        "name": "Dental Checkup",
-        "dueDate": "Due: July 20, 2025",
+        "scheduledScreeningId": "3",
+        "guidelineName": "Dental Checkup",
+        "scheduledDate": "Due: July 20, 2025",
         "month": "July 2025",
         "status": "upcoming"
     }

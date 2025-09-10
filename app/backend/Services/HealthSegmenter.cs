@@ -1,23 +1,21 @@
-using System.Text.Json.Serialization;
 using IoTM.Config;
 using IoTM.Models;
+using Microsoft.Extensions.Options;
 
+namespace IoTM.Services;
 public class HealthSegmenter
 {
-    private readonly TimeSpan _minSegmentDuration = TimeSpan.FromHours(3);
-    private readonly double _stdDevThreshold = 5.0;
-    private readonly int _minPoints = 5;
+    private readonly BPMThresholds _thresholds;
+    public HealthSegmenter(IOptions<HealthThresholds> options)
+    {
+        _thresholds = options.Value.BPM; // this grabs the configured thresholds
+    }
 
-    public List<HealthSegment> SegmentData(List<PointDto> points, Guid userId)
+    public List<HealthSegmentBPM> SegmentData(List<PointDto> points, Guid userId)
     {
         var sortedPoints = points.OrderBy(p => p.Time).ToList();
-        List<HealthSegment> segments = new();
+        List<HealthSegmentBPM> segments = new();
         int start = 0;
-        // EDGE CASE: Not enought points?: Create a single segment
-        if (sortedPoints.Count < _minPoints)
-        {
-            segments.Add(CreateSegmentEntity(sortedPoints, userId));
-        }
         int end = start;
         while (end < sortedPoints.Count - 1)
         // Start->end is set, but we are checking start->end+1
@@ -28,9 +26,18 @@ public class HealthSegmenter
             var duration = currentSegment.Last().Time - currentSegment.First().Time;
 
             // If its shorter than 3 hours, make it larger
-            if (duration < _minSegmentDuration)
+            if (duration < TimeSpan.FromHours(_thresholds.MinSegmentDuration))
             {
                 end++;
+                continue;
+            }
+            if (duration > TimeSpan.FromHours(_thresholds.MaxSegmentDuration))
+            {
+                // We will create a segement from this
+                var longSegment = sortedPoints.GetRange(start, end - start);
+                segments.Add(CreateSegmentEntity(longSegment, userId));
+                // Reposition Partitions
+                start = end;
                 continue;
             }
             // If it's larger then check the stdev
@@ -38,7 +45,7 @@ public class HealthSegmenter
             double average = bpms.Average();
             double stdDev = Math.Sqrt(bpms.Average(b => Math.Pow(b - average, 2)));
             //  if stDev exceeds is less than threshold, then continue
-            if (stdDev < _stdDevThreshold)
+            if (stdDev < _thresholds.StdDevThreshold)
             {
                 end++;
                 continue;
@@ -59,13 +66,13 @@ public class HealthSegmenter
         return segments;
     }
 
-    private HealthSegment CreateSegmentEntity(List<PointDto> points, Guid userId)
+    private HealthSegmentBPM CreateSegmentEntity(List<PointDto> points, Guid userId)
     {
         var bpms = points.Select(p => p.Bpm).ToList();
         double average = bpms.Average();
         double stdDev = Math.Sqrt(bpms.Average(b => Math.Pow(b - average, 2)));
 
-        return new HealthSegment
+        return new HealthSegmentBPM
         {
             UserId = userId,
             Start = points.First().Time,

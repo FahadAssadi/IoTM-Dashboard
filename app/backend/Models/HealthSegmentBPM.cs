@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IoTM.Models
 {
-    public class HealthSegment
+    public class HealthSegmentBPM
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

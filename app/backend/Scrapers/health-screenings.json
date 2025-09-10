@@ -1,6 +1,6 @@
 [
   {
-    "ScreeningType": "cancer",
+    "ScreeningType": "Cancer",
     "Name": "National Bowel Cancer Screening Program",
     "DefaultFrequencyMonths": 24,
     "Category": "screening",
@@ -18,10 +18,25 @@
     "Delivery": "at home",
     "Link": "https://www.health.gov.au/our-work/national-bowel-cancer-screening-program",
     "isRecurring": true,
-    "FrequencyRules": []
+    "FrequencyRules": [
+      {
+        "MinAge": 45,
+        "MaxAge": 74,
+        "SexApplicable": "both",
+        "PregnancyApplicable": "not_pregnant",
+        "FrequencyMonths": 24
+      },
+      {
+        "MinAge": 50,
+        "MaxAge": 74,
+        "SexApplicable": "both",
+        "PregnancyApplicable": "not_pregnant",
+        "FrequencyMonths": 24
+      }
+    ]
   },
   {
-    "ScreeningType": "cancer",
+    "ScreeningType": "Cancer",
     "Name": "National Cervical Screening Program",
     "DefaultFrequencyMonths": 60,
     "Category": "screening",
@@ -39,10 +54,25 @@
     "Delivery": "healthcare provider",
     "Link": "https://www.health.gov.au/our-work/national-cervical-screening-program",
     "isRecurring": true,
-    "FrequencyRules": []
+    "FrequencyRules": [
+      {
+        "MinAge": 25,
+        "MaxAge": 74,
+        "SexApplicable": "female",
+        "PregnancyApplicable": "not_pregnant",
+        "FrequencyMonths": 60
+      },
+      {
+        "MinAge": 25,
+        "MaxAge": 74,
+        "SexApplicable": "female",
+        "PregnancyApplicable": "not_pregnant",
+        "FrequencyMonths": 60
+      }
+    ]
   },
   {
-    "ScreeningType": "cancer",
+    "ScreeningType": "Cancer",
     "Name": "BreastScreen Australia Program",
     "DefaultFrequencyMonths": 24,
     "Category": "screening",
@@ -60,12 +90,41 @@
     "Delivery": null,
     "Link": "https://www.health.gov.au/our-work/breastscreen-australia-program",
     "isRecurring": true,
-    "FrequencyRules": []
+    "FrequencyRules": [
+      {
+        "MinAge": 50,
+        "MaxAge": 74,
+        "SexApplicable": "female",
+        "PregnancyApplicable": "not_pregnant",
+        "FrequencyMonths": 24
+      },
+      {
+        "MinAge": null,
+        "MaxAge": null,
+        "SexApplicable": "female",
+        "PregnancyApplicable": "not_pregnant",
+        "FrequencyMonths": 24
+      },
+      {
+        "MinAge": null,
+        "MaxAge": null,
+        "SexApplicable": "female",
+        "PregnancyApplicable": "not_pregnant",
+        "FrequencyMonths": 24
+      },
+      {
+        "MinAge": null,
+        "MaxAge": null,
+        "SexApplicable": "female",
+        "PregnancyApplicable": "not_pregnant",
+        "FrequencyMonths": 24
+      }
+    ]
   },
   {
-    "ScreeningType": "newborn",
+    "ScreeningType": "Newborn",
     "Name": "Newborn bloodspot screening",
-    "DefaultFrequencyMonths": 1,
+    "DefaultFrequencyMonths": 0,
     "Category": "screening",
     "MinAge": null,
     "MaxAge": null,
@@ -84,9 +143,9 @@
     "FrequencyRules": []
   },
   {
-    "ScreeningType": "newborn",
-    "Name": "National Framework for Newborn Hearing Screening!!!!",
-    "DefaultFrequencyMonths": 1,
+    "ScreeningType": "Newborn",
+    "Name": "National Framework for Newborn Hearing Screening",
+    "DefaultFrequencyMonths": 0,
     "Category": "screening",
     "MinAge": null,
     "MaxAge": null,
@@ -101,6 +160,27 @@
     "Cost": null,
     "Delivery": null,
     "Link": "https://www.health.gov.au/resources/publications/national-framework-for-newborn-hearing-screening",
+    "isRecurring": true,
+    "FrequencyRules": []
+  },
+  {
+    "ScreeningType": "Cancer",
+    "Name": "National Lung Cancer Screening Program",
+    "DefaultFrequencyMonths": 0,
+    "Category": "screening",
+    "MinAge": null,
+    "MaxAge": null,
+    "SexApplicable": "both",
+    "PregnancyApplicable": "not_pregnant",
+    "ConditionsRequired": "smoker",
+    "ConditionsExcluded": null,
+    "RiskFactors": null,
+    "Description": "The National Lung Cancer Screening Program (NLCSP) is a screening program using low-dose computed tomography (low-dose CT) scans to look for lung cancer in high-risk people without any symptoms. It aims to find lung cancer early and save lives. Screening for eligible people is available now.",
+    "CountrySpecific": "AUS",
+    "LastUpdated": "2025-08-25",
+    "Cost": null,
+    "Delivery": "healthcare provider",
+    "Link": "https://www.health.gov.au/our-work/nlcsp",
     "isRecurring": true,
     "FrequencyRules": []
   }

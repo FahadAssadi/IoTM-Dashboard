@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using IoTM.Data; // This is the new namespace for your DbContext
 using DotNetEnv;
 using IoTM.Config;
+using IoTM.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Config stuff
 builder.Services.Configure<HealthThresholds>(
     builder.Configuration.GetSection("HealthThresholds"));
+// Register HealthSegmenter as singleton (safe if thresholds don't change)
+builder.Services.AddSingleton<HealthSegmenter>();
+
 
 // Add services to the container.
 builder.Services.AddControllers();

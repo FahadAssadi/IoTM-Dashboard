@@ -5,7 +5,7 @@ import { Calendar, CalendarClock, Eye, EyeOff, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import HealthScreeningTimeline, { TimelineItem } from "./health-screenings-timeline"
+import HealthScreeningTimeline, { getTimelineStatus, TimelineItem } from "./health-screenings-timeline"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -26,32 +26,6 @@ export interface ScreeningItem {
   cost?: string
   delivery?: string
   link?: string
-}
-
-function getScreeningStatus(lastScheduled?: string, recommendedFrequency?: string): "due-soon" | "overdue" | "upcoming" | undefined {
-  if (!lastScheduled || !recommendedFrequency) return undefined
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const last = new Date(lastScheduled)
-  last.setHours(0, 0, 0, 0)
-
-  const nextDue = new Date(last)
-  if (recommendedFrequency.includes("year")) {
-    const years = parseInt(recommendedFrequency.replace(/\D/g, "")) || 1
-    nextDue.setFullYear(last.getFullYear() + years)
-  } else if (recommendedFrequency.includes("month")) {
-    const months = parseInt(recommendedFrequency.replace(/\D/g, "")) || 6
-    nextDue.setMonth(last.getMonth() + months)
-  }
-
-  if (nextDue < today) return "overdue"
-
-  const twoWeeksFromNow = new Date(today)
-  twoWeeksFromNow.setDate(today.getDate() + 14)
-
-  if (nextDue >= today && nextDue <= twoWeeksFromNow) return "due-soon"
-
-  return "upcoming"
 }
 
 function formatDateForInput(dateStr?: string) {
@@ -87,17 +61,18 @@ export default function HealthScreenings() {
   const [hiddenScreenings, setHiddenScreenings] = useState<ScreeningItem[]>([])
   const [showHidden, setShowHidden] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string>("")
-
   const [selectedType, setSelectedType] = useState<string>("allcategories")
-
   const [allScreenings, setAllScreenings] = useState<ScreeningItem[]>([])
-
   const [visibleScreenings, setVisibleScreenings] = useState<ScreeningItem[]>([]);
-
   const [feedbackMessage, setFeedbackMessage] = useState<string>("") // feedback message for fetching new screenings
 
-  const [page, setPage] = useState(1);
+  // Pagination state
+  const [page, setPage] = React.useState(1);
   const pageSize = 4;
+  const [totalCount, setTotalCount] = React.useState(0);
+
+  // Compute if there is a next page (based on totalCount from server)
+  const hasNext = page * pageSize < totalCount;
 
   // Fetch timeline items from backend
   const fetchTimelineItems = async () => {
@@ -107,18 +82,16 @@ export default function HealthScreenings() {
       // Map backend data to TimelineItem[]
       setTimelineItems(
         Array.isArray(data)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ? data.map((item: any) => ({
-              id: item.scheduledScreeningId,
-              guidelineId: item.guidelineId,
-              name: item.guidelineName,
-              dueDate: item.scheduledDate,
-              month: new Date(item.scheduledDate).toLocaleString("default", { month: "long" }),
-              status: getScreeningStatus(
-                item.scheduledDate,
-                item.recommendedFrequency
-              ) ?? "upcoming",
-            }))
+          ? data.map((item: TimelineItem) => ({
+            scheduledScreeningId: item.scheduledScreeningId,
+            guidelineId: item.guidelineId,
+            guidelineName: item.guidelineName,
+            scheduledDate: item.scheduledDate,
+            month: new Date(item.scheduledDate).toLocaleString("default", { month: "long" }),
+            status: getTimelineStatus(
+              item.scheduledDate
+            ) ?? "upcoming",
+          }))
           : []
       );
     } catch {
@@ -130,11 +103,12 @@ export default function HealthScreenings() {
     fetchTimelineItems();
   }, []);
 
-  // Fetch all screenings
-  const fetchAllScreenings = async () => {
+  // Fetch visible (non-hidden) screenings with backend pagination
+  const fetchAllScreenings = React.useCallback(async () => {
     try {
       const res = await fetch(`${apiBaseUrl}/api/UserScreenings/?page=${page}&pageSize=${pageSize}`);
-      const data = await res.json();
+      const payload = await res.json(); // { items, totalCount, page, pageSize }
+      const data = Array.isArray(payload.items) ? payload.items : [];
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const screenings = data.map((item: any) => ({
         screeningId: item.screeningId,
@@ -155,25 +129,38 @@ export default function HealthScreenings() {
         reminderSent: item.reminderSent,
       }));
 
+      setVisibleScreenings(screenings);
       setAllScreenings(screenings);
-      setHiddenScreenings(screenings.filter((s: ScreeningItem) => s.status === "skipped"));
-      setVisibleScreenings(screenings.filter((s: ScreeningItem) => s.status !== "skipped"));
+      const newTotal = payload.totalCount ?? 0;
+      setTotalCount(newTotal);
+
+      // If page emptied after an action (e.g., hiding), step back a page
+      const totalPages = Math.max(1, Math.ceil(newTotal / pageSize));
+      if (page > totalPages) {
+        setPage(totalPages);
+      } else if (screenings.length === 0 && page > 1) {
+        // defensive fallback if API returned empty page despite totalPages allowing it
+        setPage(page - 1);
+      }
     } catch (err) {
       console.error("Failed to fetch screenings", err);
+      setVisibleScreenings([]);
+      setAllScreenings([]);
+      setTotalCount(0);
     }
-  };
+  }, [page]);
 
   useEffect(() => {
     fetchAllScreenings();
-  }, [page]);
+  }, [fetchAllScreenings, page]);
 
-  // Fetch hidden screenings
-  const fetchHiddenScreenings = async () => {
+  // Fetch hidden screenings only when showHidden is true
+  const fetchHiddenScreenings = React.useCallback(async () => {
     try {
       const res = await fetch(`${apiBaseUrl}/api/UserScreenings/hidden`);
       const data = await res.json();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const screenings = data.map((item: any) => ({
+      const screenings = (Array.isArray(data) ? data : []).map((item: any) => ({
         screeningId: item.screeningId,
         guidelineId: item.guidelineId,
         name: item.guideline?.name ?? "",
@@ -192,32 +179,19 @@ export default function HealthScreenings() {
         reminderSent: item.reminderSent,
       }));
       setHiddenScreenings(screenings);
-    } catch (err) {
+    } catch {
       setHiddenScreenings([]);
-      console.error("Failed to fetch hidden screenings", err);
     }
-  };
+  }, []);
 
+  // Drive fetches from showHidden/page
   useEffect(() => {
     if (showHidden) {
       fetchHiddenScreenings();
     } else {
       fetchAllScreenings();
     }
-  }, [showHidden, page]);
-
-  // Filter out hidden screenings for visible list
-  // Visible screenings: status !== "skipped"
-  const screenings = visibleScreenings.filter(
-    (screening) =>
-      selectedType === "allcategories" ||
-      (screening.screeningType?.toLowerCase().replace(/\s+/g, "") === selectedType)
-  )
-
-  const screeningTypes: string[] = [
-    "All Categories",
-    ...Array.from(new Set(allScreenings.map(s => s.screeningType).filter((type): type is string => typeof type === "string")))
-  ];
+  }, [showHidden, page, fetchAllScreenings, fetchHiddenScreenings]);
 
   // Handle scheduling a screening
   const handleSchedule = (screening: ScreeningItem) => {
@@ -229,8 +203,8 @@ export default function HealthScreenings() {
   // Handle editing a timeline item
   const handleEditTimelineItem = (item: TimelineItem) => {
     setErrorMessage("")
-    setDatePickerOpen({ open: true, timelineItemId: item.id })
-    setSelectedDate(formatDateForInput(item.dueDate))
+    setDatePickerOpen({ open: true, timelineItemId: item.scheduledScreeningId })
+    setSelectedDate(formatDateForInput(item.scheduledDate))
   }
 
   // Handle removing a timeline item
@@ -307,8 +281,10 @@ export default function HealthScreenings() {
   // Hide a screening
   const handleHideScreening = async (screening: ScreeningItem) => {
     try {
-      await fetch(`${apiBaseUrl}/api/UserScreenings/hide/${screening.guidelineId}`, { method: "PUT" });
+      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/hide/${screening.guidelineId}`, { method: "PUT" });
+      if (!res.ok) throw new Error();
       await fetchAllScreenings();
+      await fetchHiddenScreenings();
     } catch {
       setErrorMessage("Failed to hide screening.");
     }
@@ -317,8 +293,11 @@ export default function HealthScreenings() {
   // Unhide a screening
   const handleUnhideScreening = async (screening: ScreeningItem) => {
     try {
-      await fetch(`${apiBaseUrl}/api/UserScreenings/unhide/${screening.guidelineId}`, { method: "PUT" });
+      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/unhide/${screening.guidelineId}`, { method: "PUT" });
+      if (!res.ok) throw new Error();
+      await fetchHiddenScreenings();
       await fetchAllScreenings();
+      if (showHidden && hiddenScreenings.length <= 1) setShowHidden(false);
     } catch {
       setErrorMessage("Failed to unhide screening.");
     }
@@ -339,6 +318,18 @@ export default function HealthScreenings() {
       setErrorMessage("Failed to unhide all screenings.");
     }
   }
+
+  const screenings = visibleScreenings.filter(
+    (screening) =>
+      selectedType === "allcategories" ||
+      (screening.screeningType?.toLowerCase().replace(/\s+/g, "") === selectedType)
+  )
+
+  // Build filter options
+  const screeningTypes: string[] = [
+    "All Categories",
+    ...Array.from(new Set(allScreenings.map(s => s.screeningType).filter((type): type is string => typeof type === "string")))
+  ];
 
   return (
     <>
@@ -540,7 +531,7 @@ export default function HealthScreenings() {
                 <Button
                   variant="outline"
                   onClick={() => setPage(page + 1)}
-                  disabled={visibleScreenings.length < pageSize}
+                  disabled={!hasNext}
                 >
                   Next
                 </Button>

@@ -8,7 +8,7 @@ namespace IoTM.Services
 {
     public interface IUserScreeningsService
     {
-        Task<List<UserScreening>> GetExistingScreeningsForUserAsync(Guid userId, int? page = null, int? pageSize = null);
+        Task<(List<UserScreening> Items, int TotalCount)> GetVisibleScreeningsForUserPagedAsync(Guid userId, int page, int pageSize);
         Task<List<UserScreening>> GetNewScreeningsForUserAsync(Guid userId);
         List<UserScreeningDto> MapToDto(List<UserScreening> screenings);
         Task<List<ScheduledScreeningDto>> GetScheduledScreenings(Guid userId);
@@ -40,26 +40,29 @@ namespace IoTM.Services
         /// <summary>
         /// Get all existing screenings for a specific user, with pagination.
         /// </summary>
-        public async Task<List<UserScreening>> GetExistingScreeningsForUserAsync(Guid userId, int? page = null, int? pageSize = null)
+        public async Task<(List<UserScreening> Items, int TotalCount)> GetVisibleScreeningsForUserPagedAsync(Guid userId, int page, int pageSize)
         {
             try
             {
                 var query = _context.UserScreenings
                     .Include(us => us.Guideline)
                     .Include(us => us.ScheduledScreenings)
-                    .Where(us => us.UserId == userId);
+                    .Where(us => us.UserId == userId && us.Status != ScreeningStatus.skipped)
+                    .OrderBy(us => us.Guideline.Name);
 
-                if (page.HasValue && pageSize.HasValue)
-                {
-                    query = query.Skip((page.Value - 1) * pageSize.Value).Take(pageSize.Value);
-                }
+                var total = await query.CountAsync();
 
-                return await query.ToListAsync();
+                var items = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, total);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching user screenings for {UserId}", userId);
-                return new List<UserScreening>();
+                _logger.LogError(ex, "Error fetching paged visible screenings for {UserId}", userId);
+                return (new List<UserScreening>(), 0);
             }
         }
 
