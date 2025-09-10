@@ -100,13 +100,10 @@ namespace IoTM.Controllers
             return Ok(scheduledScreenings);
         }
 
-        // Archive a scheduled screening (mark as inactive)
-        [HttpPut("archive/{scheduledScreeningId}")]
+        // Archive a scheduled screening
+        [HttpPut("schedule/{scheduledScreeningId:guid}/archive")]
         public async Task<IActionResult> ArchiveScheduledScreening(Guid scheduledScreeningId)
         {
-            // TODO: Replace with authenticated user ID when available
-            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-
             await _userScreeningsService.ArchiveScheduledScreening(scheduledScreeningId);
             return Ok("Scheduled screening archived.");
         }

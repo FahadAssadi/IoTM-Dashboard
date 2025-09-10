@@ -1,5 +1,5 @@
 import React from "react"
-import { Calendar, CalendarClock, Sprout, Pencil, Trash2 } from "lucide-react"
+import { Calendar, CalendarClock, Sprout, Pencil, Trash2, Archive } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
@@ -31,6 +31,7 @@ interface HealthScreeningTimelineProps {
   timelineItems: TimelineItem[]
   onEdit?: (item: TimelineItem) => void
   onRemove?: (scheduledScreeningId: string) => void
+  onArchive?: (scheduledScreeningId: string) => void
   timezone?: string // user-selectable, defaults to AEST
 }
 
@@ -60,6 +61,7 @@ export default function HealthScreeningTimeline({
   timelineItems = [],
   onEdit,
   onRemove,
+  onArchive,
   timezone = "Australia/Sydney" // default to AEST
 }: HealthScreeningTimelineProps) {
   // Group timeline items by month and year
@@ -154,8 +156,23 @@ export default function HealthScreeningTimeline({
                                   <Pencil className="w-4 h-4" />
                                 </Button>
                               )}
+                              {onArchive && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label="Archive"
+                                  onClick={() => onArchive(item.scheduledScreeningId)}
+                                >
+                                  <Archive className="w-4 h-4" />
+                                </Button>
+                              )}
                               {onRemove && (
-                                <Button variant="ghost" size="icon" aria-label="Remove" onClick={() => onRemove(item.scheduledScreeningId)}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label="Remove"
+                                  onClick={() => onRemove(item.scheduledScreeningId)}
+                                >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               )}

@@ -9,7 +9,6 @@ import HealthScreeningTimeline, { getTimelineStatus, TimelineItem } from "./heal
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-console.log("API Base URL:", apiBaseUrl);
 
 export interface ScreeningItem {
   guidelineId: string
@@ -224,6 +223,25 @@ export default function HealthScreenings() {
       await fetchAllScreenings();
     } catch {
       setErrorMessage("Failed to remove scheduled screening.");
+    }
+  };
+
+  // Archive a timeline item (scheduled screening)
+  const handleArchiveTimelineItem = async (scheduledScreeningId: string) => {
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/schedule/${scheduledScreeningId}/archive`, {
+        method: "PUT"
+      });
+      if (!res.ok) throw new Error();
+      // Refresh timeline and lists so UI updates (archived item disappears)
+      await fetchTimelineItems();
+      await fetchAllScreenings();
+      
+      if (showHidden) {
+        await fetchHiddenScreenings();
+      }
+    } catch {
+      setErrorMessage("Failed to archive scheduled screening.");
     }
   };
 
@@ -598,6 +616,7 @@ export default function HealthScreenings() {
         timelineItems={timelineItems}
         onEdit={handleEditTimelineItem}
         onRemove={handleRemoveTimelineItem}
+        onArchive={handleArchiveTimelineItem}
       />
     </>
   )
