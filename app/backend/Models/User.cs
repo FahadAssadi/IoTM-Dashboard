@@ -29,6 +29,20 @@ namespace IoTM.Models
 
         public Sex? Sex { get; set; }
 
+        // Onboarding fields
+        public int? Height { get; set; } // in cm
+        public decimal? Weight { get; set; } // in kg
+        
+        [StringLength(50)]
+        public string? State { get; set; }
+
+        public bool? IsOnboarded { get; set; }
+
+        public DateTime? OnboardingTime { get; set; }
+        
+        [StringLength(10)]
+        public string? Postcode { get; set; }
+
         [StringLength(20)]
         public string? PhoneNumber { get; set; }
 
