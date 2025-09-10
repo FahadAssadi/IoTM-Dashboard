@@ -21,6 +21,8 @@ namespace IoTM.Models
         [StringLength(100)]
         public string FirstName { get; set; } = string.Empty;
 
+        public string? AvatarUrl { get; set; }
+
         [Required]
         [StringLength(100)]
         public string LastName { get; set; } = string.Empty;
@@ -43,6 +45,7 @@ namespace IoTM.Models
 
         // Navigation properties for relationships
         public virtual UserMedicalProfile? MedicalProfile { get; set; }
+        
         public virtual ICollection<MedicalCondition> MedicalConditions { get; set; } = new List<MedicalCondition>();
         public virtual ICollection<FamilyHistory> FamilyHistories { get; set; } = new List<FamilyHistory>();
         public virtual ICollection<Medication> Medications { get; set; } = new List<Medication>();

@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using IoTM.Data; // This is the new namespace for your DbContext
+using IoTM.Data;
 using DotNetEnv;
 using IoTM.Config;
 using IoTM.Services;
@@ -85,6 +85,9 @@ app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
+
+// Static files configuration - SIMPLIFIED VERSION
+app.UseStaticFiles();
 
 app.MapControllers();
 
