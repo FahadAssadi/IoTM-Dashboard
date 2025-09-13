@@ -1,75 +1,8 @@
-<<<<<<< Updated upstream
-// using IoTM.Data;
-// using IoTM.Models;
-// using Microsoft.AspNetCore.Mvc;
-// using Microsoft.EntityFrameworkCore;
-
-// namespace IoTM.Controllers
-// {
-//     [ApiController]
-//     [Route("api/[controller]")]
-//     public class UsersController : ControllerBase
-//     {
-//         private readonly ApplicationDbContext _context;
-
-//         public UsersController(ApplicationDbContext context)
-//         {
-//             _context = context;
-//         }
-
-//         // GET: /api/users
-//         [HttpGet]
-//         public async Task<IActionResult> GetAllUsers()
-//         {
-//             var users = await _context.Users
-//                 .Include(u => u.MedicalProfile)
-//                 .Include(u => u.MedicalConditions)
-//                 .Include(u => u.FamilyHistories)
-//                 .Include(u => u.Medications)
-//                 .Include(u => u.Allergies)
-//                 .Include(u => u.ConnectedDevices)
-//                 .Include(u => u.HealthMetrics)
-//                 .Include(u => u.UserScreenings)
-//                 .Include(u => u.HealthAlerts)
-//                 .ToListAsync();
-
-//             return Ok(users);
-//         }
-
-//         // GET: /api/users/{id}
-//         [HttpGet("{id}")]
-//         public async Task<IActionResult> GetUserById(Guid id)
-//         {
-//             var user = await _context.Users
-//                 .Include(u => u.MedicalProfile)
-//                 .Include(u => u.MedicalConditions)
-//                 .Include(u => u.FamilyHistories)
-//                 .Include(u => u.Medications)
-//                 .Include(u => u.Allergies)
-//                 .Include(u => u.ConnectedDevices)
-//                 .Include(u => u.HealthMetrics)
-//                 .Include(u => u.UserScreenings)
-//                 .Include(u => u.HealthAlerts)
-//                 .FirstOrDefaultAsync(u => u.UserId == id);
-
-//             if (user == null)
-//                 return NotFound();
-
-//             return Ok(user);
-//         }
-//     }
-// }
-
-=======
->>>>>>> Stashed changes
 using IoTM.Data;
 using IoTM.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-<<<<<<< Updated upstream
-=======
 using System.ComponentModel.DataAnnotations;
->>>>>>> Stashed changes
 
 namespace IoTM.Controllers
 {
@@ -78,33 +11,20 @@ namespace IoTM.Controllers
     public class UsersController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-<<<<<<< Updated upstream
-
-        public UsersController(ApplicationDbContext context)
-        {
-            _context = context;
-=======
         private readonly ILogger<UsersController> _logger;
 
         public UsersController(ApplicationDbContext context, ILogger<UsersController> logger)
         {
             _context = context;
             _logger = logger;
->>>>>>> Stashed changes
         }
 
         // GET: /api/users
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
-<<<<<<< Updated upstream
-            // Only fetch data from the 'users' table
-            var users = await _context.Users
-                .AsNoTracking() // optional, improves performance for read-only queries
-=======
             var users = await _context.Users
                 .AsNoTracking()
->>>>>>> Stashed changes
                 .ToListAsync();
 
             return Ok(users);
@@ -124,8 +44,6 @@ namespace IoTM.Controllers
             return Ok(user);
         }
 
-<<<<<<< Updated upstream
-=======
         // Update your GetUserProfile method to include the avatar URL
         [HttpGet("{id}/profile")]
         public async Task<IActionResult> GetUserProfile(Guid id)
@@ -315,7 +233,6 @@ namespace IoTM.Controllers
             }
         }
 
->>>>>>> Stashed changes
         // PATCH: api/users/{id}
         [HttpPatch("{id}")]
         public async Task<IActionResult> PatchUser(Guid id, [FromBody] User patchData)
@@ -336,21 +253,12 @@ namespace IoTM.Controllers
             if (!string.IsNullOrEmpty(patchData.PhoneNumber))
                 user.PhoneNumber = patchData.PhoneNumber;
 
-<<<<<<< Updated upstream
-            // Save changes
-=======
             user.UpdatedAt = DateTime.UtcNow;
 
->>>>>>> Stashed changes
             await _context.SaveChangesAsync();
 
             return Ok(user);
         }
-<<<<<<< Updated upstream
-    }
-}
-
-=======
 
         // Replace your UpdateUserProfile method with this corrected version
         [HttpPut("{id}/profile")]
@@ -668,4 +576,3 @@ namespace IoTM.Controllers
         public List<string>? FamilyHistory { get; set; }
     }
 }
->>>>>>> Stashed changes
