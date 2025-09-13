@@ -21,8 +21,6 @@ namespace IoTM.Models
         [StringLength(100)]
         public string FirstName { get; set; } = string.Empty;
 
-        public string? AvatarUrl { get; set; }
-
         [Required]
         [StringLength(100)]
         public string LastName { get; set; } = string.Empty;
@@ -30,6 +28,20 @@ namespace IoTM.Models
         public DateOnly? DateOfBirth { get; set; }
 
         public Sex? Sex { get; set; }
+
+        // Onboarding fields
+        public int? Height { get; set; } // in cm
+        public decimal? Weight { get; set; } // in kg
+        
+        [StringLength(50)]
+        public string? State { get; set; }
+
+        public bool? IsOnboarded { get; set; }
+
+        public DateTime? OnboardingTime { get; set; }
+        
+        [StringLength(10)]
+        public string? Postcode { get; set; }
 
         [StringLength(20)]
         public string? PhoneNumber { get; set; }
@@ -39,6 +51,7 @@ namespace IoTM.Models
 
         [StringLength(50)]
         public string? Timezone { get; set; } = "Australia/Sydney";
+        public string? AvatarUrl { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
