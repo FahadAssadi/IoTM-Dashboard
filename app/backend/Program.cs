@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using IoTM.Data;
 using DotNetEnv;
 using IoTM.Config;
-using IoTM.Services;
+using IoTM.Services.HealthConnect;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +25,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.Configure<HealthThresholds>(
     builder.Configuration.GetSection("HealthThresholds"));
 // Register HealthSegmenter as singleton (safe if thresholds don't change)
-builder.Services.AddSingleton<HealthSegmenter>();
+// builder.Services.AddSingleton<HealthSegmenter>();
+builder.Services.AddSingleton<BPMSegmenter>();
 
 
 // Add services to the container.

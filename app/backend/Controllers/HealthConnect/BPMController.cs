@@ -1,34 +1,32 @@
-using IoTM.Data;
-using IoTM.Config;
-using IoTM.Services;
 using Microsoft.AspNetCore.Mvc;
+using IoTM.Config;
+using IoTM.Data;
+using IoTM.Services;
+using IoTM.Services.HealthConnect;
 using Microsoft.EntityFrameworkCore;
 
-
-namespace IoTM.Controllers
+namespace IoTM.Controllers.HealthConnect
 {
     [ApiController]
-    [Route("api/[controller]")]
-    public class HealthConnectController : ControllerBase
+    [Route("api/healthconnect/bpm")]
+    public class BPMController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly HealthSegmenter _segmenter;
+        private readonly BPMSegmenter _segmenter;
 
-        public HealthConnectController (ApplicationDbContext context, HealthSegmenter segmenter)
+        public BPMController(ApplicationDbContext context, BPMSegmenter segmenter)
         {
             _context = context;
-            _segmenter = segmenter; // DI provides this automatically
+            _segmenter = segmenter;
         }
 
-        // POST: api/healthconnect
         [HttpPost]
-        public async Task<IActionResult> PostHealthData([FromBody] HealthDataDto dataDto)
+        public async Task<IActionResult> PostBpmData([FromBody] HealthDataDto dataDto)
         {
             if (dataDto == null || dataDto.Points == null || !dataDto.Points.Any())
             {
                 return BadRequest("Data is required");
             }
-
             // Example: Assume UserId is passed in header or token
             // Guid userId = GetCurrentUserId(); // Replace with actual user logic
             // Guid userId = Guid.NewGuid(); // This is just to test
@@ -37,8 +35,8 @@ namespace IoTM.Controllers
             var segments = _segmenter.SegmentData(dataDto.Points, userId);
 
             // Save to DB (if needed)
-            await _context.HealthSegmentBPMs.AddRangeAsync(segments);
-            await _context.SaveChangesAsync();
+            // await _context.HealthSegmentBPMs.AddRangeAsync(segments);
+            // await _context.SaveChangesAsync();
 
             return Ok(segments.Select(s => new
             {
@@ -50,10 +48,9 @@ namespace IoTM.Controllers
                 s.DurationHours
             }));
         }
-        
-        // GET: api/healthconnect/{userId}
+
         [HttpGet("{userId}")]
-        public async Task<IActionResult> GetUserHealthSegments(Guid userId)
+        public async Task<IActionResult> GetUserBpmData(Guid userId)
         {
             var segments = await _context.HealthSegmentBPMs
                 .Where(s => s.UserId == userId)

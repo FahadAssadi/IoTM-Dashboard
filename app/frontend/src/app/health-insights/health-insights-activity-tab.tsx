@@ -24,7 +24,7 @@ export default function HealthInsightsActivityTab () {
           return;
         }
         try {
-          const response = await fetch(`http://localhost:5225/api/HealthConnect/${user.id}`);
+          const response = await fetch(`http://localhost:5225/api/HealthConnect/bpm/${user.id}`);
           if (response.status === 404){
             console.warn("No BPM data found");
             setBpmData([]); // keep empty chart
