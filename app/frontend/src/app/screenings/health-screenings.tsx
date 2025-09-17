@@ -386,6 +386,15 @@ export default function HealthScreenings() {
     }
   }, [showArchived, fetchArchivedScreenings]);
 
+  // Handle delete of an archived screening
+  const handleDeleteArchivedScreening = async (scheduledScreeningId: string) => {
+    await fetch(
+      `${apiBaseUrl}/api/UserScreenings/schedule/${scheduledScreeningId}`,
+      { method: "DELETE" }
+    );
+    await fetchArchivedScreenings();
+  };
+
   return (
     <>
       <Card className="mb-6">
@@ -675,6 +684,7 @@ export default function HealthScreenings() {
         showArchived={showArchived}
         onToggleArchived={() => setShowArchived(!showArchived)}
         archivedTimelineItems={archivedTimelineItems}
+        onDeleteArchived={handleDeleteArchivedScreening}
       />
     </>
   )

@@ -1,5 +1,5 @@
 import React from "react"
-import { Calendar, CalendarClock, Sprout, Pencil, Trash2, Archive } from "lucide-react"
+import { Calendar, CalendarClock, Sprout, Pencil, Trash2, Archive, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
@@ -36,6 +36,7 @@ interface HealthScreeningTimelineProps {
   showArchived?: boolean
   onToggleArchived?: () => void
   archivedTimelineItems?: TimelineItem[]
+  onDeleteArchived?: (scheduledScreeningId: string) => void
 }
 
 function getMonthYear(dateStr: string) {
@@ -68,17 +69,18 @@ export default function HealthScreeningTimeline({
   timezone = "Australia/Sydney", // default to AEST
   showArchived = false,
   onToggleArchived,
-  archivedTimelineItems = []
+  archivedTimelineItems = [],
+  onDeleteArchived
 }: HealthScreeningTimelineProps) {
   // Group timeline items by month and year
   const groupedItems: Record<string, TimelineItem[]> = {}
-  ;(timelineItems ?? []).forEach((item) => {
-    const groupKey = getMonthYear(item.scheduledDate)
-    if (!groupedItems[groupKey]) {
-      groupedItems[groupKey] = []
-    }
-    groupedItems[groupKey].push(item)
-  })
+    ; (timelineItems ?? []).forEach((item) => {
+      const groupKey = getMonthYear(item.scheduledDate)
+      if (!groupedItems[groupKey]) {
+        groupedItems[groupKey] = []
+      }
+      groupedItems[groupKey].push(item)
+    })
 
   // Sort group keys chronologically
   const sortedGroupKeys = Object.keys(groupedItems).sort((a, b) => {
@@ -97,7 +99,7 @@ export default function HealthScreeningTimeline({
             {showArchived ? "Archived Screenings" : "Upcoming Screenings"}
           </h2>
           <p className="text-sm text-muted-foreground">
-              {showArchived ? "Archived health screenings" : "Upcoming health screenings by date"}
+            {showArchived ? "Archived health screenings" : "Upcoming health screenings by date"}
           </p>
         </div>
 
@@ -126,7 +128,7 @@ export default function HealthScreeningTimeline({
                     {items
                       .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())
                       .map((item) => (
-                        <div key={item.scheduledScreeningId} className="pl-2">
+                        <div key={item.scheduledScreeningId} className="pl-2 flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">
                             {new Date(item.scheduledDate).toLocaleDateString("en-AU", {
                               year: "numeric",
@@ -134,6 +136,14 @@ export default function HealthScreeningTimeline({
                               day: "numeric"
                             })}
                           </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Delete"
+                            onClick={() => onDeleteArchived?.(item.scheduledScreeningId)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
                         </div>
                       ))}
                   </div>
