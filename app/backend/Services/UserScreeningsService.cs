@@ -15,10 +15,11 @@ namespace IoTM.Services
         Task ScheduleScreening(Guid userId, Guid guidelineId, DateOnly scheduledDate);
         Task EditScheduledScreening(Guid screeningId, DateOnly newDate);
         Task CancelScheduledScreening(Guid screeningId);
-        Task ArchiveScheduledScreening(Guid screeningId);
+        Task ArchiveScheduledScreening(Guid scheduledScreeningId);
         Task HideScreening(Guid userId, Guid guidelineId);
         Task UnhideScreening(Guid userId, Guid guidelineId);
         Task<List<UserScreening>> GetHiddenScreeningsForUserAsync(Guid userId);
+        Task<Dictionary<Guid, List<ScheduledScreeningDto>>> GetArchivedScreeningsForUserAsync(Guid userId);
     }
 
     public class UserScreeningsService : IUserScreeningsService
@@ -277,12 +278,12 @@ namespace IoTM.Services
             }
         }
 
-        public async Task ArchiveScheduledScreening(Guid screeningId)
+        public async Task ArchiveScheduledScreening(Guid scheduledScreeningId)
         {
             try
             {
                 var scheduledScreening = await _context.ScheduledScreenings
-                    .FirstOrDefaultAsync(ss => ss.ScheduledScreeningId == screeningId);
+                    .FirstOrDefaultAsync(x => x.ScheduledScreeningId == scheduledScreeningId);
 
                 if (scheduledScreening != null)
                 {
@@ -292,7 +293,7 @@ namespace IoTM.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error archiving scheduled screening {ScreeningId}", screeningId);
+                _logger.LogError(ex, "Error archiving scheduled screening {ScreeningId}", scheduledScreeningId);
                 throw;
             }
         }
@@ -330,6 +331,36 @@ namespace IoTM.Services
                 .Include(us => us.ScheduledScreenings)
                 .Where(us => us.UserId == userId && us.Status == ScreeningStatus.skipped)
                 .ToListAsync();
+        }
+
+        public async Task<Dictionary<Guid, List<ScheduledScreeningDto>>> GetArchivedScreeningsForUserAsync(Guid userId)
+        {
+            var archived = await _context.ScheduledScreenings
+                .Include(ss => ss.UserScreening)
+                .ThenInclude(us => us.Guideline)
+                .Where(ss => ss.UserScreening.UserId == userId && ss.IsActive == false)
+                .ToListAsync();
+
+            // Group by guidelineId and sort dates
+            var grouped = archived
+                .GroupBy(ss => ss.UserScreening.Guideline.GuidelineId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderBy(ss => ss.ScheduledDate)
+                          .Select(ss => new ScheduledScreeningDto
+                          {
+                              ScheduledScreeningId = ss.ScheduledScreeningId,
+                              ScheduledDate = ss.ScheduledDate,
+                              IsActive = ss.IsActive,
+                              ScreeningId = ss.ScreeningId,
+                              GuidelineId = ss.UserScreening.Guideline.GuidelineId,
+                              GuidelineName = ss.UserScreening.Guideline.Name,
+                              ScreeningType = ss.UserScreening.Guideline.ScreeningType,
+                              DefaultFrequencyMonths = ss.UserScreening.Guideline.DefaultFrequencyMonths
+                          }).ToList()
+                );
+
+            return grouped;
         }
     }
 }

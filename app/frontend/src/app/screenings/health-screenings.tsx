@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { Calendar, CalendarClock, Eye, EyeOff, Download } from "lucide-react"
+import { Calendar, CalendarClock, Eye, EyeOff, RefreshCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
@@ -78,6 +78,7 @@ export default function HealthScreenings() {
     try {
       const res = await fetch(`${apiBaseUrl}/api/UserScreenings/scheduled`);
       const data = await res.json();
+      console.log("DATAAAAA",data);
       // Map backend data to TimelineItem[]
       setTimelineItems(
         Array.isArray(data)
@@ -351,6 +352,40 @@ export default function HealthScreenings() {
     ...Array.from(new Set(allScreenings.map(s => s.screeningType).filter((type): type is string => typeof type === "string")))
   ];
 
+  const [showArchived, setShowArchived] = useState(false);
+  const [archivedTimelineItems, setArchivedTimelineItems] = useState<TimelineItem[]>([]);
+
+  const fetchArchivedScreenings = React.useCallback(async () => {
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/archived`);
+      const data = await res.json();
+      const items: TimelineItem[] = [];
+      Object.values(data).forEach((value: unknown) => {
+        if (Array.isArray(value)) {
+          value.forEach((ss: Record<string, unknown>) => {
+            items.push({
+              scheduledScreeningId: ss.scheduledScreeningId as string,
+              guidelineId: ss.guidelineId as string,
+              guidelineName: ss.guidelineName as string,
+              scheduledDate: ss.scheduledDate as string,
+              month: new Date(ss.scheduledDate as string).toLocaleString("default", { month: "long" })
+            });
+          });
+        }
+      });
+      items.sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime());
+      setArchivedTimelineItems(items);
+    } catch {
+      setArchivedTimelineItems([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (showArchived) {
+      fetchArchivedScreenings();
+    }
+  }, [showArchived, fetchArchivedScreenings]);
+
   return (
     <>
       <Card className="mb-6">
@@ -359,7 +394,7 @@ export default function HealthScreenings() {
             <div>
               <h2 className="text-lg font-semibold">Recommended Health Screenings</h2>
               <p className="text-sm text-muted-foreground">
-                Your personalised health screening recommendations based on your profile. We try to keep this list up to date, but please check the official guidelines for the most current information.
+                Your personalised health screening recommendations based on your profile. We try to keep the information in this list up to date, but please check the official guidelines for the most current information.
               </p>
               <p className="text-sm text-muted-foreground italic">
                 Disclaimer: This is not intended to be a substitute for professional medical advice, diagnosis, or treatment.
@@ -401,12 +436,12 @@ export default function HealthScreenings() {
                     }
                   }}
                 >
-                  <Download className="w-4 h-4" />
+                  <RefreshCcw className="w-4 h-4" />
                 </Button>
                 <span
                   className="absolute left-1/2 -translate-x-1/2 -top-8 px-2 py-1 rounded bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10"
                 >
-                  Fetch new screenings
+                  Update screenings list
                 </span>
               </div>
               <Select
@@ -634,9 +669,12 @@ export default function HealthScreenings() {
       {/* Health Screenings Timeline */}
       <HealthScreeningTimeline
         timelineItems={timelineItems}
-        onEdit={handleEditTimelineItem}
-        onRemove={handleRemoveTimelineItem}
-        onArchive={handleArchiveTimelineItem}
+        onEdit={showArchived ? undefined : handleEditTimelineItem}
+        onRemove={showArchived ? undefined : handleRemoveTimelineItem}
+        onArchive={showArchived ? undefined : handleArchiveTimelineItem}
+        showArchived={showArchived}
+        onToggleArchived={() => setShowArchived(!showArchived)}
+        archivedTimelineItems={archivedTimelineItems}
       />
     </>
   )

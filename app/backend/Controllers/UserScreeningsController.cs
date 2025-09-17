@@ -132,5 +132,13 @@ namespace IoTM.Controllers
             var dto = _userScreeningsService.MapToDto(screenings);
             return Ok(dto);
         }
+
+        [HttpGet("archived")]
+        public async Task<ActionResult<Dictionary<Guid, List<ScheduledScreeningDto>>>> GetArchivedScreenings()
+        {
+            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111"); // Replace with authenticated user
+            var archived = await _userScreeningsService.GetArchivedScreeningsForUserAsync(userId);
+            return Ok(archived);
+        }
     }
 }
