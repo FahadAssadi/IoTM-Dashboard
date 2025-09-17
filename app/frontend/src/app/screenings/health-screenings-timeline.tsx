@@ -106,22 +106,36 @@ export default function HealthScreeningTimeline({
           archivedTimelineItems.length === 0 ? (
             <div className="text-center text-slate-500 py-8">No archived screenings.</div>
           ) : (
-            <div className="space-y-4">
-              {archivedTimelineItems.map((item) => (
-                <div key={item.scheduledScreeningId} className="relative">
-                  <div className="pl-6 p-2 border border-gray-300 rounded bg-gray-50">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">{item.guidelineName}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(item.scheduledDate).toLocaleDateString("en-AU", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric"
-                          })}
-                        </p>
-                      </div>
+            <div className="space-y-6">
+              {/* Group by guidelineId */}
+              {Object.values(
+                archivedTimelineItems.reduce<Record<string, TimelineItem[]>>((acc, item) => {
+                  if (!acc[item.guidelineId]) acc[item.guidelineId] = [];
+                  acc[item.guidelineId].push(item);
+                  return acc;
+                }, {})
+              ).map((items) => (
+                <div key={items[0].guidelineId} className="relative">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex-shrink-0 w-8 h-8 bg-gray-200 text-gray-700 rounded-full flex items-center justify-center">
+                      <Archive className="h-4 w-4" />
                     </div>
+                    <span className="font-medium">{items[0].guidelineName}</span>
+                  </div>
+                  <div className="space-y-2 pl-4 ml-4 border-l border-dashed">
+                    {items
+                      .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())
+                      .map((item) => (
+                        <div key={item.scheduledScreeningId} className="pl-2">
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(item.scheduledDate).toLocaleDateString("en-AU", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric"
+                            })}
+                          </span>
+                        </div>
+                      ))}
                   </div>
                 </div>
               ))}
