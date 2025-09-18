@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using IoTM.Models;
+using IoTM.Models.HealthSegments;
 
-namespace IoTM.Data 
+namespace IoTM.Data
 {
     public class ApplicationDbContext : DbContext
     {

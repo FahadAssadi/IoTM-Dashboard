@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IoTM.Models
+namespace IoTM.Models.HealthSegments
 {
-    public class HealthSegmentBPM
+    public class HealthSegmentSummary
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -26,8 +26,10 @@ namespace IoTM.Models
         [NotMapped]
         public double DurationHours => (End - Start).TotalHours;
 
-        public double? AverageBpm { get; set; }
-
-        public double? StandardDeviation { get; set; }
+        // BPM
+        public double AverageBpm { get; set; }
+        public double BpmStandardDeviation { get; set; }
+        // BloodPressure
+        
     }
 }

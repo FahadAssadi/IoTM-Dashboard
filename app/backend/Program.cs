@@ -3,6 +3,8 @@ using IoTM.Data;
 using DotNetEnv;
 using IoTM.Config;
 using IoTM.Services.HealthConnect;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;  
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 Env.Load();
 
 // Get Supabase DB connection string from environment variable
-var connectionString = Environment.GetEnvironmentVariable("SUPABASE_DB_CONNECTION");
+var connectionString = Environment.GetEnvironmentVariable("SUPABASE_DB_CONNECTION")
+    ?? throw new InvalidOperationException("SUPABASE_DB_CONNECTION is missing.");
+var supabaseUrlString = Environment.GetEnvironmentVariable("SUPABASE_URL")
+    ?? throw new InvalidOperationException("SUPABASE_URL is missing.");
+var supabaseJwtSecret = Environment.GetEnvironmentVariable("SUPABASE_JWT_SECRET")
+    ?? throw new InvalidOperationException("SUPABASE_JWT_SECRET is missing.");
 
 if (string.IsNullOrEmpty(connectionString))
 {
@@ -27,6 +34,40 @@ builder.Services.Configure<HealthThresholds>(
 // Register HealthSegmenter as singleton (safe if thresholds don't change)
 // builder.Services.AddSingleton<HealthSegmenter>();
 builder.Services.AddSingleton<BPMSegmenter>();
+
+// Authentication and Authorisation
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(supabaseJwtSecret))
+        };
+    });
+builder.Services.AddAuthorization();
+
+
+// builder.Services.AddAuthentication(options =>
+// {
+//     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+//     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+// })
+// .AddJwtBearer(options =>
+// {
+//     // Supabase JWT Authority URL (replace with your project ref in appsettings.json or env)
+//     options.Authority = supabaseUrlString;
+//     options.TokenValidationParameters = new TokenValidationParameters
+//     {
+//         ValidateIssuer = false,
+//         ValidateAudience = false,
+//         ValidateLifetime = true,
+//         ValidateIssuerSigningKey = true
+//     };
+// });
+// builder.Services.AddAuthorization();
 
 
 // Add services to the container.
@@ -84,6 +125,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
+
+app.UseAuthentication(); // MUST go before UseAuthorization
+app.UseAuthorization();
 
 app.UseAuthorization();
 

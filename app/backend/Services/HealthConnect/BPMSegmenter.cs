@@ -1,5 +1,5 @@
 using IoTM.Config;
-using IoTM.Models;
+using IoTM.Models.HealthSegments;
 using Microsoft.Extensions.Options;
 
 namespace IoTM.Services.HealthConnect;
@@ -23,7 +23,7 @@ public class BPMSegmenter
         // Start->end is set, but we are checking start->end+1
         // The if's check if we can make the segment bigger
         {
-            Console.WriteLine($"Start index: {start}, End: {end}, Index Between: {end - start + 1}");
+            // Console.WriteLine($"Start index: {start}, End: {end}, Index Between: {end - start + 1}");
             var currentSegment = sortedPoints.GetRange(start, end - start + 1);
             var duration = currentSegment.Last().Time - currentSegment.First().Time;
 
@@ -73,8 +73,7 @@ public class BPMSegmenter
         var bpms = points.Select(p => p.Bpm).ToList();
         double average = bpms.Average();
         double stdDev = Math.Sqrt(bpms.Average(b => Math.Pow(b - average, 2)));
-
-        return new HealthSegmentBPM
+        HealthSegmentBPM healthSegmentBPM = new HealthSegmentBPM
         {
             UserId = userId,
             Start = points.First().Time,
@@ -82,7 +81,28 @@ public class BPMSegmenter
             Points = points.Count,
             AverageBpm = Math.Round(average, 2),
             StandardDeviation = Math.Round(stdDev, 2)
-            // DurationHours is automatically calculated
         };
+        // Adds category
+        CategoriseSegment(healthSegmentBPM);
+        // returns
+        return healthSegmentBPM;
+    }
+
+    private void CategoriseSegment(HealthSegmentBPM healthSegmentBPM)
+    {
+        // Categorisation based on value
+        GenericCategory? outputCategory = _thresholds.Categories.FirstOrDefault(c => healthSegmentBPM.AverageBpm >= c.Min && healthSegmentBPM.AverageBpm <= c.Max);
+        // Categorisation basd on deviation
+        GenericCategory? deviationCategory = _thresholds.DeviationCategories.FirstOrDefault(c => healthSegmentBPM.StandardDeviation >= c.Min && healthSegmentBPM.StandardDeviation <= c.Max);
+        // Compare priorities only if both categories exist
+        if (deviationCategory is not null)
+        {
+            if (outputCategory is null || deviationCategory.Priority < outputCategory.Priority)
+            {
+                outputCategory = deviationCategory;
+            }
+        }
+        healthSegmentBPM.Category = outputCategory?.Name ?? "Unclassified";
+        return;
     }
 }

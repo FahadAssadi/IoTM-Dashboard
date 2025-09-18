@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 using IoTM.Config;
 using IoTM.Data;
-using IoTM.Services;
 using IoTM.Services.HealthConnect;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace IoTM.Controllers.HealthConnect
 {
     [ApiController]
     [Route("api/healthconnect/bpm")]
+    [Authorize]
     public class BPMController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -21,23 +22,16 @@ namespace IoTM.Controllers.HealthConnect
         }
 
         [HttpPost]
-        public async Task<IActionResult> PostBpmData([FromBody] HealthDataDto dataDto)
+        [AllowAnonymous]
+        public IActionResult PostBpmDataTest([FromBody] HealthDataDto dataDto)
         {
             if (dataDto == null || dataDto.Points == null || !dataDto.Points.Any())
             {
                 return BadRequest("Data is required");
             }
-            // Example: Assume UserId is passed in header or token
-            // Guid userId = GetCurrentUserId(); // Replace with actual user logic
-            // Guid userId = Guid.NewGuid(); // This is just to test
-            Guid userId = Guid.Parse("60ac6d83-872d-46dc-a29b-537acc84853c");
-
+            Guid userId = Guid.NewGuid(); // Random UID This is just to test
             var segments = _segmenter.SegmentData(dataDto.Points, userId);
-
-            // Save to DB (if needed)
-            // await _context.HealthSegmentBPMs.AddRangeAsync(segments);
-            // await _context.SaveChangesAsync();
-
+            // Doesn't save to DB
             return Ok(segments.Select(s => new
             {
                 s.Start,
@@ -45,7 +39,31 @@ namespace IoTM.Controllers.HealthConnect
                 s.Points,
                 s.AverageBpm,
                 s.StandardDeviation,
-                s.DurationHours
+                s.DurationHours,
+                s.Category
+            }));
+        }
+
+        [HttpPost("{userId}")]
+        public async Task<IActionResult> PostBpmData(Guid userId, [FromBody] HealthDataDto dataDto)
+        {
+            if (dataDto == null || dataDto.Points == null || !dataDto.Points.Any())
+            {
+                return BadRequest("Data is required");
+            }
+            var segments = _segmenter.SegmentData(dataDto.Points, userId);
+            // Save to DB
+            await _context.HealthSegmentBPMs.AddRangeAsync(segments);
+            await _context.SaveChangesAsync();
+            return Ok(segments.Select(s => new
+            {
+                s.Start,
+                s.End,
+                s.Points,
+                s.AverageBpm,
+                s.StandardDeviation,
+                s.DurationHours,
+                s.Category
             }));
         }
 
@@ -62,14 +80,16 @@ namespace IoTM.Controllers.HealthConnect
                 return NotFound($"No health segments found for user {userId}");
             }
 
-            return Ok(segments.Select(s => new {
+            return Ok(segments.Select(s => new
+            {
                 s.Id,
                 s.Start,
                 s.End,
                 s.Points,
                 s.AverageBpm,
                 s.StandardDeviation,
-                s.DurationHours
+                s.DurationHours,
+                s.Category
             }));
         }
     }
