@@ -13,29 +13,37 @@ public class BPMSegmenter
         _thresholds = options.Value.BPM;
     }
 
-    public List<HealthSegmentBPM> SegmentData(List<PointDto> points, Guid userId)
+    public List<HealthSegmentBPM> SegmentData(List<PointDto> points,  Guid userId, HealthSegmentBPM? recentSegment)
     {
-        var sortedPoints = points.OrderBy(p => p.Time).ToList();
-        List<HealthSegmentBPM> segments = new();
+        var sortedPoints = points.OrderBy(p => p.Time).ToList(); // Order Segments
+        List<HealthSegmentBPM> segments = []; // Initialise Output Segment List
+        if (recentSegment != null)
+        {   // If there is most recent segment, remove overlapping points prior to the most recent segment
+            sortedPoints = sortedPoints.Where(p => p.Time >= recentSegment.Start).ToList();
+            // If the segment starts before the points start
+            if (recentSegment.Start < sortedPoints.First().Time)
+            {   // Keep the most recent segment and discard the points that overlap with the most recent segment
+                segments.Add(recentSegment);
+                sortedPoints = sortedPoints.Where(p => p.Time > recentSegment.End).ToList();
+            }
+            // else: Discard the most recent segment and use new data points to recalculate it
+            // Segment has already been dropped from the DB
+        }
         int start = 0;
         int end = start;
         while (end < sortedPoints.Count - 1)
-        // Start->end is set, but we are checking start->end+1
-        // The if's check if we can make the segment bigger
         {
             // Console.WriteLine($"Start index: {start}, End: {end}, Index Between: {end - start + 1}");
             var currentSegment = sortedPoints.GetRange(start, end - start + 1);
             var duration = currentSegment.Last().Time - currentSegment.First().Time;
-
-            // If its shorter than 3 hours, make it larger
+            // Make it larger if it belows threshold length
             if (duration < TimeSpan.FromHours(_thresholds.MinSegmentDuration))
             {
                 end++;
                 continue;
             }
             if (duration > TimeSpan.FromHours(_thresholds.MaxSegmentDuration))
-            {
-                // We will create a segement from this
+            {   // Create Segment if its too long
                 var longSegment = sortedPoints.GetRange(start, end - start);
                 segments.Add(CreateSegmentEntity(longSegment, userId));
                 // Reposition Partitions
@@ -46,13 +54,13 @@ public class BPMSegmenter
             var bpms = currentSegment.Select(p => p.Bpm).ToList();
             double average = bpms.Average();
             double stdDev = Math.Sqrt(bpms.Average(b => Math.Pow(b - average, 2)));
-            //  if stDev exceeds is less than threshold, then continue
+            //  if stDev is less than threshold, then continue
             if (stdDev < _thresholds.StdDevThreshold)
             {
                 end++;
                 continue;
             }
-            // We will create a segement from this
+            // Otherwise We will create a segement from this
             var segment = sortedPoints.GetRange(start, end - start);
             segments.Add(CreateSegmentEntity(segment, userId));
             // Reposition Partitions

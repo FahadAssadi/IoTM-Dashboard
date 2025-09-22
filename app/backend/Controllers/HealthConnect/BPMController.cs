@@ -23,15 +23,21 @@ namespace IoTM.Controllers.HealthConnect
 
         [HttpPost]
         [AllowAnonymous]
-        public IActionResult PostBpmDataTest([FromBody] HealthDataDto dataDto)
+        public async Task<IActionResult> PostBpmDataTest([FromBody] HealthDataDto dataDto)
         {
             if (dataDto == null || dataDto.Points == null || !dataDto.Points.Any())
             {
                 return BadRequest("Data is required");
             }
-            Guid userId = Guid.NewGuid(); // Random UID This is just to test
-            var segments = _segmenter.SegmentData(dataDto.Points, userId);
-            // Doesn't save to DB
+            Guid userId = Guid.NewGuid();
+            // Retrieve the most recent segment for the user (by End time)
+            var lastSegment = await _context.HealthSegmentBPMs
+                .Where(s => s.UserId == userId)
+                .OrderByDescending(s => s.End)
+                .FirstOrDefaultAsync();
+            // Create new segments using the new data
+            var segments = _segmenter.SegmentData(dataDto.Points, userId, lastSegment);
+            // Does NOT save to DB
             return Ok(segments.Select(s => new
             {
                 s.Start,
@@ -51,7 +57,20 @@ namespace IoTM.Controllers.HealthConnect
             {
                 return BadRequest("Data is required");
             }
-            var segments = _segmenter.SegmentData(dataDto.Points, userId);
+
+            // Retrieve the most recent segment for the user (by End time)
+            var lastSegment = await _context.HealthSegmentBPMs
+                .Where(s => s.UserId == userId)
+                .OrderByDescending(s => s.End)
+                .FirstOrDefaultAsync();
+            // Remove the last segment if it exists
+            if (lastSegment != null)
+            {
+                _context.HealthSegmentBPMs.Remove(lastSegment);
+                await _context.SaveChangesAsync(); // Save immediately to persist deletion
+            }
+            // Create new segments using the new data
+            var segments = _segmenter.SegmentData(dataDto.Points, userId, lastSegment);
             // Save to DB
             await _context.HealthSegmentBPMs.AddRangeAsync(segments);
             await _context.SaveChangesAsync();
