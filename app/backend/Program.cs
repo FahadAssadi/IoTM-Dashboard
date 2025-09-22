@@ -33,7 +33,7 @@ builder.Services.Configure<HealthThresholds>(
     builder.Configuration.GetSection("HealthThresholds"));
 // Register HealthSegmenter as singleton (safe if thresholds don't change)
 // builder.Services.AddSingleton<HealthSegmenter>();
-builder.Services.AddSingleton<BPMSegmenter>();
+builder.Services.AddSingleton<BPMService>();
 
 // Authentication and Authorisation
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

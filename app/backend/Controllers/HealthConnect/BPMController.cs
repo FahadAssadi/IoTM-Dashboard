@@ -13,9 +13,9 @@ namespace IoTM.Controllers.HealthConnect
     public class BPMController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly BPMSegmenter _segmenter;
+        private readonly BPMService _segmenter;
 
-        public BPMController(ApplicationDbContext context, BPMSegmenter segmenter)
+        public BPMController(ApplicationDbContext context, BPMService segmenter)
         {
             _context = context;
             _segmenter = segmenter;

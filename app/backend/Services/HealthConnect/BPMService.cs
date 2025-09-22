@@ -4,10 +4,10 @@ using Microsoft.Extensions.Options;
 
 namespace IoTM.Services.HealthConnect;
 
-public class BPMSegmenter
+public class BPMService
 {
     private readonly BPMThresholds _thresholds;
-    public BPMSegmenter(IOptions<HealthThresholds> options)
+    public BPMService(IOptions<HealthThresholds> options)
     {
         // this grabs the configured thresholds
         _thresholds = options.Value.BPM;
