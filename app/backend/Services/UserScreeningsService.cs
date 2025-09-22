@@ -48,7 +48,7 @@ namespace IoTM.Services
                 var query = _context.UserScreenings
                     .Include(us => us.Guideline)
                     .Include(us => us.ScheduledScreenings)
-                    .Where(us => us.UserId == userId && us.Status != ScreeningStatus.skipped)
+                    .Where(us => us.UserId == userId && us.Status != ScreeningStatus.skipped && us.Status != ScreeningStatus.completed)
                     .OrderBy(us => us.Guideline.Name);
 
                 var total = await query.CountAsync();
@@ -71,7 +71,7 @@ namespace IoTM.Services
         /// Ensure the user's screenings match current recommendations:
         /// - Adds new UserScreenings for newly recommended guidelines.
         /// - Removes UserScreenings that are no longer recommended (based on updated profile).
-        ///   Preserves completed screenings.
+        ///   Removes completed screenings.
         /// </summary>
         public async Task<List<UserScreening>> GetNewScreeningsForUserAsync(Guid userId)
         {
@@ -92,9 +92,9 @@ namespace IoTM.Services
                     .Where(g => !existingIds.Contains(g.GuidelineId))
                     .ToList();
 
-                // Determine which to remove (no longer recommended). Keep completed items.
+                // Determine which to remove (no longer recommended).
                 var screeningsToRemove = existingScreenings
-                    .Where(us => !recommendedIds.Contains(us.GuidelineId) && us.Status != ScreeningStatus.completed)
+                    .Where(us => !recommendedIds.Contains(us.GuidelineId) && us.Status == ScreeningStatus.completed)
                     .ToList();
 
                 // Apply changes transactionally
@@ -228,6 +228,15 @@ namespace IoTM.Services
                     CreatedAt = DateTime.UtcNow
                 };
                 _context.ScheduledScreenings.Add(scheduledScreening);
+
+                // If the guideline is not recurring, mark as completed
+                var guideline = await _context.ScreeningGuidelines.FindAsync(guidelineId);
+                if (guideline != null && !guideline.IsRecurring)
+                {
+                    userScreening.Status = ScreeningStatus.completed;
+                    userScreening.UpdatedAt = DateTime.UtcNow;
+                }
+
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
