@@ -23,6 +23,8 @@ namespace IoTM.Data
         public DbSet<UserScreening> UserScreenings { get; set; }
         public DbSet<HealthAlert> HealthAlerts { get; set; }
         public DbSet<NewsArticle> NewsArticles { get; set; }
+        public DbSet<HealthSegmentBPM> HealthSegmentBPMs { get; set; }
+        public DbSet<LifestyleFactor> LifestyleFactors { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

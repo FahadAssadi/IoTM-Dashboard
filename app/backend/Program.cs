@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using IoTM.Data; // This is the new namespace for your DbContext
+using IoTM.Data;
 using DotNetEnv;
+using IoTM.Config;
+using IoTM.Services.HealthConnect;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +20,14 @@ if (string.IsNullOrEmpty(connectionString))
 // Register EF Core DbContext with Npgsql using Supabase connection string
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
+
+// Config stuff
+builder.Services.Configure<HealthThresholds>(
+    builder.Configuration.GetSection("HealthThresholds"));
+// Register HealthSegmenter as singleton (safe if thresholds don't change)
+// builder.Services.AddSingleton<HealthSegmenter>();
+builder.Services.AddSingleton<BPMSegmenter>();
+
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -76,6 +86,9 @@ app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
+
+// Static files configuration - SIMPLIFIED VERSION
+app.UseStaticFiles();
 
 app.MapControllers();
 

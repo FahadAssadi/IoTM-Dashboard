@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -12,16 +13,40 @@ namespace IoTM.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "NewsArticles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Title = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    Content = table.Column<string>(type: "text", nullable: false),
+                    Source = table.Column<string>(type: "text", nullable: false),
+                    Author = table.Column<string>(type: "text", nullable: false),
+                    PublishedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Url = table.Column<string>(type: "text", nullable: false),
+                    ImageUrl = table.Column<string>(type: "text", nullable: true),
+                    Category = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NewsArticles", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "screening_guidelines",
                 columns: table => new
                 {
                     GuidelineId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
                     ScreeningType = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    DefaultFrequencyMonths = table.Column<int>(type: "integer", nullable: false),
                     Category = table.Column<string>(type: "text", nullable: false),
                     MinAge = table.Column<int>(type: "integer", nullable: true),
                     MaxAge = table.Column<int>(type: "integer", nullable: true),
                     SexApplicable = table.Column<string>(type: "text", nullable: false),
-                    FrequencyMonths = table.Column<int>(type: "integer", nullable: false),
+                    PregnancyApplicable = table.Column<int>(type: "integer", nullable: false),
                     ConditionsRequired = table.Column<string>(type: "text", nullable: true),
                     ConditionsExcluded = table.Column<string>(type: "text", nullable: true),
                     RiskFactors = table.Column<string>(type: "text", nullable: true),
@@ -31,7 +56,11 @@ namespace IoTM.Migrations
                     CountrySpecific = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: true),
                     LastUpdated = table.Column<DateOnly>(type: "date", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Cost = table.Column<string>(type: "text", nullable: true),
+                    Delivery = table.Column<string>(type: "text", nullable: true),
+                    Link = table.Column<string>(type: "text", nullable: true),
+                    IsRecurring = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -43,25 +72,44 @@ namespace IoTM.Migrations
                 columns: table => new
                 {
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    PasswordHash = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     FirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     LastName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    DateOfBirth = table.Column<DateOnly>(type: "date", nullable: false),
-                    Sex = table.Column<string>(type: "text", nullable: false),
+                    DateOfBirth = table.Column<DateOnly>(type: "date", nullable: true),
+                    Sex = table.Column<string>(type: "text", nullable: true),
                     PhoneNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
-                    CountryCode = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
-                    Timezone = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    CountryCode = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: true),
+                    Timezone = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    EmailVerified = table.Column<bool>(type: "boolean", nullable: false),
-                    PrivacyConsent = table.Column<bool>(type: "boolean", nullable: false),
-                    DataSharingConsent = table.Column<bool>(type: "boolean", nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_users", x => x.UserId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FrequencyRule",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    GuidelineId = table.Column<Guid>(type: "uuid", nullable: false),
+                    MinAge = table.Column<int>(type: "integer", nullable: true),
+                    MaxAge = table.Column<int>(type: "integer", nullable: true),
+                    SexApplicable = table.Column<int>(type: "integer", nullable: true),
+                    PregnancyApplicable = table.Column<int>(type: "integer", nullable: true),
+                    FrequencyMonths = table.Column<int>(type: "integer", nullable: false),
+                    Condition = table.Column<string>(type: "text", nullable: true),
+                    ScreeningGuidelineGuidelineId = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FrequencyRule", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FrequencyRule_screening_guidelines_ScreeningGuidelineGuidel~",
+                        column: x => x.ScreeningGuidelineGuidelineId,
+                        principalTable: "screening_guidelines",
+                        principalColumn: "GuidelineId");
                 });
 
             migrationBuilder.CreateTable(
@@ -205,6 +253,7 @@ namespace IoTM.Migrations
                     SmokingStatus = table.Column<string>(type: "text", nullable: false),
                     AlcoholFrequency = table.Column<string>(type: "text", nullable: false),
                     ActivityLevel = table.Column<string>(type: "text", nullable: false),
+                    PregnancyStatus = table.Column<int>(type: "integer", nullable: true),
                     Occupation = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     EmergencyContactName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     EmergencyContactPhone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
@@ -233,9 +282,7 @@ namespace IoTM.Migrations
                     ScreeningId = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     GuidelineId = table.Column<Guid>(type: "uuid", nullable: false),
-                    DueDate = table.Column<DateOnly>(type: "date", nullable: false),
                     Status = table.Column<string>(type: "text", nullable: false),
-                    ScheduledDate = table.Column<DateOnly>(type: "date", nullable: true),
                     CompletedDate = table.Column<DateOnly>(type: "date", nullable: true),
                     ProviderName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     ProviderPhone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
@@ -294,6 +341,28 @@ namespace IoTM.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ScheduledScreenings",
+                columns: table => new
+                {
+                    ScheduledScreeningId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ScreeningId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ScheduledDate = table.Column<DateOnly>(type: "date", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ScheduledScreenings", x => x.ScheduledScreeningId);
+                    table.ForeignKey(
+                        name: "FK_ScheduledScreenings_user_screenings_ScreeningId",
+                        column: x => x.ScreeningId,
+                        principalTable: "user_screenings",
+                        principalColumn: "ScreeningId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "health_alerts",
                 columns: table => new
                 {
@@ -347,6 +416,11 @@ namespace IoTM.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_FrequencyRule_ScreeningGuidelineGuidelineId",
+                table: "FrequencyRule",
+                column: "ScreeningGuidelineGuidelineId");
+
+            migrationBuilder.CreateIndex(
                 name: "idx_severity_created",
                 table: "health_alerts",
                 columns: new[] { "Severity", "CreatedAt" });
@@ -392,25 +466,25 @@ namespace IoTM.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ScheduledScreenings_ScreeningId",
+                table: "ScheduledScreenings",
+                column: "ScreeningId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_user_medical_profiles_UserId",
                 table: "user_medical_profiles",
                 column: "UserId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "idx_status_due",
-                table: "user_screenings",
-                columns: new[] { "Status", "DueDate" });
-
-            migrationBuilder.CreateIndex(
-                name: "idx_user_due_date",
-                table: "user_screenings",
-                columns: new[] { "UserId", "DueDate" });
-
-            migrationBuilder.CreateIndex(
                 name: "IX_user_screenings_GuidelineId",
                 table: "user_screenings",
                 column: "GuidelineId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_user_screenings_UserId",
+                table: "user_screenings",
+                column: "UserId");
         }
 
         /// <inheritdoc />
@@ -423,6 +497,9 @@ namespace IoTM.Migrations
                 name: "family_history");
 
             migrationBuilder.DropTable(
+                name: "FrequencyRule");
+
+            migrationBuilder.DropTable(
                 name: "health_alerts");
 
             migrationBuilder.DropTable(
@@ -430,6 +507,12 @@ namespace IoTM.Migrations
 
             migrationBuilder.DropTable(
                 name: "medications");
+
+            migrationBuilder.DropTable(
+                name: "NewsArticles");
+
+            migrationBuilder.DropTable(
+                name: "ScheduledScreenings");
 
             migrationBuilder.DropTable(
                 name: "user_medical_profiles");

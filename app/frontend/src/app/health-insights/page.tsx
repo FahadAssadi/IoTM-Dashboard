@@ -8,6 +8,7 @@ import {
   Download,
   Heart,
   // LineChart as LineChartIcon, - ES-Lint Error
+  // LineChart as LineChartIcon, - ES-Lint Error
   Trees as Lungs,
   Share2,
   Footprints as Shoe,
@@ -231,16 +232,12 @@ function VitalCard({ title, value, unit, status, change, icon }: VitalCardProps)
         return "text-teal-700"
     }
   }
-
-  // FIX THIS
-  console.log("Fix the problem with icon: ", icon)
-
   return (
     <Card>
       <CardContent className="p-6">
         <div className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-slate-800">{title}</CardTitle>
-          {icon} {/* This was icon but the types were weird*/}
+          {icon}
         </div>
 
         <div className="flex items-end gap-1">

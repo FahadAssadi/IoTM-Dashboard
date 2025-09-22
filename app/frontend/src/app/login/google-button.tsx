@@ -1,10 +1,29 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { supabase } from "@/lib/supabase/client";
 
 export default function GoogleButton() {
+
+    const site_url = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+
+    async function signInWithGoogle() {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: `${site_url}`
+            }
+        });
+
+        if (error) {
+            console.error('Error signing in:', error.message);
+        } else {
+            console.log('Redirecting to Google login...');
+        }
+    } 
+
     return (
-        <Button variant="outline" className="w-full">
+        <Button variant="outline" className="w-full" onClick={signInWithGoogle}>
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 height="24"
