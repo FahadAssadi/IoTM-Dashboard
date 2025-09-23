@@ -4,21 +4,16 @@ using Microsoft.Extensions.Options;
 
 namespace IoTM.Services.HealthConnect;
 
-public class BPMService
+public class SpO2Service(IOptions<HealthThresholds> options)
 {
-    private readonly BPMThresholds _thresholds;
-    public BPMService(IOptions<HealthThresholds> options)
-    {
-        // this grabs the configured thresholds
-        _thresholds = options.Value.BPM;
-    }
+    private readonly SpO2Thresholds _thresholds = options.Value.SpO2;
 
-    private void CategoriseSegment(HealthSegmentBPM healthSegmentBPM)
+    private void CategoriseSegment(HealthSegmentSpO2 healthSegmentSpO2)
     {
         // Categorisation based on value
-        GenericCategory? outputCategory = _thresholds.Categories.FirstOrDefault(c => healthSegmentBPM.AverageBpm >= c.Min && healthSegmentBPM.AverageBpm <= c.Max);
+        GenericCategory? outputCategory = _thresholds.Categories.FirstOrDefault(c => healthSegmentSpO2.AverageSpO2 >= c.Min && healthSegmentSpO2.AverageSpO2 <= c.Max);
         // Categorisation basd on deviation
-        GenericCategory? deviationCategory = _thresholds.DeviationCategories.FirstOrDefault(c => healthSegmentBPM.StandardDeviation >= c.Min && healthSegmentBPM.StandardDeviation <= c.Max);
+        GenericCategory? deviationCategory = _thresholds.DeviationCategories.FirstOrDefault(c => healthSegmentSpO2.StandardDeviation >= c.Min && healthSegmentSpO2.StandardDeviation <= c.Max);
         // Compare priorities only if both categories exist
         if (deviationCategory is not null)
         {
@@ -27,38 +22,38 @@ public class BPMService
                 outputCategory = deviationCategory;
             }
         }
-        healthSegmentBPM.Category = outputCategory?.Name ?? "Unclassified";
+        healthSegmentSpO2.Category = outputCategory?.Name ?? "Unclassified";
         return;
     }
 
-    private HealthSegmentBPM CreateSegmentEntity(List<PointDto> points, Guid userId)
+    private HealthSegmentSpO2 CreateSegmentEntity(List<PointDto> points, Guid userId)
     {
         // Extract non-null percentages
-        var nonNullBPMs = points
-            .Select(p => p.Bpm)
+        var nonNullPercentages = points
+            .Select(p => p.Percentage)
             .Where(p => p.HasValue)
             .Select(p => p.Value)
             .ToList();
 
-        if (nonNullBPMs.Count != 0)
+        if (nonNullPercentages.Count != 0)
         {
-            double average = nonNullBPMs.Average();
+            double average = nonNullPercentages.Average();
             // Standard deviation calculation
-            double stdDev = Math.Sqrt(nonNullBPMs
+            double stdDev = Math.Sqrt(nonNullPercentages
                 .Average(b => Math.Pow(b - average, 2)));
             // Create entity
-            HealthSegmentBPM healthSegmentBPM = new()
+            HealthSegmentSpO2 healthSegmentSpO2 = new()
             {
                 UserId = userId,
                 Start = points.First().Time,
                 End = points.Last().Time,
                 Points = points.Count,
-                AverageBpm = Math.Round(average, 2),
+                AverageSpO2 = Math.Round(average, 2),
                 StandardDeviation = Math.Round(stdDev, 2)
             };
             // Categorize segment
-            CategoriseSegment(healthSegmentBPM);
-            return healthSegmentBPM;
+            CategoriseSegment(healthSegmentSpO2);
+            return healthSegmentSpO2;
         }
         else
         {
@@ -66,7 +61,7 @@ public class BPMService
         }
     }
 
-    private static List<PointDto> HandleRecentSegment(List<PointDto> points, HealthSegmentBPM? recentSegment, List<HealthSegmentBPM> segments)
+    private static List<PointDto> HandleRecentSegment(List<PointDto> points, HealthSegmentSpO2? recentSegment, List<HealthSegmentSpO2> segments)
     {
         if (recentSegment == null)
             return points;
@@ -89,17 +84,17 @@ public class BPMService
 
     private bool IsBelowStdDevThreshold(List<PointDto> segment)
     {
-        var bpms = segment.Select(p => p.Bpm).Where(b => b.HasValue).Select(b => b.Value).ToList();
-        double avg = bpms.Average();
-        double stdDev = Math.Sqrt(bpms.Average(b => Math.Pow(b - avg, 2)));
+        var percentage = segment.Select(p => p.Percentage).Where(b => b.HasValue).Select(b => b.Value).ToList();
+        double avg = percentage.Average();
+        double stdDev = Math.Sqrt(percentage.Average(b => Math.Pow(b - avg, 2)));
 
         return stdDev < _thresholds.StdDevThreshold;
     }
 
-    public List<HealthSegmentBPM> SegmentData(List<PointDto> points, Guid userId, HealthSegmentBPM? recentSegment)
+    public List<HealthSegmentSpO2> SegmentData(List<PointDto> points, Guid userId, HealthSegmentSpO2? recentSegment)
     {
         var sortedPoints = points.OrderBy(p => p.Time).ToList();
-        List<HealthSegmentBPM> segments = [];
+        List<HealthSegmentSpO2> segments = [];
 
         sortedPoints = HandleRecentSegment(sortedPoints, recentSegment, segments);
 
@@ -111,29 +106,29 @@ public class BPMService
 
         while (segmentEndIndex < sortedPoints.Count)
         {
-            var currentSegment = sortedPoints.GetRange(segmentStartIndex, segmentEndIndex - segmentStartIndex + 1);
-            var duration = currentSegment.Last().Time - currentSegment.First().Time;
+            var testSegment = sortedPoints.GetRange(segmentStartIndex, segmentEndIndex - segmentStartIndex + 1);
+            var duration = testSegment.Last().Time - testSegment.First().Time;
 
             if (duration < TimeSpan.FromHours(_thresholds.MinSegmentDuration))
-            {
+            {   // increase length of segment
                 segmentEndIndex++;
                 continue;
             }
 
             if (duration > TimeSpan.FromHours(_thresholds.MaxSegmentDuration))
-            {
+            {   // End Segment
                 var longSegment = sortedPoints.GetRange(segmentStartIndex, segmentEndIndex - segmentStartIndex);
                 segments.Add(CreateSegmentEntity(longSegment, userId));
                 segmentStartIndex = segmentEndIndex;
                 continue;
             }
 
-            if (IsBelowStdDevThreshold(currentSegment))
-            {
+            if (IsBelowStdDevThreshold(testSegment))
+            {   // Increase Length of segment
                 segmentEndIndex++;
                 continue;
             }
-
+            // End Segment
             var segment = sortedPoints.GetRange(segmentStartIndex, segmentEndIndex - segmentStartIndex);
             segments.Add(CreateSegmentEntity(segment, userId));
             segmentStartIndex = segmentEndIndex;

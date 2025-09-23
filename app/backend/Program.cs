@@ -31,9 +31,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Config stuff
 builder.Services.Configure<HealthThresholds>(
     builder.Configuration.GetSection("HealthThresholds"));
-// Register HealthSegmenter as singleton (safe if thresholds don't change)
+// Register Services as singleton (safe if thresholds don't change)
 // builder.Services.AddSingleton<HealthSegmenter>();
 builder.Services.AddSingleton<BPMService>();
+builder.Services.AddSingleton<SpO2Service>();
 
 // Authentication and Authorisation
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

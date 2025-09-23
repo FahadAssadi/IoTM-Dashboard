@@ -8,16 +8,16 @@ using Microsoft.AspNetCore.Authorization;
 namespace IoTM.Controllers.HealthConnect
 {
     [ApiController]
-    [Route("api/healthconnect/bpm")]
+    [Route("api/healthconnect/spo2")]
     [Authorize]
-    public class BPMController(ApplicationDbContext context, BPMService service) : ControllerBase
+    public class SpO2Controller(ApplicationDbContext context, SpO2Service service) : ControllerBase
     {
         private readonly ApplicationDbContext _context = context;
-        private readonly BPMService _service = service;
+        private readonly SpO2Service _service = service;
 
         [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> PostBpmDataTest([FromBody] HealthDataDto dataDto)
+        public async Task<IActionResult> PostSpO2DataTest([FromBody] HealthDataDto dataDto)
         {
             if (dataDto == null || dataDto.Points == null || !dataDto.Points.Any())
             {
@@ -25,19 +25,19 @@ namespace IoTM.Controllers.HealthConnect
             }
             Guid userId = Guid.NewGuid();
             // Retrieve the most recent segment for the user (by End time)
-            var lastSegment = await _context.HealthSegmentBPMs
+            var lastSegment = await _context.HealthSegmentSpO2s
                 .Where(s => s.UserId == userId)
                 .OrderByDescending(s => s.End)
                 .FirstOrDefaultAsync();
             // Create new segments using the new data
-            var segments = _service.SegmentData(dataDto.Points, userId, lastSegment);
+            var segments = _service.SegmentData(dataDto.Points, userId, null); //, lastSegment);
             // Does NOT save to DB
             return Ok(segments.Select(s => new
             {
                 s.Start,
                 s.End,
                 s.Points,
-                s.AverageBpm,
+                s.AverageSpO2,
                 s.StandardDeviation,
                 s.DurationHours,
                 s.Category
@@ -45,7 +45,8 @@ namespace IoTM.Controllers.HealthConnect
         }
 
         [HttpPost("{userId}")]
-        public async Task<IActionResult> PostBpmData(Guid userId, [FromBody] HealthDataDto dataDto)
+        [AllowAnonymous]
+        public async Task<IActionResult> PostSpO2Data(Guid userId, [FromBody] HealthDataDto dataDto)
         {
             if (dataDto == null || dataDto.Points == null || !dataDto.Points.Any())
             {
@@ -53,27 +54,27 @@ namespace IoTM.Controllers.HealthConnect
             }
 
             // Retrieve the most recent segment for the user (by End time)
-            var lastSegment = await _context.HealthSegmentBPMs
+            var lastSegment = await _context.HealthSegmentSpO2s
                 .Where(s => s.UserId == userId)
                 .OrderByDescending(s => s.End)
                 .FirstOrDefaultAsync();
             // Remove the last segment if it exists
             if (lastSegment != null)
             {
-                _context.HealthSegmentBPMs.Remove(lastSegment);
+                _context.HealthSegmentSpO2s.Remove(lastSegment);
                 await _context.SaveChangesAsync(); // Save immediately to persist deletion
             }
             // Create new segments using the new data
             var segments = _service.SegmentData(dataDto.Points, userId, lastSegment);
             // Save to DB
-            await _context.HealthSegmentBPMs.AddRangeAsync(segments);
+            await _context.HealthSegmentSpO2s.AddRangeAsync(segments);
             await _context.SaveChangesAsync();
             return Ok(segments.Select(s => new
             {
                 s.Start,
                 s.End,
                 s.Points,
-                s.AverageBpm,
+                s.AverageSpO2,
                 s.StandardDeviation,
                 s.DurationHours,
                 s.Category
@@ -81,9 +82,9 @@ namespace IoTM.Controllers.HealthConnect
         }
 
         [HttpGet("{userId}")]
-        public async Task<IActionResult> GetUserBpmData(Guid userId)
+        public async Task<IActionResult> GetUserSpO2Data(Guid userId)
         {
-            var segments = await _context.HealthSegmentBPMs
+            var segments = await _context.HealthSegmentSpO2s
                 .Where(s => s.UserId == userId)
                 .OrderByDescending(s => s.Start) // optional: sort latest first
                 .ToListAsync();
@@ -99,7 +100,7 @@ namespace IoTM.Controllers.HealthConnect
                 s.Start,
                 s.End,
                 s.Points,
-                s.AverageBpm,
+                s.AverageSpO2,
                 s.StandardDeviation,
                 s.DurationHours,
                 s.Category

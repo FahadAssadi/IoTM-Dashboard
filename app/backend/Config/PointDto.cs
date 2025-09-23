@@ -8,6 +8,9 @@ namespace IoTM.Config
         public DateTime Time { get; set; }
 
         [JsonPropertyName("bpm")]
-        public int Bpm { get; set; }
+        public int? Bpm { get; set; }
+
+        [JsonPropertyName("percentage")] // for SpO2
+        public int? Percentage { get; set; }
     }
 }

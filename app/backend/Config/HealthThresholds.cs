@@ -4,6 +4,7 @@ namespace IoTM.Config
     {
         public required BPMThresholds BPM { get; set; }
         public required BloodPressureThresholds BloodPressure { get; set; }
+        public required SpO2Thresholds SpO2 { get; set; }
     }
 
     public class BloodPressureThresholds
@@ -14,6 +15,15 @@ namespace IoTM.Config
     }
 
     public class BPMThresholds
+    {
+        public required List<GenericCategory> Categories { get; set; }
+        public required List<GenericCategory> DeviationCategories { get; set; }
+        public required double MinSegmentDuration { get; set; }
+        public required double MaxSegmentDuration { get; set; }
+        public required double StdDevThreshold { get; set; }
+    }
+
+    public class SpO2Thresholds
     {
         public required List<GenericCategory> Categories { get; set; }
         public required List<GenericCategory> DeviationCategories { get; set; }
