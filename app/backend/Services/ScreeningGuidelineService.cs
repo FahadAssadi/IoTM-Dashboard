@@ -260,12 +260,12 @@ namespace IoTM.Services
 
             switch (c.Factor)
             {
-                case LifestyleFactor.SmokingStatus: sval = ctx.SmokingStatus; break;
-                case LifestyleFactor.Sex: sval = ctx.Sex; break;
-                case LifestyleFactor.PregnancyStatus: sval = ctx.PregnancyStatus; break;
-                case LifestyleFactor.AlcoholFrequency: sval = ctx.AlcoholFrequency; break;
-                case LifestyleFactor.ActivityLevel: sval = ctx.ActivityLevel; break;
-                case LifestyleFactor.Age: nval = ctx.Age; break;
+                case LifestyleFactorType.SmokingStatus: sval = ctx.SmokingStatus; break;
+                case LifestyleFactorType.Sex: sval = ctx.Sex; break;
+                case LifestyleFactorType.PregnancyStatus: sval = ctx.PregnancyStatus; break;
+                case LifestyleFactorType.AlcoholFrequency: sval = ctx.AlcoholFrequency; break;
+                case LifestyleFactorType.ActivityLevel: sval = ctx.ActivityLevel; break;
+                case LifestyleFactorType.Age: nval = ctx.Age; break;
                 default: return false;
             }
 

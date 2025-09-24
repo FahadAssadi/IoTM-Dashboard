@@ -4,7 +4,7 @@ namespace IoTM.Models
 {
     // What user attribute to check
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public enum LifestyleFactor
+    public enum LifestyleFactorType
     {
         SmokingStatus,
         AlcoholFrequency,
@@ -32,7 +32,7 @@ namespace IoTM.Models
     // Single rule about one factor
     public class Criterion
     {
-        public LifestyleFactor Factor { get; set; }
+        public LifestyleFactorType Factor { get; set; }
         public ComparisonOperator Operator { get; set; }
 
         // For categorical comparisons (Equals/In/NotEquals/NotIn)
