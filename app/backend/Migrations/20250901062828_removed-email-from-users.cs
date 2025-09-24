@@ -5,7 +5,7 @@
 namespace IoTM.Migrations
 {
     /// <inheritdoc />
-    public partial class removedemailfromusers : Migration
+    public partial class RemovedEmailFromUsers : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
