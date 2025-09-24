@@ -10,6 +10,8 @@
   <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
   <uses-permission android:name="android.permission.health.READ_BLOOD_PRESSURE" />
   <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION" />
+  <uses-permission android:name="android.permission.health.READ_STEPS" />
+  <uses-permission android:name="android.permission.health.READ_SLEEP" />
 
   <!-- App visibility query for the Health Connect app and https VIEW intents -->
   <queries>

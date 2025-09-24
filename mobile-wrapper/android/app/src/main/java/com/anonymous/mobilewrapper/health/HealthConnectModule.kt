@@ -10,6 +10,8 @@ import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
+import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.records.SleepSessionRecord
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +43,8 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
     const val FILE_BP  = "blood_pressure_data.json"
     const val FILE_HR  = "heart_rate_data.json"
     const val FILE_SPO2 = "spo2_data.json"
+    const val FILE_STEPS = "steps_data.json"
+    const val FILE_SLEEP = "sleep_data.json"
   }
 
   private fun dataDir(): File {
@@ -57,7 +61,9 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
   private fun requiredPermissions(): Set<String> = setOf(
     HealthPermission.getReadPermission(HeartRateRecord::class),
     HealthPermission.getReadPermission(BloodPressureRecord::class),
-    HealthPermission.getReadPermission(OxygenSaturationRecord::class)
+    HealthPermission.getReadPermission(OxygenSaturationRecord::class),
+    HealthPermission.getReadPermission(StepsRecord::class),
+    HealthPermission.getReadPermission(SleepSessionRecord::class)
   )
 
   @ReactMethod
@@ -142,6 +148,8 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
           HealthPermission.getReadPermission(HeartRateRecord::class),
           HealthPermission.getReadPermission(BloodPressureRecord::class),
           HealthPermission.getReadPermission(OxygenSaturationRecord::class),
+          HealthPermission.getReadPermission(StepsRecord::class),
+          HealthPermission.getReadPermission(SleepSessionRecord::class),
         )
         val granted = hc.permissionController.getGrantedPermissions()
         if (!granted.containsAll(required)) throw SecurityException("Permissions not granted")
@@ -149,30 +157,32 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
         val existing = HcTokenStore.getToken(reactContext)
         val stillValid = existing != null && !HcTokenStore.isTokenExpired(reactContext)
 
-        if (stillValid) {
-          // Ensure periodic job is running
-          HealthConnectSyncWorker.schedule(reactContext, 1L)
+        // if (stillValid) {
+        //   // Ensure periodic job is running
+        //   HealthConnectSyncWorker.schedule(reactContext, 15L)
 
-          // Trigger an immediate sync so user sees updates right away
-          HealthConnectSyncWorker.enqueueOneTime(reactContext)
+        //   // Trigger an immediate sync so user sees updates right away
+        //   HealthConnectSyncWorker.enqueueOneTime(reactContext)
 
-          withContext(Dispatchers.Main) { promise.resolve(true) }
-          return@launch
-        }
+        //   withContext(Dispatchers.Main) { promise.resolve(true) }
+        //   return@launch
+        // }
 
         // Get & store changes token immediately
         val token = hc.getChangesToken(
           ChangesTokenRequest(setOf(
             HeartRateRecord::class,
             BloodPressureRecord::class,
-            OxygenSaturationRecord::class
+            OxygenSaturationRecord::class,
+            StepsRecord::class,
+            SleepSessionRecord::class
           ))
         )
         HcTokenStore.saveToken(reactContext, token)
 
-        // 30 day window and seed JSON with ONLY ONE page (pageSize=1000)
+        // 7 day window and seed JSON with ONLY ONE page (pageSize=1000)
         val now = ZonedDateTime.now(ZoneOffset.UTC).toInstant()
-        val start = now.minus(30, ChronoUnit.DAYS)
+        val start = now.minus(7, ChronoUnit.DAYS)
         val tr = TimeRangeFilter.between(start, now)
         HcTokenStore.setBaselineRange(reactContext, start.toString(), now.toString())
 
@@ -181,21 +191,27 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
         val bpFile = File(outDir, FILE_BP)
         val hrFile = File(outDir, FILE_HR)
         val spo2File = File(outDir, FILE_SPO2)
+        val stepsFile = File(outDir, FILE_STEPS)
+        val sleepFile = File(outDir, FILE_SLEEP)
 
         val bpNext = HealthJsonWriters.writeFirstPageBloodPressure(hc, tr, bpFile, pageSize = 1000)
         val hrNext = HealthJsonWriters.writeFirstPageHeartRate(hc, tr, hrFile, pageSize = 1000)
         val spNext = HealthJsonWriters.writeFirstPageSpo2(hc, tr, spo2File, pageSize = 1000)
+        val stepsNext = HealthJsonWriters.writeFirstPageSteps(hc, tr, stepsFile, pageSize = 1000)
+        val sleepNext = HealthJsonWriters.writeFirstPageSleepSessions(hc, tr, sleepFile, pageSize = 1000)
 
         HcTokenStore.setNextPage(reactContext, "bp", bpNext)
         HcTokenStore.setNextPage(reactContext, "hr", hrNext)
         HcTokenStore.setNextPage(reactContext, "spo2", spNext)
+        HcTokenStore.setNextPage(reactContext, "steps", stepsNext)
+        HcTokenStore.setNextPage(reactContext, "sleep", sleepNext)
 
         val inProgress = (bpNext != null) || (hrNext != null) || (spNext != null)
         HcTokenStore.setBaselineInProgress(reactContext, inProgress)
         HcTokenStore.saveLastSyncNow(reactContext)
 
         // start worker for periodic schedule
-        HealthConnectSyncWorker.schedule(reactContext, 1L)
+        HealthConnectSyncWorker.schedule(reactContext, 15L)
         HealthConnectSyncWorker.enqueueOneTime(reactContext)
 
         withContext(Dispatchers.Main) { promise.resolve(true) }
@@ -221,6 +237,7 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
   fun runHealthSyncNow(promise: Promise) {
     try {
       HealthConnectSyncWorker.enqueueOneTime(reactContext)
+      HealthConnectSyncWorker.scheduleDebugLoop(reactContext, 2L)
       promise.resolve(true)
     } catch (t: Throwable) {
       promise.reject("RUN_NOW_ERROR", t.message, t)
