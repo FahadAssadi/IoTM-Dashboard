@@ -48,7 +48,7 @@ namespace IoTM.Services
                 var query = _context.UserScreenings
                     .Include(us => us.Guideline)
                     .Include(us => us.ScheduledScreenings)
-                    .Where(us => us.UserId == userId && us.Status != ScreeningStatus.skipped && us.Status != ScreeningStatus.completed)
+                    .Where(us => us.UserId == userId && us.Status != ScreeningStatus.skipped && us.Status != ScreeningStatus.completed && us.Status != ScreeningStatus.scheduled)
                     .OrderBy(us => us.Guideline.Name);
 
                 var total = await query.CountAsync();
@@ -94,7 +94,7 @@ namespace IoTM.Services
 
                 // Determine which to remove (no longer recommended).
                 var screeningsToRemove = existingScreenings
-                    .Where(us => !recommendedIds.Contains(us.GuidelineId) && us.Status == ScreeningStatus.completed)
+                    .Where(us => !recommendedIds.Contains(us.GuidelineId) && (us.Status == ScreeningStatus.completed || us.Status != ScreeningStatus.scheduled))
                     .ToList();
 
                 // Apply changes transactionally
@@ -229,11 +229,11 @@ namespace IoTM.Services
                 };
                 _context.ScheduledScreenings.Add(scheduledScreening);
 
-                // If the guideline is not recurring, mark as completed
+                // If the guideline is not recurring, mark as scheduled
                 var guideline = await _context.ScreeningGuidelines.FindAsync(guidelineId);
                 if (guideline != null && !guideline.IsRecurring)
                 {
-                    userScreening.Status = ScreeningStatus.completed;
+                    userScreening.Status = ScreeningStatus.scheduled;
                     userScreening.UpdatedAt = DateTime.UtcNow;
                 }
 
@@ -278,6 +278,20 @@ namespace IoTM.Services
                 {
                     _context.ScheduledScreenings.Remove(scheduledScreening);
                     await _context.SaveChangesAsync();
+
+                    // if screening is archived and non-recurring, set status to completed
+                    if (!scheduledScreening.IsActive && !scheduledScreening.UserScreening.Guideline.IsRecurring)
+                    {
+                        scheduledScreening.UserScreening.Status = ScreeningStatus.completed;
+                        scheduledScreening.UserScreening.UpdatedAt = DateTime.UtcNow;
+                    }
+
+                    // if screening is not archived and recurring, set status to pending
+                    if (scheduledScreening.IsActive && scheduledScreening.UserScreening.Guideline.IsRecurring)
+                    {
+                        scheduledScreening.UserScreening.Status = ScreeningStatus.pending;
+                        scheduledScreening.UserScreening.UpdatedAt = DateTime.UtcNow;
+                    }
                 }
             }
             catch (Exception ex)
@@ -298,6 +312,13 @@ namespace IoTM.Services
                 {
                     scheduledScreening.IsActive = false;
                     await _context.SaveChangesAsync();
+
+                    var guideline = await _context.ScreeningGuidelines.FindAsync(scheduledScreening.UserScreening.GuidelineId);
+                    if (guideline != null && !guideline.IsRecurring)
+                    {
+                        scheduledScreening.UserScreening.Status = ScreeningStatus.scheduled;
+                        scheduledScreening.UserScreening.UpdatedAt = DateTime.UtcNow;
+                    }
                 }
             }
             catch (Exception ex)
