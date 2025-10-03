@@ -276,22 +276,26 @@ namespace IoTM.Services
 
                 if (scheduledScreening != null)
                 {
+                    // Load the related UserScreening (and its Guideline) using the ScreeningId
+                    var userScreening = await _context.UserScreenings
+                        .Include(us => us.Guideline)
+                        .FirstOrDefaultAsync(us => us.ScreeningId == scheduledScreening.ScreeningId);
+
+                    // Remove the scheduled screening
                     _context.ScheduledScreenings.Remove(scheduledScreening);
+
+                    // Update parent UserScreening status based on whether the guideline is recurring
+                    if (userScreening?.Guideline != null)
+                    {
+                        // if screening is not archived and recurring, set status back to pending
+                        if (scheduledScreening.IsActive && userScreening.Guideline.IsRecurring)
+                        {
+                            userScreening.Status = ScreeningStatus.pending;
+                            userScreening.UpdatedAt = DateTime.UtcNow;
+                        }
+                    }
+
                     await _context.SaveChangesAsync();
-
-                    // if screening is archived and non-recurring, set status to completed
-                    if (!scheduledScreening.IsActive && !scheduledScreening.UserScreening.Guideline.IsRecurring)
-                    {
-                        scheduledScreening.UserScreening.Status = ScreeningStatus.completed;
-                        scheduledScreening.UserScreening.UpdatedAt = DateTime.UtcNow;
-                    }
-
-                    // if screening is not archived and recurring, set status to pending
-                    if (scheduledScreening.IsActive && scheduledScreening.UserScreening.Guideline.IsRecurring)
-                    {
-                        scheduledScreening.UserScreening.Status = ScreeningStatus.pending;
-                        scheduledScreening.UserScreening.UpdatedAt = DateTime.UtcNow;
-                    }
                 }
             }
             catch (Exception ex)
@@ -311,14 +315,23 @@ namespace IoTM.Services
                 if (scheduledScreening != null)
                 {
                     scheduledScreening.IsActive = false;
-                    await _context.SaveChangesAsync();
 
-                    var guideline = await _context.ScreeningGuidelines.FindAsync(scheduledScreening.UserScreening.GuidelineId);
-                    if (guideline != null && !guideline.IsRecurring)
+                    // Load the related UserScreening (and its Guideline) using the ScreeningId
+                    var userScreening = await _context.UserScreenings
+                        .Include(us => us.Guideline)
+                        .FirstOrDefaultAsync(us => us.ScreeningId == scheduledScreening.ScreeningId);
+                    // Update parent UserScreening status based on whether the guideline is recurring
+                    if (userScreening?.Guideline != null)
                     {
-                        scheduledScreening.UserScreening.Status = ScreeningStatus.scheduled;
-                        scheduledScreening.UserScreening.UpdatedAt = DateTime.UtcNow;
+                        // if screening is non-recurring, set status to completed
+                        // TODO: add check to make sure the scheduled date has passed, and throw error if not
+                        if (!userScreening.Guideline.IsRecurring)
+                        {
+                            userScreening.Status = ScreeningStatus.completed;
+                            userScreening.UpdatedAt = DateTime.UtcNow;
+                        }
                     }
+                    await _context.SaveChangesAsync();
                 }
             }
             catch (Exception ex)

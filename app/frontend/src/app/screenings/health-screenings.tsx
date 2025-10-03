@@ -78,7 +78,6 @@ export default function HealthScreenings() {
     try {
       const res = await fetch(`${apiBaseUrl}/api/UserScreenings/scheduled`);
       const data = await res.json();
-      console.log("DATAAAAA",data);
       // Map backend data to TimelineItem[]
       setTimelineItems(
         Array.isArray(data)
