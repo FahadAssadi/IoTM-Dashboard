@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.HttpsPolicy;
 
 namespace IoTM.Tests.Integration;
 
@@ -17,6 +18,9 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
+            // Avoid HTTPS redirection 500 by specifying an HTTPS port
+            services.PostConfigure<HttpsRedirectionOptions>(o => o.HttpsPort = 443);
+
             // Replace the real DB with InMemory
             var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
             if (descriptor != null)
@@ -27,6 +31,37 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             {
                 options.UseInMemoryDatabase($"IoTM_IntTest_{Guid.NewGuid()}");
             });
+
+            // Register a minimal Supabase client to satisfy controller DI via reflection
+            try
+            {
+                var clientType = Type.GetType("Supabase.Client, Supabase");
+                var optionsType = Type.GetType("Supabase.SupabaseOptions, Supabase");
+                if (clientType != null)
+                {
+                    object? optionsInstance = null;
+                    if (optionsType != null)
+                    {
+                        optionsInstance = Activator.CreateInstance(optionsType);
+                        var prop1 = optionsType.GetProperty("AutoRefreshToken");
+                        var prop2 = optionsType.GetProperty("AutoConnectRealtime");
+                        prop1?.SetValue(optionsInstance, false);
+                        prop2?.SetValue(optionsInstance, false);
+                    }
+
+                    var instance = optionsInstance is null
+                        ? Activator.CreateInstance(clientType, new object?[] { "http://localhost", "test" })
+                        : Activator.CreateInstance(clientType, new object?[] { "http://localhost", "test", optionsInstance });
+                    if (instance != null)
+                    {
+                        services.AddSingleton(clientType, instance);
+                    }
+                }
+            }
+            catch
+            {
+                // If Supabase types aren't available or constructor differs, ignore.
+            }
         });
     }
 

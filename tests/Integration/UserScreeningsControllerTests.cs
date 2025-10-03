@@ -18,6 +18,11 @@ public class UserScreeningsControllerTests : IClassFixture<CustomWebApplicationF
     {
         var client = _factory.CreateClient();
         var response = await client.GetAsync("/api/UserScreenings?page=1&pageSize=4");
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            throw new Xunit.Sdk.XunitException($"Expected 200 OK but got {(int)response.StatusCode} {response.StatusCode}. Body: {body}");
+        }
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 }
