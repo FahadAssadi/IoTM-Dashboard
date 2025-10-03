@@ -1,4 +1,5 @@
 using IoTM.Config;
+using IoTM.Dtos.HealthPoints;
 using IoTM.Models.HealthSegments;
 using Microsoft.Extensions.Options;
 
@@ -31,42 +32,29 @@ public class BPMService
         return;
     }
 
-    private HealthSegmentBPM CreateSegmentEntity(List<PointDto> points, Guid userId)
+    private HealthSegmentBPM CreateSegmentEntity(List<BPMPointDto> points, Guid userId)
     {
-        // Extract non-null percentages
-        var nonNullBPMs = points
-            .Select(p => p.Bpm)
-            .Where(p => p.HasValue)
-            .Select(p => p.Value)
-            .ToList();
-
-        if (nonNullBPMs.Count != 0)
+        double average = points.Average(p => p.Bpm);
+        // Standard deviation calculation
+        double stdDev = Math.Sqrt(
+            points.Average(p => Math.Pow(p.Bpm - average, 2))
+        );
+        // Create entity
+        HealthSegmentBPM healthSegmentBPM = new()
         {
-            double average = nonNullBPMs.Average();
-            // Standard deviation calculation
-            double stdDev = Math.Sqrt(nonNullBPMs
-                .Average(b => Math.Pow(b - average, 2)));
-            // Create entity
-            HealthSegmentBPM healthSegmentBPM = new()
-            {
-                UserId = userId,
-                Start = points.First().Time,
-                End = points.Last().Time,
-                Points = points.Count,
-                AverageBpm = Math.Round(average, 2),
-                StandardDeviation = Math.Round(stdDev, 2)
-            };
-            // Categorize segment
-            CategoriseSegment(healthSegmentBPM);
-            return healthSegmentBPM;
-        }
-        else
-        {
-            throw new InvalidOperationException("Cannot create segment: no valid (non-null) percentage values found.");
-        }
+            UserId = userId,
+            Start = points.First().Time,
+            End = points.Last().Time,
+            Points = points.Count,
+            AverageBpm = Math.Round(average, 2),
+            StandardDeviation = Math.Round(stdDev, 2)
+        };
+        // Categorize segment
+        CategoriseSegment(healthSegmentBPM);
+        return healthSegmentBPM;
     }
 
-    private static List<PointDto> HandleRecentSegment(List<PointDto> points, HealthSegmentBPM? recentSegment, List<HealthSegmentBPM> segments)
+    private static List<BPMPointDto> HandleRecentSegment(List<BPMPointDto> points, HealthSegmentBPM? recentSegment, List<HealthSegmentBPM> segments)
     {
         if (recentSegment == null)
             return points;
@@ -87,16 +75,16 @@ public class BPMService
         return filteredPoints;
     }
 
-    private bool IsBelowStdDevThreshold(List<PointDto> segment)
+    private bool IsBelowStdDevThreshold(List<BPMPointDto> segment)
     {
-        var bpms = segment.Select(p => p.Bpm).Where(b => b.HasValue).Select(b => b.Value).ToList();
+        var bpms = segment.Select(p => p.Bpm).ToList();
         double avg = bpms.Average();
         double stdDev = Math.Sqrt(bpms.Average(b => Math.Pow(b - avg, 2)));
 
         return stdDev < _thresholds.StdDevThreshold;
     }
 
-    public List<HealthSegmentBPM> SegmentData(List<PointDto> points, Guid userId, HealthSegmentBPM? recentSegment)
+    public List<HealthSegmentBPM> SegmentData(List<BPMPointDto> points, Guid userId, HealthSegmentBPM? recentSegment)
     {
         var sortedPoints = points.OrderBy(p => p.Time).ToList();
         List<HealthSegmentBPM> segments = [];

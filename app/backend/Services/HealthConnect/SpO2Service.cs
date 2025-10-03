@@ -1,6 +1,7 @@
 using IoTM.Config;
 using IoTM.Models.HealthSegments;
 using Microsoft.Extensions.Options;
+using IoTM.Dtos.HealthPoints;
 
 namespace IoTM.Services.HealthConnect;
 
@@ -26,42 +27,30 @@ public class SpO2Service(IOptions<HealthThresholds> options)
         return;
     }
 
-    private HealthSegmentSpO2 CreateSegmentEntity(List<PointDto> points, Guid userId)
+    private HealthSegmentSpO2 CreateSegmentEntity(List<SpO2PointDto> points, Guid userId)
     {
-        // Extract non-null percentages
-        var nonNullPercentages = points
-            .Select(p => p.Percentage)
-            .Where(p => p.HasValue)
-            .Select(p => p.Value)
-            .ToList();
 
-        if (nonNullPercentages.Count != 0)
+        double average = points.Average(p => p.Percentage);
+        // Standard deviation calculation
+        double stdDev = Math.Sqrt(
+            points.Average(p => Math.Pow(p.Percentage - average, 2))
+        );
+        // Create entity
+        HealthSegmentSpO2 healthSegmentSpO2 = new()
         {
-            double average = nonNullPercentages.Average();
-            // Standard deviation calculation
-            double stdDev = Math.Sqrt(nonNullPercentages
-                .Average(b => Math.Pow(b - average, 2)));
-            // Create entity
-            HealthSegmentSpO2 healthSegmentSpO2 = new()
-            {
-                UserId = userId,
-                Start = points.First().Time,
-                End = points.Last().Time,
-                Points = points.Count,
-                AverageSpO2 = Math.Round(average, 2),
-                StandardDeviation = Math.Round(stdDev, 2)
-            };
-            // Categorize segment
-            CategoriseSegment(healthSegmentSpO2);
-            return healthSegmentSpO2;
-        }
-        else
-        {
-            throw new InvalidOperationException("Cannot create segment: no valid (non-null) percentage values found.");
-        }
+            UserId = userId,
+            Start = points.First().Time,
+            End = points.Last().Time,
+            Points = points.Count,
+            AverageSpO2 = Math.Round(average, 2),
+            StandardDeviation = Math.Round(stdDev, 2)
+        };
+        // Categorize segment
+        CategoriseSegment(healthSegmentSpO2);
+        return healthSegmentSpO2;
     }
 
-    private static List<PointDto> HandleRecentSegment(List<PointDto> points, HealthSegmentSpO2? recentSegment, List<HealthSegmentSpO2> segments)
+    private static List<SpO2PointDto> HandleRecentSegment(List<SpO2PointDto> points, HealthSegmentSpO2? recentSegment, List<HealthSegmentSpO2> segments)
     {
         if (recentSegment == null)
             return points;
@@ -82,16 +71,16 @@ public class SpO2Service(IOptions<HealthThresholds> options)
         return filteredPoints;
     }
 
-    private bool IsBelowStdDevThreshold(List<PointDto> segment)
+    private bool IsBelowStdDevThreshold(List<SpO2PointDto> segment)
     {
-        var percentage = segment.Select(p => p.Percentage).Where(b => b.HasValue).Select(b => b.Value).ToList();
+        var percentage = segment.Select(p => p.Percentage).ToList();
         double avg = percentage.Average();
         double stdDev = Math.Sqrt(percentage.Average(b => Math.Pow(b - avg, 2)));
 
         return stdDev < _thresholds.StdDevThreshold;
     }
 
-    public List<HealthSegmentSpO2> SegmentData(List<PointDto> points, Guid userId, HealthSegmentSpO2? recentSegment)
+    public List<HealthSegmentSpO2> SegmentData(List<SpO2PointDto> points, Guid userId, HealthSegmentSpO2? recentSegment)
     {
         var sortedPoints = points.OrderBy(p => p.Time).ToList();
         List<HealthSegmentSpO2> segments = [];

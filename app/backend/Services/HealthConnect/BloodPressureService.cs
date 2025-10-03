@@ -1,6 +1,7 @@
 using IoTM.Config;
 using IoTM.Models.HealthSegments;
 using Microsoft.Extensions.Options;
+using IoTM.Dtos.HealthPoints;
 
 namespace IoTM.Services.HealthConnect;
 
@@ -27,52 +28,35 @@ public class BloodPressureService
         return;
     }
 
-    private HealthSegmentBloodPressure CreateSegmentEntity(List<PointDto> points, Guid userId)
+    private HealthSegmentBloodPressure CreateSegmentEntity(List<BloodPressurePointDto> points, Guid userId)
     {
-        // Extract non-null percentages
-        var nonNullSystolic = points
-            .Select(p => p.Systolic)
-            .Where(p => p.HasValue)
-            .Select(p => p.Value)
-            .ToList();
-        var nonNullDiastolic = points
-            .Select(p => p.Diastolic)
-            .Where(p => p.HasValue)
-            .Select(p => p.Value)
-            .ToList();
-
-        if (nonNullSystolic.Count == nonNullDiastolic.Count && nonNullDiastolic.Count > 0)
+        double averageSystolic = points.Average(p => p.Systolic);
+        double averageDiastolic = points.Average(p => p.Diastolic);
+        // Standard deviation calculation
+        double stdDevSystolic = Math.Sqrt(
+            points.Average(p => Math.Pow(p.Systolic - averageSystolic, 2))
+        );
+        double stdDevDiastolic = Math.Sqrt(
+            points.Average(p => Math.Pow(p.Diastolic - averageDiastolic, 2))
+        );
+        // Create entity
+        HealthSegmentBloodPressure healthSegmentBloodPressure = new()
         {
-            double averageSystolic = nonNullSystolic.Average();
-            double averageDiastolic = nonNullDiastolic.Average();
-            // Standard deviation calculation
-            double stdDevSystolic = Math.Sqrt(nonNullSystolic
-                .Average(b => Math.Pow(b - averageSystolic, 2)));
-            double stdDevDiastolic = Math.Sqrt(nonNullDiastolic
-                .Average(b => Math.Pow(b - averageDiastolic, 2)));
-            // Create entity
-            HealthSegmentBloodPressure healthSegmentBloodPressure = new()
-            {
-                UserId = userId,
-                Start = points.First().Time,
-                End = points.Last().Time,
-                Points = points.Count,
-                AverageDiastolic = Math.Round(averageDiastolic, 2),
-                AverageSystolic = Math.Round(averageSystolic, 2),
-                SystolicStandardDeviation = Math.Round(stdDevSystolic, 2),
-                DiastolicStandardDeviation = Math.Round(stdDevDiastolic, 2)
-            };
-            // Categorize segment
-            CategoriseSegment(healthSegmentBloodPressure);
-            return healthSegmentBloodPressure;
-        }
-        else
-        {
-            throw new InvalidOperationException("Cannot create segment: no valid (non-null) percentage values found.");
-        }
+            UserId = userId,
+            Start = points.First().Time,
+            End = points.Last().Time,
+            Points = points.Count,
+            AverageDiastolic = Math.Round(averageDiastolic, 2),
+            AverageSystolic = Math.Round(averageSystolic, 2),
+            SystolicStandardDeviation = Math.Round(stdDevSystolic, 2),
+            DiastolicStandardDeviation = Math.Round(stdDevDiastolic, 2)
+        };
+        // Categorize segment
+        CategoriseSegment(healthSegmentBloodPressure);
+        return healthSegmentBloodPressure;
     }
 
-    private static List<PointDto> HandleRecentSegment(List<PointDto> points, HealthSegmentBloodPressure? recentSegment, List<HealthSegmentBloodPressure> segments)
+    private static List<BloodPressurePointDto> HandleRecentSegment(List<BloodPressurePointDto> points, HealthSegmentBloodPressure? recentSegment, List<HealthSegmentBloodPressure> segments)
     {
         if (recentSegment == null)
             return points;
@@ -93,16 +77,16 @@ public class BloodPressureService
         return filteredPoints;
     }
 
-    private bool IsBelowStdDevThreshold(List<PointDto> segment)
+    private bool IsBelowStdDevThreshold(List<BloodPressurePointDto> segment)
     {
-        var systolicValues = segment.Select(p => p.Systolic).Where(b => b.HasValue).Select(b => b.Value).ToList();
+        var systolicValues = segment.Select(p => p.Systolic).ToList();
         double avg = systolicValues.Average();
         double stdDev = Math.Sqrt(systolicValues.Average(b => Math.Pow(b - avg, 2)));
 
         return stdDev < _thresholds.StdDevThreshold;
     }
 
-    public List<HealthSegmentBloodPressure> SegmentData(List<PointDto> points, Guid userId, HealthSegmentBloodPressure? recentSegment)
+    public List<HealthSegmentBloodPressure> SegmentData(List<BloodPressurePointDto> points, Guid userId, HealthSegmentBloodPressure? recentSegment)
     {
         var sortedPoints = points.OrderBy(p => p.Time).ToList();
         List<HealthSegmentBloodPressure> segments = [];

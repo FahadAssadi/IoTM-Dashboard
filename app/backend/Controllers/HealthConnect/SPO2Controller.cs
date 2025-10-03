@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using IoTM.Config;
-using IoTM.Data;
-using IoTM.Services.HealthConnect;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using IoTM.Data;
+using IoTM.Services.HealthConnect;
+using IoTM.Dtos.HealthPoints;
+using IoTM.Dtos.HealthData;
 
 namespace IoTM.Controllers.HealthConnect
 {
@@ -17,7 +18,7 @@ namespace IoTM.Controllers.HealthConnect
 
         [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> PostSpO2DataTest([FromBody] HealthDataDto dataDto)
+        public async Task<IActionResult> PostSpO2DataTest([FromBody] SpO2Dto dataDto)
         {
             if (dataDto == null || dataDto.Points == null || !dataDto.Points.Any())
             {
@@ -30,7 +31,10 @@ namespace IoTM.Controllers.HealthConnect
                 .OrderByDescending(s => s.End)
                 .FirstOrDefaultAsync();
             // Create new segments using the new data
-            var segments = _service.SegmentData(dataDto.Points, userId, null); //, lastSegment);
+            var filteredPoints = dataDto.Points
+                .OfType<SpO2PointDto>()  
+                .ToList();
+            var segments = _service.SegmentData(filteredPoints, userId, lastSegment);
             // Does NOT save to DB
             return Ok(segments.Select(s => new
             {
@@ -46,7 +50,7 @@ namespace IoTM.Controllers.HealthConnect
 
         [HttpPost("{userId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> PostSpO2Data(Guid userId, [FromBody] HealthDataDto dataDto)
+        public async Task<IActionResult> PostSpO2Data(Guid userId, [FromBody] SpO2Dto dataDto)
         {
             if (dataDto == null || dataDto.Points == null || !dataDto.Points.Any())
             {
@@ -65,7 +69,10 @@ namespace IoTM.Controllers.HealthConnect
                 await _context.SaveChangesAsync(); // Save immediately to persist deletion
             }
             // Create new segments using the new data
-            var segments = _service.SegmentData(dataDto.Points, userId, lastSegment);
+            var filteredPoints = dataDto.Points
+                .OfType<SpO2PointDto>()  
+                .ToList();
+            var segments = _service.SegmentData(filteredPoints, userId, lastSegment);
             // Save to DB
             await _context.HealthSegmentSpO2s.AddRangeAsync(segments);
             await _context.SaveChangesAsync();
