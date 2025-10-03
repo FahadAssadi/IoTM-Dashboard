@@ -10,8 +10,12 @@ namespace IoTM.Config
     public class BloodPressureThresholds
     {
         public required List<BloodPressureCategory> Categories { get; set; }
-        public required List<GenericCategory> InnerDeviation { get; set; }
-        public required List<GenericCategory> OuterDeviation { get; set; }
+        // public required List<GenericCategory> InnerDeviation { get; set; }
+        // public required List<GenericCategory> OuterDeviation { get; set; }
+        public required List<GenericCategory> DeviationCategories { get; set; }
+        public required double MinSegmentDuration { get; set; }
+        public required double MaxSegmentDuration { get; set; }
+        public required double StdDevThreshold { get; set; }
     }
 
     public class BPMThresholds
@@ -35,6 +39,7 @@ namespace IoTM.Config
     public class BloodPressureCategory
     {
         public required string Name { get; set; }
+        public double Priority { get; set; } = 10;
         public int SystolicMin { get; set; }
         public int SystolicMax { get; set; }
         public int DiastolicMin { get; set; }

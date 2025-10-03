@@ -1,52 +1,17 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } from "recharts";
-import { toast } from "react-toastify";
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase/client"
-
-type SpO2DataPoint = {
-  start: string;                // ISO datetime string
-  end: string;                  // ISO datetime string
-  points: number;
-  averageSpO2: number;
-  standardDeviation: number;
-  durationHours: number;
-}
+import { SpO2DataPoint, loadSpO2} from "./backend"
 
 export default function HealthInsightsRespiratoryTab () {
-    const [spO2Data, setBpmData ] = useState<SpO2DataPoint[]>([]);
-        useEffect(() => {
-          async function loadBPM() {
-            const { data: { user }, } = await supabase.auth.getUser();
-            const { data: { session } } = await supabase.auth.getSession();
-            const token = session?.access_token;
-            if (!user){
-              console.error("Unable to retrieve userId");
-              return;
-            }
-            try {
-              const response = await fetch(`http://localhost:5225/api/HealthConnect/spo2/${user.id}`, {
-                headers: {
-                  "Authorization": `Bearer ${token}`,
-                  "Content-Type": "application/json"
-                }
-              });
-              if (response.status === 404){
-                console.warn("No BPM data found");
-                setBpmData([]); // keep empty chart
-                return;
-              }
-              const BPM_json = await response.json();
-              console.log("Fetched SpO2 data:", BPM_json);
-              setBpmData(BPM_json)
-            } catch (err) {
-              toast.error("Error: Could not load user data")
-              console.error("Error fetching SpO2 data:", err);
-            }
-          }
-          // Function calls
-          loadBPM()
-        }, [])
+  const [spO2Data, setSpO2Data ] = useState<SpO2DataPoint[]>([]);
+      useEffect(() => {
+        async function fetchData() {
+          const data = await loadSpO2();
+          setSpO2Data(data);
+        }
+        fetchData();
+      }, []);
 
     return (
         <div className="grid gap-6 md:grid-cols-2">

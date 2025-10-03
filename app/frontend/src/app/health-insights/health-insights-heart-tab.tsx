@@ -2,28 +2,29 @@
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label, TooltipProps } from "recharts";
-
-type BloodPressureDataPoint = {
-  start: string;                // ISO datetime string
-  end: string;                  // ISO datetime string
-  points: number;
-  systolic: number;
-  diastolic: number;
-  standardDeviation: number;
-  durationHours: number;
-};
+import { loadBloodPressure, BloodPressureDataPoint } from "./backend";
+import { useEffect, useState } from "react";
 
 export default function HealthInsightsHeartTab () {
-
-  const testData: BloodPressureDataPoint[] = Array.from({ length: 9 }, (_, i) => ({
-    start: `2025-09-0${i + 1}T17:07:04.568Z`,
-    end: `2025-09-0${i + 1}T17:07:04.568Z`,
-    points: Math.floor(Math.random() * 10),
-    systolic: Math.floor(Math.random() * 10) + 110,
-    diastolic: Math.floor(Math.random() * 10) + 70,
-    standardDeviation: Math.random() * 5,  // fixed typo
-    durationHours: 1
-  }));
+  // const testData: BloodPressureDataPoint[] = Array.from({ length: 9 }, (_, i) => ({
+  //   start: `2025-09-0${i + 1}T17:07:04.568Z`,
+  //   end: `2025-09-0${i + 1}T17:07:04.568Z`,
+  //   points: Math.floor(Math.random() * 10),
+  //   averageSystolic: Math.floor(Math.random() * 10) + 110,
+  //   averageDiastolic: Math.floor(Math.random() * 10) + 70,
+  //   systolicStandardDeviation: Math.random() * 5,
+  //   diastolicStandardDeviation: Math.random() * 5,
+  //   durationHours: 1,
+  //   category: "Generated - No Data",
+  // }));
+  const [bloodPressureData, setBloodPressureData ] = useState<BloodPressureDataPoint[]>([]);
+    useEffect(() => {
+      async function fetchData() {
+        const data = await loadBloodPressure();
+        setBloodPressureData(data);
+      }
+      fetchData();
+    }, []);
 
     return (
         <div className="grid gap-6 md:grid-cols-2">
@@ -33,7 +34,7 @@ export default function HealthInsightsHeartTab () {
                     <CardDescription>Comprehensive view of your blood pressure patterns</CardDescription>
                 </CardHeader>
                 <CardContent className="h-[400px]">
-                  <BloodPressureChart bloodPressureData={testData}/>
+                  <BloodPressureChart bloodPressureData={bloodPressureData}/>
                 </CardContent>
             </Card>
 
@@ -53,7 +54,7 @@ export default function HealthInsightsHeartTab () {
                 <CardDescription>Measure of heart health</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
-                <HeartRateVariabilityChart bloodPressureData={testData}/>
+                <HeartRateVariabilityChart bloodPressureData={bloodPressureData}/>
               </CardContent>
             </Card>
           </div>
@@ -68,10 +69,10 @@ function CustomTooltip({ active, payload, label }: TooltipProps<number, string>)
       <div className="bg-white p-2 border rounded shadow">
         <p>{new Date(label).toLocaleString()}</p>
         <p className="text-black-700">Period Length: {dataPoint.durationHours.toFixed(2)} hours</p>
-        <p className="text-red-600">systolic: {dataPoint.systolic}</p>
-        <p className="text-blue-600">diastolic: {dataPoint.diastolic}</p>
-        <p className="text-black-600">Deviation: {dataPoint.standardDeviation.toFixed(2)}</p>
-        <p className="text-orange-300">RiskLevel: Undefined</p>
+        <p className="text-red-600">systolic: {dataPoint.averageSystolic}</p>
+        <p className="text-blue-600">diastolic: {dataPoint.averageDiastolic}</p>
+        <p className="text-black-600">Deviation: {(dataPoint.systolicStandardDeviation + dataPoint.diastolicStandardDeviation) / 2}</p>
+        <p className="text-orange-300">RiskLevel: {dataPoint.category}</p>
       </div>
     );
   }
@@ -92,13 +93,12 @@ function BloodPressureChart({ bloodPressureData }: { bloodPressureData: BloodPre
           <YAxis />
           <Tooltip content={<CustomTooltip />}/>
           <Legend />
-          <Line type="monotone" name="Systolic Blood Pressure" dataKey="systolic" stroke="#726cf5" />
-          <Line type="monotone" name="Diastolic Blood Pressure" dataKey="diastolic" stroke="#f76e4f" />
+          <Line type="monotone" name="Systolic Blood Pressure" dataKey="averageSystolic" stroke="#726cf5" />
+          <Line type="monotone" name="Diastolic Blood Pressure" dataKey="averageDiastolic" stroke="#f76e4f" />
         </LineChart>
       </ResponsiveContainer>
     </div>
   );
-
 }
 
 function RestingHeartRateChart() {
@@ -142,7 +142,7 @@ function HeartRateVariabilityChart({ bloodPressureData }: { bloodPressureData: B
           </YAxis>
           <Tooltip />
           <Legend />
-          <Line type="monotone" name="Blood Pressure Variance" dataKey="standardDeviation" stroke="#8b5cf6" />
+          <Line type="monotone" name="Blood Pressure Variance" dataKey="systolicStandardDeviation" stroke="#8b5cf6" />
         </LineChart>
       </ResponsiveContainer>
     </div>

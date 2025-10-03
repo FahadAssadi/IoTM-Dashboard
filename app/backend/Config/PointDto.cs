@@ -12,5 +12,9 @@ namespace IoTM.Config
 
         [JsonPropertyName("percentage")] // for SpO2
         public int? Percentage { get; set; }
+        [JsonPropertyName("sys")] // for SpO2
+        public int? Systolic { get; set; }
+        [JsonPropertyName("dia")] // for SpO2
+        public int? Diastolic { get; set; }
     }
 }

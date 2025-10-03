@@ -35,6 +35,7 @@ builder.Services.Configure<HealthThresholds>(
 // builder.Services.AddSingleton<HealthSegmenter>();
 builder.Services.AddSingleton<BPMService>();
 builder.Services.AddSingleton<SpO2Service>();
+builder.Services.AddSingleton<BloodPressureService>();
 
 // Authentication and Authorisation
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
