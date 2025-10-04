@@ -48,6 +48,11 @@ namespace IoTM.Controllers
             // TODO: Replace with authenticated user ID when available
             Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
             await _userScreeningsService.ScheduleScreening(userId, guidelineId, scheduledDate);
+            var scheduled = await _userScreeningsService.ScheduleScreening(userId, guidelineId, scheduledDate);
+            if (!scheduled)
+            {
+                return Conflict("You’ve already scheduled this screening for that date.");
+            }
             return Ok("Screening scheduled.");
         }
 
@@ -60,6 +65,19 @@ namespace IoTM.Controllers
             Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
             await _userScreeningsService.EditScheduledScreening(scheduledScreeningId, newDate);
             return Ok("Scheduled screening updated.");
+            try
+            {
+                var updated = await _userScreeningsService.EditScheduledScreening(scheduledScreeningId, newDate);
+                if (!updated)
+                {
+                    return Conflict("A screening is already scheduled for that date.");
+                }
+                return Ok("Scheduled screening updated.");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         // Remove a scheduled screening

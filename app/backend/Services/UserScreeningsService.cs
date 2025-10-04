@@ -12,8 +12,8 @@ namespace IoTM.Services
         Task<List<UserScreening>> GetNewScreeningsForUserAsync(Guid userId);
         List<UserScreeningDto> MapToDto(List<UserScreening> screenings);
         Task<List<ScheduledScreeningDto>> GetScheduledScreenings(Guid userId);
-        Task ScheduleScreening(Guid userId, Guid guidelineId, DateOnly scheduledDate);
-        Task EditScheduledScreening(Guid screeningId, DateOnly newDate);
+        Task<bool> ScheduleScreening(Guid userId, Guid guidelineId, DateOnly scheduledDate);
+        Task<bool> EditScheduledScreening(Guid screeningId, DateOnly newDate);
         Task CancelScheduledScreening(Guid screeningId);
         Task ArchiveScheduledScreening(Guid scheduledScreeningId);
         Task HideScreening(Guid userId, Guid guidelineId);
@@ -196,7 +196,7 @@ namespace IoTM.Services
             }
         }
 
-        public async Task ScheduleScreening(Guid userId, Guid guidelineId, DateOnly scheduledDate)
+        public async Task<bool> ScheduleScreening(Guid userId, Guid guidelineId, DateOnly scheduledDate)
         {
             try
             {
@@ -219,6 +219,15 @@ namespace IoTM.Services
                     await _context.SaveChangesAsync();
                 }
 
+                // Idempotency: if a scheduled screening already exists for the same date and is active, return Duplicate
+                var duplicateExists = await _context.ScheduledScreenings
+                    .AnyAsync(ss => ss.ScreeningId == userScreening.ScreeningId && ss.ScheduledDate == scheduledDate && ss.IsActive);
+                if (duplicateExists)
+                {
+                    // No-op: idempotent duplicate
+                    return false;
+                }
+
                 // Add scheduled screening
                 var scheduledScreening = new ScheduledScreening
                 {
@@ -238,6 +247,7 @@ namespace IoTM.Services
                 }
 
                 await _context.SaveChangesAsync();
+                return true;
             }
             catch (Exception ex)
             {
@@ -246,19 +256,40 @@ namespace IoTM.Services
             }
         }
 
-        public async Task EditScheduledScreening(Guid screeningId, DateOnly newDate)
+        public async Task<bool> EditScheduledScreening(Guid screeningId, DateOnly newDate)
         {
             try
             {
                 var scheduledScreening = await _context.ScheduledScreenings
                     .FirstOrDefaultAsync(ss => ss.ScheduledScreeningId == screeningId);
 
-                if (scheduledScreening != null)
+                if (scheduledScreening == null)
                 {
-                    scheduledScreening.ScheduledDate = newDate;
-                    scheduledScreening.UpdatedAt = DateTime.UtcNow;
-                    await _context.SaveChangesAsync();
+                    throw new KeyNotFoundException("Scheduled screening does not exist.");
                 }
+
+                // If the date hasn't changed, consider it a success (idempotent)
+                if (scheduledScreening.ScheduledDate == newDate)
+                {
+                    return true;
+                }
+
+                // Idempotency: prevent changing to a date that already exists for the same UserScreening (active only)
+                var duplicateExists = await _context.ScheduledScreenings
+                    .AnyAsync(ss => ss.ScreeningId == scheduledScreening.ScreeningId
+                                    && ss.ScheduledScreeningId != screeningId
+                                    && ss.ScheduledDate == newDate
+                                    && ss.IsActive);
+                if (duplicateExists)
+                {
+                    return false;
+                }
+
+                scheduledScreening.ScheduledDate = newDate;
+                scheduledScreening.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                return true;
             }
             catch (Exception ex)
             {

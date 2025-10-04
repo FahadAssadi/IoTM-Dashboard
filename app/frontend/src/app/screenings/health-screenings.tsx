@@ -258,6 +258,10 @@ export default function HealthScreenings() {
           `${apiBaseUrl}/api/UserScreenings/schedule/${datePickerOpen.timelineItemId}?newDate=${selectedDate}`,
           { method: "PUT" }
         );
+        if (res.status === 409) {
+          setErrorMessage("A screening is already scheduled for that date.");
+          return;
+        }
         if (!res.ok) {
           setErrorMessage("Failed to update scheduled screening.");
           return;
@@ -280,6 +284,10 @@ export default function HealthScreenings() {
           `${apiBaseUrl}/api/UserScreenings/schedule?guidelineId=${screeningId}&scheduledDate=${dueDate}`,
           { method: "POST" }
         );
+        if (res.status === 409) {
+          setErrorMessage("You've already scheduled this screening for that date.");
+          return;
+        }
         if (!res.ok) {
           setErrorMessage("Failed to schedule screening.");
           return;
