@@ -1,8 +1,10 @@
 "use client"
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label, TooltipProps } from "recharts";
-import { loadBloodPressure, BloodPressureDataPoint } from "./backend";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } from "recharts";
+import type { TooltipProps } from "recharts";
+import type { BloodPressureDataPoint } from "./backend";
+import { loadBloodPressure } from "./backend";
 import { useEffect, useState } from "react";
 
 export default function HealthInsightsHeartTab () {
@@ -80,11 +82,12 @@ function CustomTooltip({ active, payload, label }: TooltipProps<number, string>)
 }
 
 function BloodPressureChart({ bloodPressureData }: { bloodPressureData: BloodPressureDataPoint[] }) {
+  const sorted = [...bloodPressureData].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
   return (
-    <div className="w-full h-96">
+    <div className="w-full h-full">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
-          data={bloodPressureData}
+          data={sorted}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" />
@@ -128,15 +131,16 @@ function RestingHeartRateChart() {
 }
 
 function HeartRateVariabilityChart({ bloodPressureData }: { bloodPressureData: BloodPressureDataPoint[] }) {
+  const sorted = [...bloodPressureData].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
   return (
     <div className="w-full h-72">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
-          data={bloodPressureData}
+          data={sorted}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="day"/>
+          <XAxis dataKey="start" tickFormatter={(value) => new Date(value).toLocaleDateString()} />
           <YAxis>
             <Label value="Variance" angle={-90} position="insideLeft" />
           </YAxis>

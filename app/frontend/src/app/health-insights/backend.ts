@@ -2,6 +2,8 @@
 import { supabase } from "@/lib/supabase/client";
 import { toast } from "react-toastify";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5225/api";
+
 // BPM STUFF
 export type BPMDataPoint = {
   start: string;                // ISO datetime string
@@ -24,7 +26,7 @@ export async function loadBPM(): Promise<BPMDataPoint[]> {
       return [];
     }
 
-    const response = await fetch(`http://localhost:5225/api/HealthConnect/bpm/${user.id}`, {
+    const response = await fetch(`${API_BASE_URL}/healthconnect/bpm/${user.id}`, {
       headers: {
         "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json"
@@ -32,7 +34,7 @@ export async function loadBPM(): Promise<BPMDataPoint[]> {
     });
 
     if (response.status === 404) {
-      console.warn("No BPM data found");
+      console.warn("No heart rate (BPM) data found");
       return [];
     }
 
@@ -71,7 +73,7 @@ export async function loadBloodPressure(): Promise<BloodPressureDataPoint[]> {
       return [];
     }
 
-    const response = await fetch(`http://localhost:5225/api/HealthConnect/bloodPressure/${user.id}`, {
+    const response = await fetch(`${API_BASE_URL}/healthconnect/bloodPressure/${user.id}`, {
       headers: {
         "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json"
@@ -79,16 +81,16 @@ export async function loadBloodPressure(): Promise<BloodPressureDataPoint[]> {
     });
 
     if (response.status === 404) {
-      console.warn("No BPM data found");
+      console.warn("No blood pressure data found");
       return [];
     }
 
     const data_json = await response.json();
-    console.log("Fetched BPM data:", data_json);
+    console.log("Fetched blood pressure data:", data_json);
     return data_json;
   } catch (err) {
     toast.error("Error: Could not load user data");
-    console.error("Error fetching BPM data:", err);
+    console.error("Error fetching blood pressure data:", err);
     return [];
   }
 }
@@ -116,7 +118,7 @@ export async function loadSpO2(): Promise<SpO2DataPoint[]> {
       return [];
     }
 
-    const response = await fetch(`http://localhost:5225/api/HealthConnect/spo2/${user.id}`, {
+    const response = await fetch(`${API_BASE_URL}/healthconnect/spo2/${user.id}`, {
       headers: {
         "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json"
@@ -124,16 +126,16 @@ export async function loadSpO2(): Promise<SpO2DataPoint[]> {
     });
 
     if (response.status === 404) {
-      console.warn("No BPM data found");
+      console.warn("No SpO2 data found");
       return [];
     }
 
     const data_json = await response.json();
-    console.log("Fetched BPM data:", data_json);
+    console.log("Fetched SpO2 data:", data_json);
     return data_json;
   } catch (err) {
     toast.error("Error: Could not load user data");
-    console.error("Error fetching BPM data:", err);
+    console.error("Error fetching SpO2 data:", err);
     return [];
   }
 }

@@ -1,7 +1,9 @@
+"use client"
+
 import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
 import { useEffect, useState } from "react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } from "recharts";
-import { TooltipProps } from "recharts";
+import type { TooltipProps } from "recharts";
 import { loadBPM, BPMDataPoint } from "./backend";
 
 export default function HealthInsightsActivityTab () {
@@ -48,7 +50,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps<number, string>)
 function HeartRateDetailedChart({ bpmData }: { bpmData: BPMDataPoint[] }) {
   const sortedData = [...bpmData].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
   return (
-    <div className="w-full h-92">
+    <div className="w-full h-full">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={sortedData}

@@ -1,7 +1,10 @@
+"use client"
+
 import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } from "recharts";
 import { useEffect, useState } from "react"
-import { SpO2DataPoint, loadSpO2} from "./backend"
+import type { SpO2DataPoint } from "./backend"
+import { loadSpO2} from "./backend"
 
 export default function HealthInsightsRespiratoryTab () {
   const [spO2Data, setSpO2Data ] = useState<SpO2DataPoint[]>([]);
@@ -37,7 +40,7 @@ function RespiratoryHealthChart({ spO2Data }: {spO2Data : SpO2DataPoint[] }) {
   // }))
   const sortedData = [...spO2Data].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
   return (
-    <div className="w-full h-96">
+    <div className="w-full h-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={sortedData}
