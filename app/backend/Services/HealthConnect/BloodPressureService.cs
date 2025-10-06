@@ -5,14 +5,9 @@ using IoTM.Dtos.HealthPoints;
 
 namespace IoTM.Services.HealthConnect;
 
-public class BloodPressureService
+public class BloodPressureService(IOptions<HealthThresholds> options)
 {
-    private readonly BloodPressureThresholds _thresholds;
-    public BloodPressureService(IOptions<HealthThresholds> options)
-    {
-        // this grabs the configured thresholds
-        _thresholds = options.Value.BloodPressure;
-    }
+    private readonly BloodPressureThresholds _thresholds = options.Value.BloodPressure;
 
     private void CategoriseSegment(HealthSegmentBloodPressure healthSegmentBloodPressure)
     {

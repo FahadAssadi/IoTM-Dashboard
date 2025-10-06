@@ -27,6 +27,7 @@ namespace IoTM.Data
         public DbSet<HealthSegmentBPM> HealthSegmentBPMs { get; set; }
         public DbSet<HealthSegmentSpO2> HealthSegmentSpO2s { get; set; }
         public DbSet<HealthSegmentBloodPressure> HealthSegmentBloodPressures { get; set; }
+        public DbSet<HealthSegmentSleep> HealthSegmentSleeps { get; set; }
         public DbSet<LifestyleFactor> LifestyleFactors { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
