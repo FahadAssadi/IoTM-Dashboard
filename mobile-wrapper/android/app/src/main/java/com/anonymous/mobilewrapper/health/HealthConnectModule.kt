@@ -18,18 +18,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.cancel
-import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
-import androidx.health.connect.client.request.AggregateRequest
-import androidx.health.connect.client.request.ChangesTokenRequest
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
-import org.json.JSONObject
 import java.io.File
-import java.io.BufferedWriter
-import java.io.OutputStreamWriter
-import java.nio.charset.StandardCharsets
 
 class HealthConnectModule(private val reactContext: ReactApplicationContext)
   : ReactContextBaseJavaModule(reactContext) {
@@ -144,89 +137,46 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
         if (status != HealthConnectClient.SDK_AVAILABLE) throw IllegalStateException("Health Connect not available")
 
         val hc = HealthConnectClient.getOrCreate(reactContext)
-        val required = setOf(
-          HealthPermission.getReadPermission(HeartRateRecord::class),
-          HealthPermission.getReadPermission(BloodPressureRecord::class),
-          HealthPermission.getReadPermission(OxygenSaturationRecord::class),
-          HealthPermission.getReadPermission(StepsRecord::class),
-          HealthPermission.getReadPermission(SleepSessionRecord::class),
-        )
+        val required = requiredPermissions()
         val granted = hc.permissionController.getGrantedPermissions()
         if (!granted.containsAll(required)) throw SecurityException("Permissions not granted")
-        
-        val existing = HcTokenStore.getToken(reactContext)
-        val stillValid = existing != null && !HcTokenStore.isTokenExpired(reactContext)
 
-        // if (stillValid) {
-        //   // Ensure periodic job is running
-        //   HealthConnectSyncWorker.schedule(reactContext, 15L)
-
-        //   // Trigger an immediate sync so user sees updates right away
-        //   HealthConnectSyncWorker.enqueueOneTime(reactContext)
-
-        //   withContext(Dispatchers.Main) { promise.resolve(true) }
-        //   return@launch
-        // }
-
-        // Get & store changes token immediately
-        val token = hc.getChangesToken(
-          ChangesTokenRequest(setOf(
-            HeartRateRecord::class,
-            BloodPressureRecord::class,
-            OxygenSaturationRecord::class,
-            StepsRecord::class,
-            SleepSessionRecord::class
-          ))
-        )
-        HcTokenStore.saveToken(reactContext, token)
-
-        // 7 day window and seed JSON with ONLY ONE page (pageSize=1000)
         val now = ZonedDateTime.now(ZoneOffset.UTC).toInstant()
-        val start = now.minus(7, ChronoUnit.DAYS)
+        val start = now.minus(30, ChronoUnit.DAYS)
         val tr = TimeRangeFilter.between(start, now)
-        HcTokenStore.setBaselineRange(reactContext, start.toString(), now.toString())
 
         val outDir = dataDir()
-
         val bpFile = File(outDir, FILE_BP)
         val hrFile = File(outDir, FILE_HR)
         val spo2File = File(outDir, FILE_SPO2)
         val stepsFile = File(outDir, FILE_STEPS)
         val sleepFile = File(outDir, FILE_SLEEP)
 
-        val bpNext = HealthJsonWriters.writeFirstPageBloodPressure(hc, tr, bpFile, pageSize = 1000)
-        val hrNext = HealthJsonWriters.writeFirstPageHeartRate(hc, tr, hrFile, pageSize = 1000)
-        val spNext = HealthJsonWriters.writeFirstPageSpo2(hc, tr, spo2File, pageSize = 1000)
-        val stepsNext = HealthJsonWriters.writeFirstPageSteps(hc, tr, stepsFile, pageSize = 1000)
-        val sleepNext = HealthJsonWriters.writeFirstPageSleepSessions(hc, tr, sleepFile, pageSize = 1000)
+        // Overwrite each baseline dump
+        bpFile.delete(); hrFile.delete(); spo2File.delete(); stepsFile.delete(); sleepFile.delete()
 
-        HcTokenStore.setNextPage(reactContext, "bp", bpNext)
-        HcTokenStore.setNextPage(reactContext, "hr", hrNext)
-        HcTokenStore.setNextPage(reactContext, "spo2", spNext)
-        HcTokenStore.setNextPage(reactContext, "steps", stepsNext)
-        HcTokenStore.setNextPage(reactContext, "sleep", sleepNext)
+        HealthJsonWriters.writeBloodPressureWindow(hc, tr, bpFile, 2000)
+        HealthJsonWriters.writeHeartRateWindow(hc, tr, hrFile, 2000)
+        HealthJsonWriters.writeSpo2Window(hc, tr, spo2File, 2000)
+        HealthJsonWriters.writeStepsWindow(hc, tr, stepsFile, 2000)
+        HealthJsonWriters.writeSleepSessionsWindow(hc, tr, sleepFile, 2000)
 
-        val inProgress = (bpNext != null) || (hrNext != null) || (spNext != null)
-        HcTokenStore.setBaselineInProgress(reactContext, inProgress)
-        HcTokenStore.saveLastSyncNow(reactContext)
-
-        // start worker for periodic schedule
+        // Start periodic sync every 15 minutes
         HealthConnectSyncWorker.schedule(reactContext, 15L)
-        HealthConnectSyncWorker.enqueueOneTime(reactContext)
 
         withContext(Dispatchers.Main) { promise.resolve(true) }
       } catch (e: Exception) {
-        HcTokenStore.clear(reactContext)
         withContext(Dispatchers.Main) { promise.reject("BASELINE_ERROR", e.message, e) }
       }
     }
   }
 
-  /** Schedules the periodic HC sync worker (default: hourly) */
   @ReactMethod
   fun schedulePeriodicHealthSync(hours: Int, promise: Promise) {
+    // Keep for compatibility; convert hours -> minutes
     try {
-      HealthConnectSyncWorker.schedule(reactContext, hours.toLong().coerceAtLeast(1L))
+      val minutes = (hours * 60).coerceAtLeast(15) // WorkManager min is 15 minutes
+      HealthConnectSyncWorker.schedule(reactContext, minutes.toLong())
       promise.resolve(true)
     } catch (t: Throwable) {
       promise.reject("SCHEDULE_ERROR", t.message, t)
@@ -237,12 +187,9 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
   fun runHealthSyncNow(promise: Promise) {
     try {
       HealthConnectSyncWorker.enqueueOneTime(reactContext)
-      HealthConnectSyncWorker.scheduleDebugLoop(reactContext, 2L)
       promise.resolve(true)
     } catch (t: Throwable) {
       promise.reject("RUN_NOW_ERROR", t.message, t)
     }
   }
-
-
 }
