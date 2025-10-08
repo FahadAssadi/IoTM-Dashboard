@@ -201,4 +201,121 @@ public class UserScreeningsServiceTests
         scheduled.Should().HaveCount(1);
         scheduled[0].ScheduledDate.Should().Be(date);
     }
+
+    [Fact]
+    public async Task CancelScheduledScreening_Should_Remove_Active_Scheduled_Item()
+    {
+        // Arrange
+        using var ctx = DbContextFactory.CreateInMemory();
+        var userId = Guid.NewGuid();
+        var guideline = new ScreeningGuideline
+        {
+            GuidelineId = Guid.NewGuid(),
+            Name = "Cancel Test",
+            ScreeningType = "type",
+            DefaultFrequencyMonths = 12,
+            Category = ScreeningCategory.screening,
+            Description = "desc",
+            SourceOrganisation = "org",
+            LastUpdated = DateOnly.FromDateTime(DateTime.UtcNow),
+            IsRecurring = true // recurring to exercise status revert path
+        };
+        ctx.ScreeningGuidelines.Add(guideline);
+
+        var userScreening = new UserScreening
+        {
+            ScreeningId = Guid.NewGuid(),
+            UserId = userId,
+            GuidelineId = guideline.GuidelineId,
+            Status = ScreeningStatus.scheduled,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        ctx.UserScreenings.Add(userScreening);
+
+        var scheduled = new ScheduledScreening
+        {
+            ScheduledScreeningId = Guid.NewGuid(),
+            ScreeningId = userScreening.ScreeningId,
+            ScheduledDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(3)),
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+        ctx.ScheduledScreenings.Add(scheduled);
+        await ctx.SaveChangesAsync();
+
+        var sut = CreateService(ctx);
+
+        // Act
+        await sut.CancelScheduledScreening(scheduled.ScheduledScreeningId);
+
+        // Assert: scheduled entry is removed
+        var stillThere = await ctx.ScheduledScreenings
+            .AnyAsync(ss => ss.ScheduledScreeningId == scheduled.ScheduledScreeningId);
+        stillThere.Should().BeFalse();
+
+        // And the parent user screening remains
+        var parentExists = await ctx.UserScreenings.AnyAsync(us => us.ScreeningId == userScreening.ScreeningId);
+        parentExists.Should().BeTrue();
+
+        // Since guideline is recurring and item was active, status should revert to pending
+        var refreshed = await ctx.UserScreenings.FirstAsync(us => us.ScreeningId == userScreening.ScreeningId);
+        refreshed.Status.Should().Be(ScreeningStatus.pending);
+    }
+
+    [Fact]
+    public async Task ArchiveScheduledScreening_Should_Set_Inactive_And_Exclude_From_GetScheduled()
+    {
+        // Arrange
+        using var ctx = DbContextFactory.CreateInMemory();
+        var userId = Guid.NewGuid();
+        var guideline = new ScreeningGuideline
+        {
+            GuidelineId = Guid.NewGuid(),
+            Name = "Archive Test",
+            ScreeningType = "type",
+            DefaultFrequencyMonths = 12,
+            Category = ScreeningCategory.screening,
+            Description = "desc",
+            SourceOrganisation = "org",
+            LastUpdated = DateOnly.FromDateTime(DateTime.UtcNow),
+            IsRecurring = true
+        };
+        ctx.ScreeningGuidelines.Add(guideline);
+
+        var userScreening = new UserScreening
+        {
+            ScreeningId = Guid.NewGuid(),
+            UserId = userId,
+            GuidelineId = guideline.GuidelineId,
+            Status = ScreeningStatus.scheduled,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        ctx.UserScreenings.Add(userScreening);
+
+        var scheduled = new ScheduledScreening
+        {
+            ScheduledScreeningId = Guid.NewGuid(),
+            ScreeningId = userScreening.ScreeningId,
+            ScheduledDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(10)),
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+        ctx.ScheduledScreenings.Add(scheduled);
+        await ctx.SaveChangesAsync();
+
+        var sut = CreateService(ctx);
+
+        // Act
+        await sut.ArchiveScheduledScreening(scheduled.ScheduledScreeningId);
+
+        // Assert: archived flag (IsActive) is false
+        var archived = await ctx.ScheduledScreenings.FirstAsync(ss => ss.ScheduledScreeningId == scheduled.ScheduledScreeningId);
+        archived.IsActive.Should().BeFalse();
+
+        // And it should not be returned by GetScheduledScreenings
+        var scheduledNow = await sut.GetScheduledScreenings(userId);
+        scheduledNow.Any(ss => ss.ScheduledScreeningId == scheduled.ScheduledScreeningId).Should().BeFalse();
+    }
 }

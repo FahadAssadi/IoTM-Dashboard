@@ -64,7 +64,6 @@ namespace IoTM.Controllers
             // TODO: Replace with authenticated user ID when available
             Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
             await _userScreeningsService.EditScheduledScreening(scheduledScreeningId, newDate);
-            return Ok("Scheduled screening updated.");
             try
             {
                 var updated = await _userScreeningsService.EditScheduledScreening(scheduledScreeningId, newDate);
