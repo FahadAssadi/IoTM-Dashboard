@@ -23,9 +23,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <!-- Exclude legacy test sources and build artifacts -->
+  <!-- Exclude build artifacts -->
   <ItemGroup>
-    <Compile Remove="IoTM.UnitTests/**/*.cs" />
     <Compile Remove="**/bin/**/*.cs" />
     <Compile Remove="**/obj/**/*.cs" />
   </ItemGroup>
