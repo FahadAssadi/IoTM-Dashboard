@@ -53,7 +53,7 @@ namespace IoTM.Controllers.HealthConnect
         [HttpPost("{userId}")]
         public async Task<IActionResult> PostBloodPressureData(Guid userId, [FromBody] BloodPressureDto dataDto)
         {
-            if (dataDto == null || dataDto.Points == null || !dataDto.Points.Any())
+            if (dataDto == null || dataDto.Points == null || dataDto.Points.Count == 0)
             {
                 return BadRequest("Data is required");
             }
