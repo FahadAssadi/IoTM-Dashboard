@@ -2,12 +2,46 @@ using IoTM.Config;
 using IoTM.Models.HealthSegments;
 using Microsoft.Extensions.Options;
 using IoTM.Dtos.HealthPoints;
+using IoTM.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.TagHelpers;
 
 namespace IoTM.Services.HealthConnect;
 
 public class BloodPressureService(IOptions<HealthThresholds> options)
 {
     private readonly BloodPressureThresholds _thresholds = options.Value.BloodPressure;
+    public async Task<List<HealthSegmentSummary>> UpdateHealthSummary(ApplicationDbContext context, List<HealthSegmentBloodPressure> healthSegmentBloodPressures, Guid userId)
+    {
+        var earliestDate = healthSegmentBloodPressures.Min(s => s.Start);
+        // Update Existing Health Segments
+        var healthSummaryService = new HealthSummaryService();
+        await healthSummaryService.GenerateBlankHealthSummarys(context, earliestDate, userId);
+        // Retrieve and filter HealthSegments
+        var healthSummarySegments = await context.HealthSegmentSummarys.ToListAsync();
+        var filteredSegments = healthSummarySegments
+            .Where(s => s.UserId == userId) // Sort by userId
+            .Where(s => s.End > earliestDate) // All values preceeding the earlist segment date
+            .OrderBy(s => s.End) // Ordered
+            .ToList();
+        // For each health summary segment, find all segments that overlap with it
+        foreach (var summary in healthSummarySegments)
+        {
+            // Get all segments where the time ranges overlap
+            var overlappingSegments = healthSegmentBloodPressures
+                .Where(s => s.Start <= summary.End && s.End >= summary.Start)
+                .ToList();
+            if (overlappingSegments.Count != 0)
+            {
+                // Calculate average of the overlapping segment averages
+                summary.AverageSystolic = overlappingSegments.Average(s => s.AverageSystolic);
+                summary.AverageDiastolic = overlappingSegments.Average(s => s.AverageDiastolic);
+                summary.BloodPressureStandardDeviation = (overlappingSegments.Average(s => s.AverageSystolic) + overlappingSegments.Average(s => s.AverageSystolic)) / 2;
+            }
+        }
+        await context.SaveChangesAsync();
+        return filteredSegments;
+    }
 
     private void CategoriseSegment(HealthSegmentBloodPressure healthSegmentBloodPressure)
     {

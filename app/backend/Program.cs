@@ -37,6 +37,7 @@ builder.Services.AddSingleton<BPMService>();
 builder.Services.AddSingleton<SpO2Service>();
 builder.Services.AddSingleton<BloodPressureService>();
 builder.Services.AddSingleton<SleepService>();
+builder.Services.AddSingleton<HealthSummaryService>();
 
 // Authentication and Authorisation
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

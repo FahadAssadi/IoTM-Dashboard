@@ -162,7 +162,7 @@ export async function loadRecentSummary(): Promise<RecentSummary> {
       return blankRecentSummary;
     }
 
-    const response = await fetch(`http://localhost:5225/api/HealthConnect/HealthSummary/${user.id}`, {
+    const response = await fetch(`http://localhost:5225/api/HealthConnect/HealthSummary/recent/${user.id}`, {
       headers: {
         "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json"

@@ -1,17 +1,45 @@
 using IoTM.Config;
+using IoTM.Data;
 using IoTM.Dtos.HealthPoints;
 using IoTM.Models.HealthSegments;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace IoTM.Services.HealthConnect;
 
-public class BPMService
+public class BPMService(IOptions<HealthThresholds> options)
 {
-    private readonly BPMThresholds _thresholds;
-    public BPMService(IOptions<HealthThresholds> options)
+    private readonly BPMThresholds _thresholds = options.Value.BPM;
+
+    public async Task<List<HealthSegmentSummary>> UpdateHealthSummary(ApplicationDbContext context, List<HealthSegmentBPM> healthSegmentBPMs, Guid userId)
     {
-        // this grabs the configured thresholds
-        _thresholds = options.Value.BPM;
+        var earliestDate = healthSegmentBPMs.Min(s => s.Start);
+        // Update Existing Health Segments
+        var healthSummaryService = new HealthSummaryService();
+        await healthSummaryService.GenerateBlankHealthSummarys(context, earliestDate, userId);
+        // Retrieve and filter HealthSegments
+        var healthSummarySegments = await context.HealthSegmentSummarys.ToListAsync();
+        var filteredSegments = healthSummarySegments
+            .Where(s => s.UserId == userId) // Sort by userId
+            .Where(s => s.End > earliestDate) // All values preceeding the earlist Bpm date
+            .OrderBy(s => s.End) // Ordered
+            .ToList();
+        // For each health summary segment, find all BPM segments that overlap with it
+        foreach (var summary in healthSummarySegments)
+        {
+            // Get all BPM segments where the time ranges overlap
+            var overlappingSegments = healthSegmentBPMs
+                .Where(s => s.Start <= summary.End && s.End >= summary.Start)
+                .ToList();
+            if (overlappingSegments.Count != 0)
+            {
+                // Calculate average of the overlapping Bpm segment averages
+                summary.AverageBpm = overlappingSegments.Average(s => s.AverageBpm);
+                summary.BpmStandardDeviation = overlappingSegments.Average(s => s.StandardDeviation);
+            }
+        }
+        await context.SaveChangesAsync();
+        return filteredSegments;
     }
 
     private void CategoriseSegment(HealthSegmentBPM healthSegmentBPM)
