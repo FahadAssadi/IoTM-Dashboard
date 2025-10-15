@@ -13,7 +13,7 @@ namespace IoTM.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20250901062828_removed-email-from-users")]
-    partial class removedemailfromusers
+    partial class RemovedEmailFromUsers
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -38,7 +38,8 @@ namespace IoTM.Migrations
 
                     b.Property<string>("AllergyType")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
