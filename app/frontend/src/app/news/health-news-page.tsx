@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Loader2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
-import { set } from "react-hook-form"
+import { Calendar, Loader2, AlertCircle, ChevronLeft, ChevronRight, Sparkles, Copy } from "lucide-react"
 
 // Types based on your backend API
 interface NewsArticle {
@@ -42,10 +42,15 @@ const API_KEY = process.env.NEXT_PUBLIC_NEWS_API_KEY;
 const NEWS_API_URL = `https://newsapi.org/v2/everything?apiKey=${API_KEY}`;
 const ARTICLES_PER_PAGE = 10
 
-export function HealthNewsPage() {
+// You can optionally pass an "summary" prop to show an AI-generated summary.
+// Alternatively, append ?summary=... to the URL. The section appears above the articles list.
+export function HealthNewsPage({ summary }: { summary?: string } = {}) {
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [expandedArticle, setExpandedArticle] = useState<number | null>(null)
   const [articles, setArticles] = useState<NewsArticle[]>([])
+  const [aiSummary, setAiSummary] = useState<string | null>(null)
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [copied, setCopied] = useState(false)
   const [categories, setCategories] = useState<NewsCategory[]>(
     [
       { value: 1, name: "All", displayName: "All", apiName: ["health"] },
@@ -68,63 +73,96 @@ export function HealthNewsPage() {
 
   // Fetch news articles from API
   useEffect(() => {
-    const fetchNews = async () => {
-      if (currentPage === 1) {
-        setLoading(true)
-      } else {
-        setPaginationLoading(true)
-      }
-      setError(null)
-      
-      try {
-        // Construct the `q` parameter dynamically based on the selected categor
-        const selectedCategoryObj = categories.find(
-          (category) => category.displayName === selectedCategory
-        );
-        const query = selectedCategoryObj?.apiName.join("+") || "health";
-
-        const url = `${NEWS_API_URL}&q=${query}`;
-        console.log(url);
-
-        const response = await fetch(url)
-        if (!response.ok) throw new Error('Failed to fetch news')
-
-      
-        const data = await response.json()
-        console.log('API Response:', data)
-        
-        if (data.articles) {
-          setArticles(
-            data.articles.map((article: any, index: number) => ({
-              id: index,
-              title: article.title,
-              description: article.description,
-              content: article.content,
-              source: article.source.name,
-              author: article.author,
-              publishedAt: article.publishedAt,
-              url: article.url,
-              imageUrl: article.urlToImage,
-              category: "General", // Default category for now
-              createdAt: new Date().toISOString(),
-            }))
-          );
-          setTotalResults(data.totalResults)
-          setTotalPages(Math.ceil(data.totalResults / ARTICLES_PER_PAGE))
-        } else {
-          throw new Error('No articles found')
-        }
-      } catch (err) {
-        console.error('Error fetching news:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load news')
-      } finally {
-        setLoading(false)
-        setPaginationLoading(false)
-      }
+  const fetchNews = async () => {
+    if (currentPage === 1) {
+      setLoading(true);
+    } else {
+      setPaginationLoading(true);
     }
+    setError(null);
 
-    fetchNews()
-  }, [currentPage, selectedCategory, categories])
+    try {
+      // Build the query
+      const selectedCategoryObj = categories.find(
+        (category) => category.displayName === selectedCategory
+      );
+      const query = selectedCategoryObj?.apiName.join("+") || "health";
+
+      const url = `${NEWS_API_URL}&q=${query}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch news");
+
+      const data = await response.json();
+
+      if (data.articles) {
+        const formatted = data.articles.map((article: any, index: number) => ({
+          id: index,
+          title: article.title,
+          description: article.description,
+          content: article.content,
+          source: article.source.name,
+          author: article.author,
+          publishedAt: article.publishedAt,
+          url: article.url,
+          imageUrl: article.urlToImage,
+          category: "General",
+          createdAt: new Date().toISOString(),
+        }));
+
+        setArticles(formatted);
+        setTotalResults(data.totalResults);
+        setTotalPages(Math.ceil(data.totalResults / ARTICLES_PER_PAGE));
+
+        // Trigger AI summary fetch separately (non-blocking)
+        fetchSummary(data.articles);
+      } else {
+        throw new Error("No articles found");
+      }
+    } catch (err) {
+      console.error("Error fetching news:", err);
+      setError(err instanceof Error ? err.message : "Failed to load news");
+    } finally {
+      setLoading(false);
+      setPaginationLoading(false);
+    }
+  };
+
+  const fetchSummary = async (articles: any[]) => {
+    try {
+      setSummaryLoading(true);
+
+      const topArticles = articles.slice(0, 5);
+      const prompt = `
+        You are a concise news summarization assistant.
+
+        Summarize the following ${topArticles.length} news articles into a short, engaging paragraph (under 150 words).
+        Focus on the main theme, key events, and overall tone of the news.
+
+        Articles:
+        ${topArticles
+          .map(
+            (a: any, i: number) =>
+              `${i + 1}. "${a.title}" — ${a.description || a.content || ""}`
+          )
+          .join("\n")}
+
+        Return only the summary paragraph — do not list the articles individually.
+      `;
+
+      const res = await fetch(`/api/gemini?prompt=${encodeURIComponent(prompt)}`);
+      const summary = await res.text();
+      setAiSummary(summary);
+    } catch (err) {
+      console.error("Error fetching AI summary:", err);
+      setAiSummary("Failed to generate AI summary.");
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  fetchNews();
+}, [currentPage, selectedCategory, categories]);
+
 
   // Reset to page 1 when category changes
   useEffect(() => {
@@ -277,6 +315,54 @@ export function HealthNewsPage() {
                     ))}
                   </TabsList>
                 </Tabs>
+              </div>
+
+              {/* AI Summary section - appears before articles */}
+              <div className="mb-6">
+                <Card className="border-teal-200 bg-teal-50/60">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-teal-600 text-white hover:bg-teal-700">
+                        AI Summary
+                      </Badge>
+                      <Sparkles className="h-4 w-4 text-teal-700" />
+                    </div>
+                    <CardTitle className="text-xl font-semibold text-teal-900">
+                      Today’s Health Briefing
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {summaryLoading ? (
+                      <div className="flex items-center gap-2 text-teal-700">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Generating AI summary...</span>
+                      </div>
+                    ) : aiSummary && aiSummary.length > 0 ? (
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                        <p className="text-teal-900/90 whitespace-pre-line md:max-w-[85%]">
+                          {aiSummary}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className="self-start bg-white text-teal-700 hover:bg-teal-100"
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(aiSummary);
+                              setCopied(true);
+                              setTimeout(() => setCopied(false), 1500);
+                            } catch {}
+                          }}
+                        >
+                          <Copy className="h-4 w-4 mr-2" />
+                          {copied ? "Copied" : "Copy"}
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-teal-900/80">No AI summary yet.</p>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Loading state */}
