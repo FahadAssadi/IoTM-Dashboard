@@ -228,16 +228,16 @@ export default function DashboardPage() {
 
           <CardContent className="pt-0 space-y-2">
             {alertError ? (
-              <p className="text-red-700">{alertError}</p>
+              <p className="text-white-700">{alertError}</p>
             ) : alertSummaryLoading ? (
-              <p className="text-red-700/80 flex items-center gap-2">
+              <p className="text-white-700/80 flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Generating AI summary...
               </p>
             ) : alertSummary ? (
-              <p className="text-red-900 font-medium whitespace-pre-line">{alertSummary}</p>
+              <p className="text-white-900 font-medium whitespace-pre-line">{alertSummary}</p>
             ) : (
-              <p className="text-red-700/80">No active emergency alerts at the moment.</p>
+              <p className="text-white-700/80">No active emergency alerts at the moment.</p>
             )}
           </CardContent>
         </Card>
