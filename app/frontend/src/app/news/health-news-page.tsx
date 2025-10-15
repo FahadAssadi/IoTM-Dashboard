@@ -401,67 +401,76 @@ export function HealthNewsPage({ summary }: { summary?: string } = {}) {
                     </div>
                   )}
 
-                  <div className="grid gap-6 md:grid-cols-2">
-                    {articles.length === 0 ? (
-                      <div className="col-span-2 text-center py-12">
-                        <p className="text-gray-600">No news articles found for the selected category.</p>
+                  {/* Only show articles for the current page */}
+                  {(() => {
+                    const pagedArticles = articles.slice(
+                      (currentPage - 1) * ARTICLES_PER_PAGE,
+                      currentPage * ARTICLES_PER_PAGE
+                    );
+                    return (
+                      <div className="grid gap-6 md:grid-cols-2">
+                        {pagedArticles.length === 0 ? (
+                          <div className="col-span-2 text-center py-12">
+                            <p className="text-gray-600">No news articles found for the selected category.</p>
+                          </div>
+                        ) : (
+                          pagedArticles.map((article, index) => (
+                            <Card key={`${article.id}-${index}-${article.title.slice(0, 20)}`} className="overflow-hidden">
+                              <CardHeader className="pb-3">
+                                <div className="flex justify-between items-start">
+                                  <Badge variant="outline" className="bg-teal-50 text-teal-700 hover:bg-teal-100">
+                                    {getCategoryDisplayName(article.category)}
+                                  </Badge>
+                                  <div className="flex items-center text-sm text-gray-500">
+                                    <Calendar className="h-3.5 w-3.5 mr-1" />
+                                    {formatDate(article.publishedAt)}
+                                  </div>
+                                </div>
+                                <CardTitle className="text-lg font-semibold mt-2">{article.title}</CardTitle>
+                              </CardHeader>
+                              <CardContent className="pb-3">
+                                <p className="text-gray-600 text-sm">
+                                  {expandedArticle === article.id
+                                    ? article.description || "No description available."
+                                    : article.description
+                                    ? `${article.description.substring(0, 120)}...`
+                                    : "No description available."}
+                                </p>
+                                {expandedArticle === article.id && article.content && article.content !== article.description && (
+                                  <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-700">
+                                    {article.content}
+                                  </div>
+                                )}
+                              </CardContent>
+                              <CardFooter className="flex justify-between pt-0">
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="link"
+                                    className="p-0 h-auto text-teal-600 hover:text-teal-800"
+                                    onClick={() => toggleArticle(article.id)}
+                                  >
+                                    {expandedArticle === article.id ? "Show Less" : "Read More"}
+                                  </Button>
+                                  {article.url && (
+                                    <Button
+                                      variant="link"
+                                      className="p-0 h-auto text-blue-600 hover:text-blue-800"
+                                      onClick={() => window.open(article.url, '_blank')}
+                                    >
+                                      View Source
+                                    </Button>
+                                  )}
+                                </div>
+                                <Badge variant="secondary" className="bg-gray-100 text-gray-700">
+                                  {article.source}
+                                </Badge>
+                              </CardFooter>
+                            </Card>
+                          ))
+                        )}
                       </div>
-                    ) : (
-                      articles.map((article, index) => (
-                        <Card key={`${article.id}-${index}-${article.title.slice(0, 20)}`} className="overflow-hidden">
-                          <CardHeader className="pb-3">
-                            <div className="flex justify-between items-start">
-                              <Badge variant="outline" className="bg-teal-50 text-teal-700 hover:bg-teal-100">
-                                {getCategoryDisplayName(article.category)}
-                              </Badge>
-                              <div className="flex items-center text-sm text-gray-500">
-                                <Calendar className="h-3.5 w-3.5 mr-1" />
-                                {formatDate(article.publishedAt)}
-                              </div>
-                            </div>
-                            <CardTitle className="text-lg font-semibold mt-2">{article.title}</CardTitle>
-                          </CardHeader>
-                          <CardContent className="pb-3">
-                            <p className="text-gray-600 text-sm">
-                              {expandedArticle === article.id
-                                ? article.description || "No description available."
-                                : article.description
-                                ? `${article.description.substring(0, 120)}...`
-                                : "No description available."}
-                            </p>
-                            {expandedArticle === article.id && article.content && article.content !== article.description && (
-                              <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-700">
-                                {article.content}
-                              </div>
-                            )}
-                          </CardContent>
-                          <CardFooter className="flex justify-between pt-0">
-                            <div className="flex gap-2">
-                              <Button
-                                variant="link"
-                                className="p-0 h-auto text-teal-600 hover:text-teal-800"
-                                onClick={() => toggleArticle(article.id)}
-                              >
-                                {expandedArticle === article.id ? "Show Less" : "Read More"}
-                              </Button>
-                              {article.url && (
-                                <Button
-                                  variant="link"
-                                  className="p-0 h-auto text-blue-600 hover:text-blue-800"
-                                  onClick={() => window.open(article.url, '_blank')}
-                                >
-                                  View Source
-                                </Button>
-                              )}
-                            </div>
-                            <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-                              {article.source}
-                            </Badge>
-                          </CardFooter>
-                        </Card>
-                      ))
-                    )}
-                  </div>
+                    );
+                  })()}
                 </div>
               )}
 
