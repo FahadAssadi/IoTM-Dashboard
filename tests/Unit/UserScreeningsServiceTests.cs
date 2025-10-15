@@ -56,9 +56,9 @@ public class UserScreeningsServiceTests
             new UserScreening { UserId = userId, GuidelineId = guideline.GuidelineId, Status = ScreeningStatus.pending }
         );
         await ctx.SaveChangesAsync();
-        var sut = CreateService(ctx);
+        var service = CreateService(ctx);
 
-        var result = await sut.GetHiddenScreeningsForUserAsync(userId);
+        var result = await service.GetHiddenScreeningsForUserAsync(userId);
 
         result.Should().HaveCount(1);
         result.First().Status.Should().Be(ScreeningStatus.skipped);
@@ -85,11 +85,11 @@ public class UserScreeningsServiceTests
         ctx.ScreeningGuidelines.Add(guideline);
         await ctx.SaveChangesAsync();
 
-        var sut = CreateService(ctx);
+        var service = CreateService(ctx);
         var scheduledDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(14));
 
         // Act
-        await sut.ScheduleScreening(userId, guideline.GuidelineId, scheduledDate);
+        await service.ScheduleScreening(userId, guideline.GuidelineId, scheduledDate);
 
         // Assert
         var userScreening = ctx.UserScreenings.Single(us => us.UserId == userId && us.GuidelineId == guideline.GuidelineId);
@@ -144,10 +144,10 @@ public class UserScreeningsServiceTests
         }
         await ctx.SaveChangesAsync();
 
-        var sut = CreateService(ctx);
+        var service = CreateService(ctx);
 
         // Act: page 2, pageSize 4 => items 5–8 of the 10 visible
-        var (items, total) = await sut.GetVisibleScreeningsForUserPagedAsync(userId, page: 2, pageSize: 4);
+        var (items, total) = await service.GetVisibleScreeningsForUserPagedAsync(userId, page: 2, pageSize: 4);
 
         // Assert
         total.Should().Be(10);
@@ -187,11 +187,11 @@ public class UserScreeningsServiceTests
         ctx.ScreeningGuidelines.Add(guideline);
         await ctx.SaveChangesAsync();
 
-        var sut = CreateService(ctx);
+        var service = CreateService(ctx);
         var date = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(7));
 
-    var first = await sut.ScheduleScreening(userId, guideline.GuidelineId, date);
-    var second = await sut.ScheduleScreening(userId, guideline.GuidelineId, date);
+    var first = await service.ScheduleScreening(userId, guideline.GuidelineId, date);
+    var second = await service.ScheduleScreening(userId, guideline.GuidelineId, date);
 
     first.Should().BeTrue();
     second.Should().BeFalse();
@@ -244,10 +244,10 @@ public class UserScreeningsServiceTests
         ctx.ScheduledScreenings.Add(scheduled);
         await ctx.SaveChangesAsync();
 
-        var sut = CreateService(ctx);
+        var service = CreateService(ctx);
 
         // Act
-        await sut.CancelScheduledScreening(scheduled.ScheduledScreeningId);
+        await service.CancelScheduledScreening(scheduled.ScheduledScreeningId);
 
         // Assert: scheduled entry is removed
         var stillThere = await ctx.ScheduledScreenings
@@ -305,17 +305,139 @@ public class UserScreeningsServiceTests
         ctx.ScheduledScreenings.Add(scheduled);
         await ctx.SaveChangesAsync();
 
-        var sut = CreateService(ctx);
+        var service = CreateService(ctx);
 
         // Act
-        await sut.ArchiveScheduledScreening(scheduled.ScheduledScreeningId);
+        await service.ArchiveScheduledScreening(scheduled.ScheduledScreeningId);
 
         // Assert: archived flag (IsActive) is false
         var archived = await ctx.ScheduledScreenings.FirstAsync(ss => ss.ScheduledScreeningId == scheduled.ScheduledScreeningId);
         archived.IsActive.Should().BeFalse();
 
         // And it should not be returned by GetScheduledScreenings
-        var scheduledNow = await sut.GetScheduledScreenings(userId);
+        var scheduledNow = await service.GetScheduledScreenings(userId);
         scheduledNow.Any(ss => ss.ScheduledScreeningId == scheduled.ScheduledScreeningId).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Hide_Then_Unhide_Should_Toggle_Status_And_Reflect_In_Hidden_List()
+    {
+        // Arrange
+        using var ctx = DbContextFactory.CreateInMemory();
+        var userId = Guid.NewGuid();
+        var guideline = new ScreeningGuideline
+        {
+            GuidelineId = Guid.NewGuid(),
+            Name = "Hide/Unhide Test",
+            ScreeningType = "type",
+            DefaultFrequencyMonths = 12,
+            Category = ScreeningCategory.screening,
+            Description = "desc",
+            SourceOrganisation = "org",
+            LastUpdated = DateOnly.FromDateTime(DateTime.UtcNow),
+            IsRecurring = true
+        };
+        ctx.ScreeningGuidelines.Add(guideline);
+
+        var userScreening = new UserScreening
+        {
+            ScreeningId = Guid.NewGuid(),
+            UserId = userId,
+            GuidelineId = guideline.GuidelineId,
+            Status = ScreeningStatus.pending,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        ctx.UserScreenings.Add(userScreening);
+        await ctx.SaveChangesAsync();
+
+        var service = CreateService(ctx);
+
+        // Act: Hide
+        await service.HideScreening(userId, guideline.GuidelineId);
+
+        // Assert: status is skipped and appears in hidden list
+        var afterHide = await ctx.UserScreenings.FirstAsync(us => us.ScreeningId == userScreening.ScreeningId);
+        afterHide.Status.Should().Be(ScreeningStatus.skipped);
+        var hiddenList = await service.GetHiddenScreeningsForUserAsync(userId);
+        hiddenList.Select(x => x.ScreeningId).Should().Contain(userScreening.ScreeningId);
+
+        // Act: Unhide
+        await service.UnhideScreening(userId, guideline.GuidelineId);
+
+        // Assert: status back to pending and no longer in hidden list
+        var afterUnhide = await ctx.UserScreenings.FirstAsync(us => us.ScreeningId == userScreening.ScreeningId);
+        afterUnhide.Status.Should().Be(ScreeningStatus.pending);
+        var hiddenListAfter = await service.GetHiddenScreeningsForUserAsync(userId);
+        hiddenListAfter.Select(x => x.ScreeningId).Should().NotContain(userScreening.ScreeningId);
+    }
+
+    [Fact]
+    public async Task GetNewScreeningsForUserAsync_Should_Add_Smoker_Guideline_When_Recommended()
+    {
+        // Arrange
+        var (ctx, conn) = SqliteDbContextFactory.CreateInMemory();
+        await using var _ = conn; // ensure connection disposed after test
+        var userId = Guid.NewGuid();
+
+        // Smoker-specific guideline with ConditionsRequired targeting current/former smokers
+        var smokerGuideline = new ScreeningGuideline
+        {
+            GuidelineId = Guid.NewGuid(),
+            Name = "Smoker Lung Screening",
+            ScreeningType = "lung_cancer",
+            DefaultFrequencyMonths = 12,
+            Category = ScreeningCategory.screening,
+            Description = "Recommended for current or former smokers",
+            SourceOrganisation = "org",
+            LastUpdated = DateOnly.FromDateTime(DateTime.UtcNow),
+            IsRecurring = true,
+            IsActive = true,
+            ConditionsRequired = "{\"All\":[{\"Factor\":\"SmokingStatus\",\"Operator\":\"In\",\"Values\":[\"current_smoker\",\"former_smoker\"]}],\"Any\":[]}"
+        };
+    ctx.ScreeningGuidelines.Add(smokerGuideline);
+    // Seed the user to satisfy FK when adding UserScreenings
+        ctx.Users.Add(new User { UserId = userId, FirstName = "Test", LastName = "User" });
+    await ctx.SaveChangesAsync();
+
+        // Mock guideline service to recommend the smoker guideline for this user (simulating updated profile)
+        var logger = new Mock<ILogger<UserScreeningsService>>().Object;
+        var guidelineSvc = new Mock<IScreeningGuidelineService>(MockBehavior.Strict);
+        guidelineSvc
+            .Setup(g => g.GetRecommendedScreeningGuidelines(userId))
+            .ReturnsAsync(new System.Collections.Generic.List<ScreeningGuideline> { smokerGuideline });
+        guidelineSvc.Setup(g => g.MapToDto(It.IsAny<ScreeningGuideline>()))
+            .Returns<ScreeningGuideline>(g => new IoTM.Dtos.ScreeningGuidelineDto
+            {
+                Id = g.GuidelineId,
+                Name = g.Name,
+                ScreeningType = g.ScreeningType,
+                RecommendedFrequency = $"{g.DefaultFrequencyMonths} months",
+                Category = g.Category,
+                Description = g.Description,
+                IsRecurring = g.IsRecurring
+            });
+
+    var service = new UserScreeningsService(ctx, (ILogger<UserScreeningsService>)logger, guidelineSvc.Object);
+
+        // Act
+        var added = await service.GetNewScreeningsForUserAsync(userId);
+
+        // Assert: one new screening created for the smoker guideline
+        added.Should().ContainSingle();
+        added[0].UserId.Should().Be(userId);
+        added[0].GuidelineId.Should().Be(smokerGuideline.GuidelineId);
+        added[0].Status.Should().Be(ScreeningStatus.pending);
+
+        // And it exists in the database
+        var exists = await ctx.UserScreenings.AnyAsync(us => us.UserId == userId && us.GuidelineId == smokerGuideline.GuidelineId);
+        exists.Should().BeTrue();
+
+        // Calling again should add nothing new (idempotent for already existing screening)
+        var second = await service.GetNewScreeningsForUserAsync(userId);
+        second.Should().BeEmpty();
+
+        // Verify the recommendation method was called
+        guidelineSvc.Verify(g => g.GetRecommendedScreeningGuidelines(userId), Times.AtLeastOnce());
     }
 }
