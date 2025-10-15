@@ -3,6 +3,7 @@ using System;
 using IoTM.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IoTM.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250910043120_AddedAvatarUrl")]
+    partial class AddedAvatarUrl
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -282,17 +285,14 @@ namespace IoTM.Migrations
                     b.ToTable("health_metrics");
                 });
 
-            modelBuilder.Entity("IoTM.Models.HealthSegments.HealthSegmentBPM", b =>
+            modelBuilder.Entity("IoTM.Models.HealthSegmentBPM", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<double>("AverageBpm")
+                    b.Property<double?>("AverageBpm")
                         .HasColumnType("double precision");
-
-                    b.Property<string>("Category")
-                        .HasColumnType("text");
 
                     b.Property<DateTime>("End")
                         .HasColumnType("timestamp with time zone");
@@ -300,7 +300,7 @@ namespace IoTM.Migrations
                     b.Property<int>("Points")
                         .HasColumnType("integer");
 
-                    b.Property<double>("StandardDeviation")
+                    b.Property<double?>("StandardDeviation")
                         .HasColumnType("double precision");
 
                     b.Property<DateTime>("Start")
@@ -314,137 +314,6 @@ namespace IoTM.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("HealthSegmentBPMs");
-                });
-
-            modelBuilder.Entity("IoTM.Models.HealthSegments.HealthSegmentBloodPressure", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<double>("AverageDiastolic")
-                        .HasColumnType("double precision");
-
-                    b.Property<double>("AverageSystolic")
-                        .HasColumnType("double precision");
-
-                    b.Property<string>("Category")
-                        .HasColumnType("text");
-
-                    b.Property<double>("DiastolicStandardDeviation")
-                        .HasColumnType("double precision");
-
-                    b.Property<DateTime>("End")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Points")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("Start")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<double>("SystolicStandardDeviation")
-                        .HasColumnType("double precision");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("HealthSegmentBloodPressures");
-                });
-
-            modelBuilder.Entity("IoTM.Models.HealthSegments.HealthSegmentSleep", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Category")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("End")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("Start")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("HealthSegmentSleeps");
-                });
-
-            modelBuilder.Entity("IoTM.Models.HealthSegments.HealthSegmentSpO2", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<double>("AverageSpO2")
-                        .HasColumnType("double precision");
-
-                    b.Property<string>("Category")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("End")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Points")
-                        .HasColumnType("integer");
-
-                    b.Property<double>("StandardDeviation")
-                        .HasColumnType("double precision");
-
-                    b.Property<DateTime>("Start")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("HealthSegmentSpO2s");
-                });
-
-            modelBuilder.Entity("IoTM.Models.LifestyleFactor", b =>
-                {
-                    b.Property<Guid>("LifestyleFactorId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Factor")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Selection")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("LifestyleFactorId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("lifestyle_factors");
                 });
 
             modelBuilder.Entity("IoTM.Models.MedicalCondition", b =>
@@ -736,34 +605,17 @@ namespace IoTM.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int?>("Height")
-                        .HasColumnType("integer");
-
-                    b.Property<bool?>("IsOnboarded")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<DateTime?>("OnboardingTime")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("PhoneNumber")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<string>("Postcode")
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
                     b.Property<string>("Sex")
                         .HasColumnType("text");
-
-                    b.Property<string>("State")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Timezone")
                         .HasMaxLength(50)
@@ -771,9 +623,6 @@ namespace IoTM.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal?>("Weight")
-                        .HasColumnType("numeric");
 
                     b.HasKey("UserId");
 
@@ -989,51 +838,7 @@ namespace IoTM.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("IoTM.Models.HealthSegments.HealthSegmentBPM", b =>
-                {
-                    b.HasOne("IoTM.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("IoTM.Models.HealthSegments.HealthSegmentBloodPressure", b =>
-                {
-                    b.HasOne("IoTM.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("IoTM.Models.HealthSegments.HealthSegmentSleep", b =>
-                {
-                    b.HasOne("IoTM.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("IoTM.Models.HealthSegments.HealthSegmentSpO2", b =>
-                {
-                    b.HasOne("IoTM.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("IoTM.Models.LifestyleFactor", b =>
+            modelBuilder.Entity("IoTM.Models.HealthSegmentBPM", b =>
                 {
                     b.HasOne("IoTM.Models.User", "User")
                         .WithMany()

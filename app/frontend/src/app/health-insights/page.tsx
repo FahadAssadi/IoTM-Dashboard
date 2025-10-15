@@ -1,19 +1,7 @@
 "use client"
 
-import { ReactNode, useState } from "react"
-import {
-  Activity,
-  Calendar,
-  Clock,
-  Download,
-  Heart,
-  // LineChart as LineChartIcon, - ES-Lint Error
-  Trees as Lungs,
-  Share2,
-  Footprints as Shoe,
-  ThermometerSnowflake,
-} from "lucide-react"
-
+import { ReactNode, useEffect, useState } from "react"
+import {  Activity, Calendar, Clock, Download, Heart, Trees as Lungs, Share2, Footprints as Shoe, ThermometerSnowflake } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -23,10 +11,25 @@ import HealthInsightsHeartTab from "./health-insights-heart-tab"
 import HealthInsightsRespiratoryTab from "./health-insights-respiratory-tab"
 import HealthInsightsActivityTab from "./health-insights-activity-tab"
 import HealthInsightsSleepTab from "./health-insights-sleep-tab"
+import { loadRecentSummary, RecentSummary } from "./backend"
 
 // Renamed the component and main heading to "Health Insights"
 export default function HealthInsightsPage() {
   const [timeRange, setTimeRange] = useState("24h")
+  const [recentSummary, setRecentSummary ] = useState<RecentSummary>({
+    bpm: "loading",
+    spO2: "loading",
+    systolicBloodPressure: "loading",
+    diastolicBloodPressure: "loading"
+  });
+  useEffect(() => {
+    async function fetchData() {
+      const data = await loadRecentSummary();
+      setRecentSummary(data);
+    }
+    fetchData();
+  }, []);
+
 
   return (
     <main id="main-content" className="w-full flex flex-col gap-4 p-4 md:gap-8 md:p-6 bg-slate-50" role="main">
@@ -64,7 +67,7 @@ export default function HealthInsightsPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <VitalCard
           title="Heart Rate"
-          value="72"
+          value={recentSummary.bpm}
           unit="bpm"
           status="normal"
           change="-3"
@@ -72,7 +75,7 @@ export default function HealthInsightsPage() {
         />
         <VitalCard
           title="Blood Oxygen"
-          value="98"
+          value={recentSummary.spO2}
           unit="%"
           status="normal"
           change="+1"
@@ -231,16 +234,12 @@ function VitalCard({ title, value, unit, status, change, icon }: VitalCardProps)
         return "text-teal-700"
     }
   }
-
-  // FIX THIS
-  console.log("Fix the problem with icon: ", icon)
-
   return (
     <Card>
       <CardContent className="p-6">
         <div className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-slate-800">{title}</CardTitle>
-          {icon} {/* This was icon but the types were weird*/}
+          {icon}
         </div>
 
         <div className="flex items-end gap-1">
