@@ -17,7 +17,16 @@ import com.anonymous.mobilewrapper.health.HealthConnectPackage
 import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ReactNativeHostWrapper
 
-class MainApplication : Application(), ReactApplication {
+import androidx.work.Configuration as WorkManagerConfiguration
+import androidx.work.WorkManager
+import android.util.Log
+
+class MainApplication : Application(), ReactApplication, WorkManagerConfiguration.Provider {
+
+  override val workManagerConfiguration: WorkManagerConfiguration
+    get() = WorkManagerConfiguration.Builder()
+      .setMinimumLoggingLevel(Log.DEBUG)
+      .build()
 
   override val reactNativeHost: ReactNativeHost = ReactNativeHostWrapper(
         this,
@@ -51,6 +60,7 @@ class MainApplication : Application(), ReactApplication {
     }
     ApplicationLifecycleDispatcher.onApplicationCreate(this)
   }
+
 
   override fun onConfigurationChanged(newConfig: Configuration) {
     super.onConfigurationChanged(newConfig)

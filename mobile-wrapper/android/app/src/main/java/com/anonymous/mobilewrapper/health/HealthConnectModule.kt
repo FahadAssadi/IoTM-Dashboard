@@ -163,6 +163,8 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
 
         // Start periodic sync every 15 minutes
         HealthConnectSyncWorker.schedule(reactContext, 15L)
+        // Run one-time work immediately
+        HealthConnectSyncWorker.enqueueOneTime(reactContext)
 
         withContext(Dispatchers.Main) { promise.resolve(true) }
       } catch (e: Exception) {
@@ -171,17 +173,6 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
     }
   }
 
-  @ReactMethod
-  fun schedulePeriodicHealthSync(hours: Int, promise: Promise) {
-    // Keep for compatibility; convert hours -> minutes
-    try {
-      val minutes = (hours * 60).coerceAtLeast(15) // WorkManager min is 15 minutes
-      HealthConnectSyncWorker.schedule(reactContext, minutes.toLong())
-      promise.resolve(true)
-    } catch (t: Throwable) {
-      promise.reject("SCHEDULE_ERROR", t.message, t)
-    }
-  }
 
   @ReactMethod
   fun runHealthSyncNow(promise: Promise) {

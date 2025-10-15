@@ -16,13 +16,26 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
+import androidx.core.app.NotificationCompat
+import android.util.Log
 
 class HealthConnectSyncWorker(
   appContext: Context,
   params: WorkerParameters
 ) : CoroutineWorker(appContext, params) {
 
+  override suspend fun getForegroundInfo(): ForegroundInfo {
+    val notification = createForegroundNotification()
+    return ForegroundInfo(1001, notification)
+  }
+
   override suspend fun doWork(): Result {
+    Log.d("HealthSyncWorker", "doWork started")
+    setForeground(getForegroundInfo())
     val hc = HealthConnectClient.getOrCreate(applicationContext)
 
     // Permissions check
@@ -37,6 +50,7 @@ class HealthConnectSyncWorker(
     if (!granted.containsAll(required)) return Result.retry()
 
     return try {
+      Log.d("HealthSyncWorker", "Sync logic running...")
       val outDir = applicationContext.getExternalFilesDir("health_data") ?: applicationContext.filesDir
       if (!outDir.exists()) outDir.mkdirs()
 
@@ -62,8 +76,33 @@ class HealthConnectSyncWorker(
 
       Result.success()
     } catch (e: Exception) {
+      Log.e("HealthSyncWorker", "Worker failed", e)
       Result.retry()
     }
+  }
+
+  private fun createForegroundNotification(): Notification {
+    val channelId = "health_sync_channel"
+    val context = applicationContext
+
+    // Create notification channel (for Android 8+)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val name = "Health Data Sync"
+      val description = "Syncing data with Health Connect"
+      val importance = NotificationManager.IMPORTANCE_LOW
+      val channel = NotificationChannel(channelId, name, importance).apply {
+        this.description = description
+      }
+      val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+      notificationManager.createNotificationChannel(channel)
+    }
+
+    return NotificationCompat.Builder(context, channelId)
+      .setContentTitle("Syncing Health Data")
+      .setContentText("Your health data is being synced in the background.")
+      .setSmallIcon(android.R.drawable.ic_popup_sync)
+      .setOngoing(true)
+      .build()
   }
 
   companion object {
