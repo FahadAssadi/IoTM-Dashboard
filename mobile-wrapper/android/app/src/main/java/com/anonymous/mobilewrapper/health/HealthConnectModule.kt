@@ -12,6 +12,7 @@ import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.SleepSessionRecord
+import androidx.health.connect.client.records.ExerciseSessionRecord
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +39,7 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
     const val FILE_SPO2 = "spo2_data.json"
     const val FILE_STEPS = "steps_data.json"
     const val FILE_SLEEP = "sleep_data.json"
+    const val FILE_EXERCISE = "exercise_data.json"
   }
 
   private fun dataDir(): File {
@@ -56,7 +58,8 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
     HealthPermission.getReadPermission(BloodPressureRecord::class),
     HealthPermission.getReadPermission(OxygenSaturationRecord::class),
     HealthPermission.getReadPermission(StepsRecord::class),
-    HealthPermission.getReadPermission(SleepSessionRecord::class)
+    HealthPermission.getReadPermission(SleepSessionRecord::class),
+    HealthPermission.getReadPermission(ExerciseSessionRecord::class),
   )
 
   @ReactMethod
@@ -151,6 +154,7 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
         val spo2File = File(outDir, FILE_SPO2)
         val stepsFile = File(outDir, FILE_STEPS)
         val sleepFile = File(outDir, FILE_SLEEP)
+        val exerciseFile = File(outDir, FILE_EXERCISE)
 
         // Overwrite each baseline dump
         bpFile.delete(); hrFile.delete(); spo2File.delete(); stepsFile.delete(); sleepFile.delete()
@@ -160,6 +164,7 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
         HealthJsonWriters.writeSpo2Window(hc, tr, spo2File, 2000)
         HealthJsonWriters.writeStepsWindow(hc, tr, stepsFile, 2000)
         HealthJsonWriters.writeSleepSessionsWindow(hc, tr, sleepFile, 2000)
+        HealthJsonWriters.writeExerciseSessionsWindow(hc, tr, exerciseFile, 2000)
 
         // Start periodic sync every 15 minutes
         HealthConnectSyncWorker.schedule(reactContext, 15L)

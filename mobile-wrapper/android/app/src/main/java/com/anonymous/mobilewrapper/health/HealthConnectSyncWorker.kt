@@ -9,6 +9,7 @@ import androidx.health.connect.client.records.OxygenSaturationRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.request.ChangesTokenRequest
+import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.work.*
 import java.io.File
@@ -45,6 +46,7 @@ class HealthConnectSyncWorker(
       HealthPermission.getReadPermission(OxygenSaturationRecord::class),
       HealthPermission.getReadPermission(StepsRecord::class),
       HealthPermission.getReadPermission(SleepSessionRecord::class),
+      HealthPermission.getReadPermission(ExerciseSessionRecord::class),
     )
     val granted = hc.permissionController.getGrantedPermissions()
     if (!granted.containsAll(required)) return Result.retry()
@@ -64,15 +66,17 @@ class HealthConnectSyncWorker(
       val spo2File = File(outDir, "spo2_data.json")
       val stepsFile = File(outDir, "steps_data.json")
       val sleepFile = File(outDir, "sleep_data.json")
+      val exerciseFile = File(outDir, "exercise_data.json")
 
       // Optional cleanup; writers overwrite anyway
-      bpFile.delete(); hrFile.delete(); spo2File.delete(); stepsFile.delete(); sleepFile.delete()
+      bpFile.delete(); hrFile.delete(); spo2File.delete(); stepsFile.delete(); sleepFile.delete(); exerciseFile.delete()
 
       HealthJsonWriters.writeBloodPressureWindow(hc, tr, bpFile, 2000)
       HealthJsonWriters.writeHeartRateWindow(hc, tr, hrFile, 2000)
       HealthJsonWriters.writeSpo2Window(hc, tr, spo2File, 2000)
       HealthJsonWriters.writeStepsWindow(hc, tr, stepsFile, 2000)
       HealthJsonWriters.writeSleepSessionsWindow(hc, tr, sleepFile, 2000)
+      HealthJsonWriters.writeExerciseSessionsWindow(hc, tr, exerciseFile, 2000)
 
       Result.success()
     } catch (e: Exception) {
