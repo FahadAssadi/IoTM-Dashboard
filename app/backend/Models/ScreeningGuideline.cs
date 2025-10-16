@@ -18,7 +18,7 @@ namespace IoTM.Models
     }
     public enum PregnancyApplicable
     {
-        not_pregnant, pregnant, postpartum
+        not_pregnant, pregnant, postpartum, any
     }
 
     [Table("screening_guidelines")]

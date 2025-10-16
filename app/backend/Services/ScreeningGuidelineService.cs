@@ -69,9 +69,13 @@ namespace IoTM.Services
                     if (g.MaxAge.HasValue && ctx.Age.HasValue && ctx.Age > g.MaxAge) continue;
                     if (!string.Equals(g.SexApplicable.ToString(), "both", StringComparison.OrdinalIgnoreCase) &&
                         !string.Equals(g.SexApplicable.ToString(), ctx.Sex, StringComparison.OrdinalIgnoreCase)) continue;
-                    if (!string.IsNullOrWhiteSpace(g.PregnancyApplicable.ToString()) &&
-                        !string.Equals(g.PregnancyApplicable.ToString(), ctx.PregnancyStatus, StringComparison.OrdinalIgnoreCase) &&
-                        !string.Equals(g.PregnancyApplicable.ToString(), "both", StringComparison.OrdinalIgnoreCase)) continue;
+                    // Pregnancy applicability: 'any' means universally applicable; otherwise must match user's status
+                    if (g.PregnancyApplicable != PregnancyApplicable.any)
+                    {
+                        var requiredPreg = g.PregnancyApplicable.ToString();
+                        if (!string.Equals(requiredPreg, ctx.PregnancyStatus, StringComparison.OrdinalIgnoreCase))
+                            continue;
+                    }
 
                     if (!string.IsNullOrWhiteSpace(g.ConditionsRequired))
                     {

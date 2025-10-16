@@ -441,3 +441,246 @@ public class UserScreeningsServiceTests
         guidelineSvc.Verify(g => g.GetRecommendedScreeningGuidelines(userId), Times.AtLeastOnce());
     }
 }
+
+public class ScreeningGuidelineServiceCriteriaTests
+{
+    private static ScreeningGuidelineService CreateService(ApplicationDbContext ctx)
+    {
+        var logger = new Mock<ILogger<ScreeningGuidelineService>>().Object;
+        return new ScreeningGuidelineService(ctx, (ILogger<ScreeningGuidelineService>)logger);
+    }
+
+    private static ScreeningGuideline CreateGeneralGuideline()
+    {
+        return new ScreeningGuideline
+        {
+            GuidelineId = Guid.NewGuid(),
+            Name = "Yearly Health Check",
+            ScreeningType = "General",
+            DefaultFrequencyMonths = 12,
+            Category = ScreeningCategory.checkup,
+            Description = "Comprehensive health check to monitor overall wellbeing.",
+            SourceOrganisation = "org",
+            LastUpdated = DateOnly.Parse("2025-08-25"),
+            IsRecurring = true,
+            IsActive = true,
+            ConditionsRequired = null,
+            Cost = "Usually covered by Medicare or private insurance",
+            Delivery = "General practitioner",
+            Link = null,
+            SexApplicable = SexApplicable.both,
+            PregnancyApplicable = PregnancyApplicable.any
+        };
+    }
+
+    [Fact]
+    public async Task GetRecommendedScreeningGuidelines_Should_Return_When_Age_Meets_Criteria()
+    {
+        // Arrange: SQLite for transaction/relational behavior
+        var (ctx, conn) = SqliteDbContextFactory.CreateInMemory();
+        await using var _ = conn;
+        var userId = Guid.NewGuid();
+
+        // User age 55 (DOB 55 years ago)
+        var dob55 = DateOnly.FromDateTime(DateTime.Today.AddYears(-55));
+        ctx.Users.Add(new User { UserId = userId, FirstName = "Test", LastName = "User", DateOfBirth = dob55, Sex = Sex.male });
+
+        // Guideline requiring Age >= 50 via ConditionsRequired JSON
+        var ageSpecific = new ScreeningGuideline
+        {
+            GuidelineId = Guid.NewGuid(),
+            Name = "Age 50+ Screening",
+            ScreeningType = "age_based",
+            DefaultFrequencyMonths = 12,
+            Category = ScreeningCategory.screening,
+            Description = "Eligible when age >= 50",
+            SourceOrganisation = "org",
+            LastUpdated = DateOnly.FromDateTime(DateTime.UtcNow),
+            IsRecurring = true,
+            IsActive = true,
+            ConditionsRequired = "{\"All\":[{\"Factor\":\"Age\",\"Operator\":\"GreaterOrEqual\",\"Min\":50}],\"Any\":[]}"
+        };
+        var general = CreateGeneralGuideline();
+        ctx.ScreeningGuidelines.AddRange(ageSpecific, general);
+        await ctx.SaveChangesAsync();
+
+        var service = CreateService(ctx);
+
+        // Act
+        var result = await service.GetRecommendedScreeningGuidelines(userId);
+
+        // Assert
+        result.Select(g => g.GuidelineId).Should().Contain(ageSpecific.GuidelineId);
+        result.Select(g => g.GuidelineId).Should().Contain(general.GuidelineId);
+        result.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetRecommendedScreeningGuidelines_Should_Exclude_When_Age_Does_Not_Meet_Criteria()
+    {
+        // Arrange
+        var (ctx, conn) = SqliteDbContextFactory.CreateInMemory();
+        await using var _ = conn;
+        var userId = Guid.NewGuid();
+
+        // User age 40 (DOB 40 years ago)
+        var dob40 = DateOnly.FromDateTime(DateTime.Today.AddYears(-40));
+        ctx.Users.Add(new User { UserId = userId, FirstName = "Test", LastName = "User", DateOfBirth = dob40, Sex = Sex.female });
+
+        // Same guideline requiring Age >= 50
+        var ageSpecific = new ScreeningGuideline
+        {
+            GuidelineId = Guid.NewGuid(),
+            Name = "Age 50+ Screening",
+            ScreeningType = "age_based",
+            DefaultFrequencyMonths = 12,
+            Category = ScreeningCategory.screening,
+            Description = "Eligible when age >= 50",
+            SourceOrganisation = "org",
+            LastUpdated = DateOnly.FromDateTime(DateTime.UtcNow),
+            IsRecurring = true,
+            IsActive = true,
+            ConditionsRequired = "{\"All\":[{\"Factor\":\"Age\",\"Operator\":\"GreaterOrEqual\",\"Min\":50}],\"Any\":[]}"
+        };
+        var general = CreateGeneralGuideline();
+        ctx.ScreeningGuidelines.AddRange(ageSpecific, general);
+        await ctx.SaveChangesAsync();
+
+        var service = CreateService(ctx);
+
+        // Act
+        var result = await service.GetRecommendedScreeningGuidelines(userId);
+
+        // Assert
+        result.Select(g => g.GuidelineId).Should().NotContain(ageSpecific.GuidelineId);
+        result.Select(g => g.GuidelineId).Should().Contain(general.GuidelineId);
+        result.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task GetRecommendedScreeningGuidelines_Should_Exclude_Pregnancy_Guideline_When_User_Not_Pregnant()
+    {
+        // Arrange: Use SQLite provider
+        var (ctx, conn) = SqliteDbContextFactory.CreateInMemory();
+        await using var _ = conn;
+        var userId = Guid.NewGuid();
+
+        // Seed user with default medical profile: PregnancyStatus defaults to not_pregnant
+        ctx.Users.Add(new User { UserId = userId, FirstName = "Test", LastName = "User", Sex = Sex.female });
+        ctx.UserMedicalProfiles.Add(new UserMedicalProfile { UserId = userId });
+
+        // Guideline requiring PregnancyStatus == pregnant
+        var pregnancyGuideline = new ScreeningGuideline
+        {
+            GuidelineId = Guid.NewGuid(),
+            Name = "Pregnancy-specific Check",
+            ScreeningType = "prenatal",
+            DefaultFrequencyMonths = 1,
+            Category = ScreeningCategory.checkup,
+            Description = "Applicable only when pregnant",
+            SourceOrganisation = "org",
+            LastUpdated = DateOnly.FromDateTime(DateTime.UtcNow),
+            IsRecurring = true,
+            IsActive = true,
+            PregnancyApplicable = PregnancyApplicable.pregnant,
+            ConditionsRequired = "{\"All\":[{\"Factor\":\"PregnancyStatus\",\"Operator\":\"Equals\",\"Values\":[\"pregnant\"]}],\"Any\":[]}"
+        };
+        var general = CreateGeneralGuideline();
+        ctx.ScreeningGuidelines.AddRange(pregnancyGuideline, general);
+        await ctx.SaveChangesAsync();
+
+        var service = CreateService(ctx);
+
+        // Act
+        var result = await service.GetRecommendedScreeningGuidelines(userId);
+
+        // Assert: pregnancy-only guideline excluded; general included
+        result.Select(g => g.GuidelineId).Should().NotContain(pregnancyGuideline.GuidelineId);
+        result.Select(g => g.GuidelineId).Should().Contain(general.GuidelineId);
+        result.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task GetRecommendedScreeningGuidelines_Should_Return_Postpartum_Guideline_And_General_When_User_Postpartum()
+    {
+        // Arrange
+        var (ctx, conn) = SqliteDbContextFactory.CreateInMemory();
+        await using var _ = conn;
+        var userId = Guid.NewGuid();
+
+        // User is postpartum
+        ctx.Users.Add(new User { UserId = userId, FirstName = "Test", LastName = "User", Sex = Sex.female });
+        ctx.UserMedicalProfiles.Add(new UserMedicalProfile { UserId = userId, PregnancyStatus = PregnancyStatus.postpartum });
+
+        // Postpartum-specific guideline, representative of "people with newborns"
+        var postpartumGuideline = new ScreeningGuideline
+        {
+            GuidelineId = Guid.NewGuid(),
+            Name = "Newborn bloodspot screening",
+            ScreeningType = "Newborn",
+            DefaultFrequencyMonths = 0,
+            Category = ScreeningCategory.screening,
+            Description = "Healthcare providers offer bloodspot screening for all babies born in Australia.",
+            SourceOrganisation = "org",
+            LastUpdated = DateOnly.Parse("2025-09-10"),
+            IsRecurring = false,
+            IsActive = true,
+            PregnancyApplicable = PregnancyApplicable.postpartum,
+            ConditionsRequired = null
+        };
+
+        var general = CreateGeneralGuideline(); // PregnancyApplicable.any
+        ctx.ScreeningGuidelines.AddRange(postpartumGuideline, general);
+        await ctx.SaveChangesAsync();
+
+        var service = CreateService(ctx);
+
+        // Act
+        var result = await service.GetRecommendedScreeningGuidelines(userId);
+
+        // Assert: both postpartum-specific and general are recommended
+        result.Select(g => g.GuidelineId).Should().Contain(postpartumGuideline.GuidelineId);
+        result.Select(g => g.GuidelineId).Should().Contain(general.GuidelineId);
+    }
+
+    [Fact]
+    public async Task GetRecommendedScreeningGuidelines_Should_Return_Pregnancy_Guideline_And_General_When_User_Pregnant()
+    {
+        // Arrange
+        var (ctx, conn) = SqliteDbContextFactory.CreateInMemory();
+        await using var _ = conn;
+        var userId = Guid.NewGuid();
+
+        // User is pregnant
+        ctx.Users.Add(new User { UserId = userId, FirstName = "Test", LastName = "User", Sex = Sex.female });
+        ctx.UserMedicalProfiles.Add(new UserMedicalProfile { UserId = userId, PregnancyStatus = PregnancyStatus.pregnant });
+
+        var pregnancyGuideline = new ScreeningGuideline
+        {
+            GuidelineId = Guid.NewGuid(),
+            Name = "Prenatal Check",
+            ScreeningType = "prenatal",
+            DefaultFrequencyMonths = 1,
+            Category = ScreeningCategory.checkup,
+            Description = "Guideline applicable during pregnancy",
+            SourceOrganisation = "org",
+            LastUpdated = DateOnly.FromDateTime(DateTime.UtcNow),
+            IsRecurring = true,
+            IsActive = true,
+            PregnancyApplicable = PregnancyApplicable.pregnant,
+            ConditionsRequired = "{\"All\":[{\"Factor\":\"PregnancyStatus\",\"Operator\":\"Equals\",\"Values\":[\"pregnant\"]}],\"Any\":[]}"
+        };
+        var general = CreateGeneralGuideline();
+        ctx.ScreeningGuidelines.AddRange(pregnancyGuideline, general);
+        await ctx.SaveChangesAsync();
+
+        var service = CreateService(ctx);
+
+        // Act
+        var result = await service.GetRecommendedScreeningGuidelines(userId);
+
+        // Assert: both specific and general returned
+        result.Select(g => g.GuidelineId).Should().Contain(pregnancyGuideline.GuidelineId);
+        result.Select(g => g.GuidelineId).Should().Contain(general.GuidelineId);
+    }
+}
