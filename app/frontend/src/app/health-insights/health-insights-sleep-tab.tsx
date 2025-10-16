@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { SleepDataPoint, loadSleepData } from "./sleep-components/load-sleep-data";
 import { useState, useEffect } from "react";
 import { SleepTimeline } from "./sleep-components/sleep-timeline";
+import { SleepSummary } from "./sleep-components/sleep-summary";
 
 export default function HealthInsightsSleepTab() {
   const [sleepData, setSleepData ] = useState<SleepDataPoint[]>([]);
@@ -30,40 +31,15 @@ export default function HealthInsightsSleepTab() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-6 flex gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 justify-items-center">
           <SleepTimeline data={chartData}/>
           <SleepTimeline data={chartData} timeframe={7}/>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 justify-items-center">
+          <SleepSummary data={chartData}/>
+          <SleepSummary data={chartData} timeframe={7}/>
         </div>
       </CardContent>
     </Card>
   );
 }
-
-
-
-// function SleepAnalysisChart() {
-//   // Sleep data for the past week
-//   const data = [
-//     { day: "Mon", deep: 1.5, light: 4.5, rem: 1.2, awake: 0.5 },
-//     { day: "Tue", deep: 1.8, light: 4.2, rem: 1.5, awake: 0.3 },
-//     { day: "Wed", deep: 1.2, light: 4.8, rem: 1.0, awake: 0.7 },
-//     { day: "Thu", deep: 2.0, light: 4.0, rem: 1.7, awake: 0.2 },
-//     { day: "Fri", deep: 1.7, light: 4.3, rem: 1.4, awake: 0.4 },
-//     { day: "Sat", deep: 2.2, light: 4.5, rem: 1.8, awake: 0.3 },
-//     { day: "Sun", deep: 2.0, light: 4.7, rem: 1.6, awake: 0.2 },
-//   ]
-
-//   return (
-//     <BarChart
-//       data={data}
-//       categories={["deep", "light", "rem", "awake"]}
-//       index="day"
-//       colors={["#3b82f6", "#94a3b8", "#8b5cf6", "#f97316"]}
-//       valueFormatter={(value) => `${value} hrs`}
-//       showAnimation
-//       showLegend
-//       className="h-[400px]"
-//       layout="stacked"
-//     />
-//   )
-// }
