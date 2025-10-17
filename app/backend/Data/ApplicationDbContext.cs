@@ -23,7 +23,6 @@ namespace IoTM.Data
         public DbSet<ScreeningGuideline> ScreeningGuidelines { get; set; }
         public DbSet<UserScreening> UserScreenings { get; set; }
         public DbSet<HealthAlert> HealthAlerts { get; set; }
-        public DbSet<NewsArticle> NewsArticles { get; set; }
         public DbSet<HealthSegmentBPM> HealthSegmentBPMs { get; set; }
         public DbSet<HealthSegmentSpO2> HealthSegmentSpO2s { get; set; }
         public DbSet<HealthSegmentBloodPressure> HealthSegmentBloodPressures { get; set; }
