@@ -1,6 +1,5 @@
 using IoTM.Data;
 using IoTM.Models.HealthSegments;
-using Microsoft.Build.Experimental.ProjectCache;
 using Microsoft.EntityFrameworkCore;
 
 namespace IoTM.Services.HealthConnect

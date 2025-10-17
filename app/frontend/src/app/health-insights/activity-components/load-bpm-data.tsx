@@ -1,14 +1,16 @@
 import { toast } from "react-toastify";
 import { supabase } from "@/lib/supabase/client";
 
+export type BPMCategory = "220+"|"0 - 60"|"60 - 80"|"80 - 100"|"100 - 120"|"120 - 140"|"140 - 160"|"160 - 180"|"180 - 200"|"200 - 220"
+
 export type BPMDataPoint = {
-  start: string;                // ISO datetime string
-  end: string;                  // ISO datetime string
-  points: number;
-  averageBpm: number;
-  standardDeviation: number;
-  durationHours: number;
-  category: string;
+    start: number;                // ISO datetime string
+    end: number;                  // ISO datetime string
+    points: number;
+    averageBpm: number;
+    standardDeviation: number;
+    durationHours: number;
+    category: BPMCategory;
 };
 
 export async function loadBPM(): Promise<BPMDataPoint[]> {
@@ -18,28 +20,28 @@ export async function loadBPM(): Promise<BPMDataPoint[]> {
     const token = session?.access_token;
 
     if (!user) {
-      console.error("Unable to retrieve userId");
-      return [];
+		console.error("Unable to retrieve userId");
+		return [];
     }
 
     const response = await fetch(`http://localhost:5225/api/HealthConnect/bpm/${user.id}`, {
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json"
-      }
+		headers: {
+			"Authorization": `Bearer ${token}`,
+			"Content-Type": "application/json"
+		}
     });
 
     if (response.status === 404) {
-      console.warn("No BPM data found");
-      return [];
+		console.warn("No BPM data found");
+		return [];
     }
 
-    const data_json = await response.json();
-    console.log("Fetched BPM data:", data_json);
-    return data_json;
-  } catch (err) {
-    toast.error("Error: Could not load user data");
-    console.error("Error fetching BPM data:", err);
-    return [];
-  }
-}
+		const data_json = await response.json();
+		console.log("Fetched BPM data:", data_json);
+		return data_json;
+	} catch (err) {
+		toast.error("Error: Could not load user data");
+		console.error("Error fetching BPM data:", err);
+		return [];
+	}
+	}

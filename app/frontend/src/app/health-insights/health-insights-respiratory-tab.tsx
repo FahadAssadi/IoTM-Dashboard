@@ -1,5 +1,6 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
-import { RespiratoryHealthChart, RespiratoryHealthSummary } from "./respiratory-components/respiratory-health-chart";
+import { RespiratoryHealthChart } from "./respiratory-components/respiratory-health-chart";
+import { RespiratoryHealthSummary } from "./respiratory-components/respiratory-health-summary";
 import { useEffect, useState } from "react"
 import { SpO2DataPoint, loadSpO2 } from "./respiratory-components/load-spo2-data";
 
