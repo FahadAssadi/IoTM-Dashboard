@@ -56,7 +56,6 @@ namespace IoTM.Data
             modelBuilder.Entity<UserScreening>().Property(s => s.Status).HasConversion<string>();
             modelBuilder.Entity<HealthAlert>().Property(a => a.AlertType).HasConversion<string>();
             modelBuilder.Entity<HealthAlert>().Property(a => a.Severity).HasConversion<string>();
-            modelBuilder.Entity<NewsArticle>().Property(n => n.Category).HasConversion<string>();
         }
     }
 }
