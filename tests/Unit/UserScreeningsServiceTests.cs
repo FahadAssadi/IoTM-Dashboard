@@ -683,4 +683,131 @@ public class ScreeningGuidelineServiceCriteriaTests
         result.Select(g => g.GuidelineId).Should().Contain(pregnancyGuideline.GuidelineId);
         result.Select(g => g.GuidelineId).Should().Contain(general.GuidelineId);
     }
+
+    [Fact]
+    public async Task GetRecommendedScreeningGuidelines_Should_Exclude_Smoker_Guideline_When_User_Never_Smoked()
+    {
+        // Arrange
+        var (ctx, conn) = SqliteDbContextFactory.CreateInMemory();
+        await using var _ = conn;
+        var userId = Guid.NewGuid();
+
+        // User never smoked
+        ctx.Users.Add(new User { UserId = userId, FirstName = "Test", LastName = "User", Sex = Sex.male });
+        ctx.UserMedicalProfiles.Add(new UserMedicalProfile { UserId = userId, SmokingStatus = SmokingStatus.never });
+
+        // Smoker guideline recommended for current/former smokers
+        var smokerGuideline = new ScreeningGuideline
+        {
+            GuidelineId = Guid.NewGuid(),
+            Name = "Lung Cancer Screening",
+            ScreeningType = "lung_cancer",
+            DefaultFrequencyMonths = 12,
+            Category = ScreeningCategory.screening,
+            Description = "Recommended for current or former smokers",
+            SourceOrganisation = "org",
+            LastUpdated = DateOnly.FromDateTime(DateTime.UtcNow),
+            IsRecurring = true,
+            IsActive = true,
+            PregnancyApplicable = PregnancyApplicable.any,
+            ConditionsRequired = "{\"All\":[{\"Factor\":\"SmokingStatus\",\"Operator\":\"In\",\"Values\":[\"current\",\"former\"]}],\"Any\":[]}"
+        };
+        var general = CreateGeneralGuideline();
+        ctx.ScreeningGuidelines.AddRange(smokerGuideline, general);
+        await ctx.SaveChangesAsync();
+
+        var service = CreateService(ctx);
+
+        // Act
+        var result = await service.GetRecommendedScreeningGuidelines(userId);
+
+        // Assert: smoker guideline excluded; general included
+        result.Select(g => g.GuidelineId).Should().NotContain(smokerGuideline.GuidelineId);
+        result.Select(g => g.GuidelineId).Should().Contain(general.GuidelineId);
+        result.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task GetRecommendedScreeningGuidelines_Should_Return_Smoker_Guideline_And_General_When_User_Current_Smoker()
+    {
+        // Arrange
+        var (ctx, conn) = SqliteDbContextFactory.CreateInMemory();
+        await using var _ = conn;
+        var userId = Guid.NewGuid();
+
+        // User is current smoker
+        ctx.Users.Add(new User { UserId = userId, FirstName = "Test", LastName = "User", Sex = Sex.male });
+        ctx.UserMedicalProfiles.Add(new UserMedicalProfile { UserId = userId, SmokingStatus = SmokingStatus.current });
+
+        var smokerGuideline = new ScreeningGuideline
+        {
+            GuidelineId = Guid.NewGuid(),
+            Name = "Lung Cancer Screening",
+            ScreeningType = "lung_cancer",
+            DefaultFrequencyMonths = 12,
+            Category = ScreeningCategory.screening,
+            Description = "Recommended for current or former smokers",
+            SourceOrganisation = "org",
+            LastUpdated = DateOnly.FromDateTime(DateTime.UtcNow),
+            IsRecurring = true,
+            IsActive = true,
+            PregnancyApplicable = PregnancyApplicable.any,
+            ConditionsRequired = "{\"All\":[{\"Factor\":\"SmokingStatus\",\"Operator\":\"In\",\"Values\":[\"current\",\"former\"]}],\"Any\":[]}"
+        };
+        var general = CreateGeneralGuideline();
+        ctx.ScreeningGuidelines.AddRange(smokerGuideline, general);
+        await ctx.SaveChangesAsync();
+
+        var service = CreateService(ctx);
+
+        // Act
+        var result = await service.GetRecommendedScreeningGuidelines(userId);
+
+        // Assert: both returned
+        result.Select(g => g.GuidelineId).Should().Contain(smokerGuideline.GuidelineId);
+        result.Select(g => g.GuidelineId).Should().Contain(general.GuidelineId);
+        result.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetRecommendedScreeningGuidelines_Should_Return_Smoker_Guideline_And_General_When_User_Former_Smoker()
+    {
+        // Arrange
+        var (ctx, conn) = SqliteDbContextFactory.CreateInMemory();
+        await using var _ = conn;
+        var userId = Guid.NewGuid();
+
+        // User is former smoker
+        ctx.Users.Add(new User { UserId = userId, FirstName = "Test", LastName = "User", Sex = Sex.female });
+        ctx.UserMedicalProfiles.Add(new UserMedicalProfile { UserId = userId, SmokingStatus = SmokingStatus.former });
+
+        var smokerGuideline = new ScreeningGuideline
+        {
+            GuidelineId = Guid.NewGuid(),
+            Name = "Lung Cancer Screening",
+            ScreeningType = "lung_cancer",
+            DefaultFrequencyMonths = 12,
+            Category = ScreeningCategory.screening,
+            Description = "Recommended for current or former smokers",
+            SourceOrganisation = "org",
+            LastUpdated = DateOnly.FromDateTime(DateTime.UtcNow),
+            IsRecurring = true,
+            IsActive = true,
+            PregnancyApplicable = PregnancyApplicable.any,
+            ConditionsRequired = "{\"All\":[{\"Factor\":\"SmokingStatus\",\"Operator\":\"In\",\"Values\":[\"current\",\"former\"]}],\"Any\":[]}"
+        };
+        var general = CreateGeneralGuideline();
+        ctx.ScreeningGuidelines.AddRange(smokerGuideline, general);
+        await ctx.SaveChangesAsync();
+
+        var service = CreateService(ctx);
+
+        // Act
+        var result = await service.GetRecommendedScreeningGuidelines(userId);
+
+        // Assert: both returned
+        result.Select(g => g.GuidelineId).Should().Contain(smokerGuideline.GuidelineId);
+        result.Select(g => g.GuidelineId).Should().Contain(general.GuidelineId);
+        result.Should().HaveCount(2);
+    }
 }
