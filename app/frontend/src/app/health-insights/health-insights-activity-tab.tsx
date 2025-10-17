@@ -1,19 +1,9 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
-import { useEffect, useState } from "react"
-import { loadBPM, BPMDataPoint, BPMCategory } from "./activity-components/load-bpm-data";
+import { BPMDataPoint, BPMCategory } from "./activity-components/load-bpm-data";
 import { HeartRateDetailedChart } from "./activity-components/heart-rate-chart";
 import { HeartRateTimeline } from "./activity-components/heart-rate-timeline";
 
-export default function HealthInsightsActivityTab () {
-    const [bpmData, setBpmData ] = useState<BPMDataPoint[]>([]);
-    useEffect(() => {
-		async function fetchData() {
-			const data = await loadBPM();
-			setBpmData(data);
-		}
-		fetchData();
-    }, []);
-
+export default function HealthInsightsActivityTab ({ data = [] }: { data?: BPMDataPoint[] }) {
 	const chartCategorisor = (bpmValue : number): BPMCategory => {
 		if (bpmValue < 60){
 			return "0 - 60"
@@ -38,7 +28,7 @@ export default function HealthInsightsActivityTab () {
 		}
 	}
     
-    const chartData: BPMDataPoint[] = bpmData.map(d => ({
+    const chartData: BPMDataPoint[] = data.map(d => ({
         start: new Date(d.start).getTime(),
         end: new Date(d.end).getTime(),
         category: chartCategorisor(d.averageBpm),

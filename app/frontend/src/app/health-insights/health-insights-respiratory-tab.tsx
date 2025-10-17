@@ -1,20 +1,10 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
 import { RespiratoryHealthChart } from "./respiratory-components/respiratory-health-chart";
 import { RespiratoryHealthSummary } from "./respiratory-components/respiratory-health-summary";
-import { useEffect, useState } from "react"
-import { SpO2DataPoint, loadSpO2 } from "./respiratory-components/load-spo2-data";
+import { SpO2DataPoint } from "./respiratory-components/load-spo2-data";
 
-export default function HealthInsightsRespiratoryTab () {
-    const [spO2Data, setSpO2Data ] = useState<SpO2DataPoint[]>([]);
-        useEffect(() => {
-            async function fetchData() {
-            const data = await loadSpO2();
-            setSpO2Data(data);
-            }
-            fetchData();
-        }, []);
-
-    const chartData: SpO2DataPoint[] = spO2Data.map(d => ({
+export default function HealthInsightsRespiratoryTab ({ data = [] } : { data?: SpO2DataPoint[] }) {
+    const chartData: SpO2DataPoint[] = data.map(d => ({
         start: new Date(d.start).getTime(),
         end: new Date(d.end).getTime(),
         category: d.category,
