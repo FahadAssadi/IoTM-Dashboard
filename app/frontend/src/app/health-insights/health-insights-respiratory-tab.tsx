@@ -1,40 +1,41 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
-import { LineChart } from "@/components/ui/chart"
+import { RespiratoryHealthChart } from "./respiratory-components/respiratory-health-chart";
+import { RespiratoryHealthSummary } from "./respiratory-components/respiratory-health-summary";
+import { SpO2DataPoint } from "./respiratory-components/load-spo2-data";
 
-export default function HealthInsightsRespiratoryTab () {
+export default function HealthInsightsRespiratoryTab ({ data = [] } : { data?: SpO2DataPoint[] }) {
+    const chartData: SpO2DataPoint[] = data.map(d => ({
+        start: new Date(d.start).getTime(),
+        end: new Date(d.end).getTime(),
+        category: d.category,
+        averageSpO2: d.averageSpO2,
+        standardDeviation: d.standardDeviation,
+        points: d.points,
+        durationHours: d.durationHours
+    }));
+    
+
     return (
         <div className="grid gap-6 md:grid-cols-2">
-            <Card className="md:col-span-2">
+            <Card className="md:col-span-1">
                 <CardHeader>
                     <CardTitle>Respiratory Health</CardTitle>
                     <CardDescription>Blood oxygen and breathing rate</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[400px]">
-                    <RespiratoryHealthChart />
+                <CardContent>
+                    <RespiratoryHealthChart data={chartData}/>
+                </CardContent>
+            </Card>
+
+            <Card className="md:col-span-1">
+                <CardHeader>
+                    <CardTitle>Respiratory Health Summary</CardTitle>
+                    <CardDescription>Blood oxygen and breathing rate</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <RespiratoryHealthSummary data={chartData}/>
                 </CardContent>
             </Card>
         </div>
     )
-}
-
-function RespiratoryHealthChart() {
-  // Respiratory stats for 24 hours
-  const data = Array.from({ length: 24 }, (_, i) => ({
-    hour: `${i}:00`,
-    bloodOxygen: Math.floor(Math.random() * 4) + 95,
-    breathingRate: Math.floor(Math.random() * 4) + 14,
-  }))
-
-  return (
-    <LineChart
-      data={data}
-      categories={["bloodOxygen", "breathingRate"]}
-      index="hour"
-      colors={["#0ea5e9", "#8b5cf6"]}
-      valueFormatter={(value, category) => (category === "bloodOxygen" ? `${value}%` : `${value} br/min`)}
-      showAnimation
-      showLegend
-      className="h-[400px]"
-    />
-  )
 }
