@@ -6,17 +6,6 @@ import { loadBloodPressure, BloodPressureDataPoint } from "./backend";
 import { useEffect, useState } from "react";
 
 export default function HealthInsightsHeartTab () {
-  // const testData: BloodPressureDataPoint[] = Array.from({ length: 9 }, (_, i) => ({
-  //   start: `2025-09-0${i + 1}T17:07:04.568Z`,
-  //   end: `2025-09-0${i + 1}T17:07:04.568Z`,
-  //   points: Math.floor(Math.random() * 10),
-  //   averageSystolic: Math.floor(Math.random() * 10) + 110,
-  //   averageDiastolic: Math.floor(Math.random() * 10) + 70,
-  //   systolicStandardDeviation: Math.random() * 5,
-  //   diastolicStandardDeviation: Math.random() * 5,
-  //   durationHours: 1,
-  //   category: "Generated - No Data",
-  // }));
   const [bloodPressureData, setBloodPressureData ] = useState<BloodPressureDataPoint[]>([]);
     useEffect(() => {
       async function fetchData() {
@@ -58,7 +47,6 @@ export default function HealthInsightsHeartTab () {
               </CardContent>
             </Card>
           </div>
-
     )
 }
 

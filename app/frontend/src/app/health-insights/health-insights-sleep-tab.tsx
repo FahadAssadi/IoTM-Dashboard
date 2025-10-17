@@ -23,23 +23,36 @@ export default function HealthInsightsSleepTab() {
   }));
 
   return (
-    <Card className="border-slate-200 shadow-sm">
-      <CardHeader>
-        <CardTitle>Sleep Analysis</CardTitle>
-        <CardDescription className="text-slate-600">
-          Sleep stages and quality
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 justify-items-center">
-          <SleepTimeline data={chartData}/>
-          <SleepTimeline data={chartData} timeframe={7}/>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 justify-items-center">
-          <SleepSummary data={chartData}/>
-          <SleepSummary data={chartData} timeframe={7}/>
-        </div>
-      </CardContent>
-    </Card>
+    <>
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader>
+          <CardTitle> 24 Hour Sleep Analysis</CardTitle>
+          <CardDescription className="text-slate-600">
+            Sleep stages and quality over the past 24 hours
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 justify-items-center">
+            <SleepTimeline data={chartData}/>
+            <SleepSummary data={chartData}/>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader>
+          <CardTitle>7 day Sleep Analysis</CardTitle>
+          <CardDescription className="text-slate-600">
+            Sleep stages and quality over the past 7 days
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 justify-items-center">
+            <SleepTimeline data={chartData} timeframe={7}/>           
+            <SleepSummary data={chartData} timeframe={7}/>
+          </div>
+        </CardContent>
+      </Card>
+    </>
   );
 }
