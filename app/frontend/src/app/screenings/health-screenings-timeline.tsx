@@ -175,6 +175,8 @@ export default function HealthScreeningTimeline({
                         const endDate = new Date(item.scheduledDate)
                         endDate.setHours(endDate.getHours() + 1) // 1 hour event by default
 
+                        const computedStatus = item.status ?? getTimelineStatus(item.scheduledDate)
+
                         const event: ICalEvent = {
                           title: item.guidelineName,
                           description: "Health screening reminder",
@@ -192,11 +194,11 @@ export default function HealthScreeningTimeline({
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <h3 className="font-medium">{item.guidelineName}</h3>
-                                    {item.status === "due-soon" ? (
+                                    {computedStatus === "due-soon" ? (
                                       <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
                                         Due Soon
                                       </Badge>
-                                    ) : item.status === "overdue" ? (
+                                    ) : computedStatus === "overdue" ? (
                                       <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200">
                                         Overdue
                                       </Badge>
