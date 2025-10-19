@@ -167,7 +167,19 @@
     "MaxAge": null,
     "SexApplicable": "both",
     "PregnancyApplicable": "not_pregnant",
-    "ConditionsRequired": "{\"All\":[{\"Factor\":\"SmokingStatus\",\"Operator\":\"In\",\"Values\":[\"current_smoker\",\"former_smoker\"]}],\"Any\":[]}",
+    "ConditionsRequired": {
+      "All": [
+        {
+          "Factor": "SmokingStatus",
+          "Operator": "In",
+          "Values": [
+            "current",
+            "former"
+          ]
+        }
+      ],
+      "Any": []
+    },
     "ConditionsExcluded": null,
     "RiskFactors": null,
     "Description": "The National Lung Cancer Screening Program (NLCSP) is a screening program using low-dose computed tomography (low-dose CT) scans to look for lung cancer in high-risk people without any symptoms. It aims to find lung cancer early and save lives. Screening for eligible people is available now.",

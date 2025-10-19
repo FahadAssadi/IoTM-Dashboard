@@ -6,6 +6,18 @@
     "isRecurring": false
   },
   "nlcsp": {
-    "ConditionsRequired": "{\"All\":[{\"Factor\":\"SmokingStatus\",\"Operator\":\"In\",\"Values\":[\"current\",\"former\"]}],\"Any\":[]}"
+    "ConditionsRequired": {
+      "All": [
+        {
+          "Factor": "SmokingStatus",
+          "Operator": "In",
+          "Values": [
+            "current",
+            "former"
+          ]
+        }
+      ],
+      "Any": []
+    }
   }
 }

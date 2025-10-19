@@ -393,7 +393,18 @@ public class UserScreeningsServiceTests
             LastUpdated = DateOnly.FromDateTime(DateTime.UtcNow),
             IsRecurring = true,
             IsActive = true,
-            ConditionsRequired = "{\"All\":[{\"Factor\":\"SmokingStatus\",\"Operator\":\"In\",\"Values\":[\"current_smoker\",\"former_smoker\"]}],\"Any\":[]}"
+            ConditionsRequired = new CriteriaGroup
+            {
+                All = new List<Criterion>
+                {
+                    new Criterion
+                    {
+                        Factor = LifestyleFactorType.SmokingStatus,
+                        Operator = ComparisonOperator.In,
+                        Values = new List<string> { "current", "former" }
+                    }
+                }
+            }
         };
     ctx.ScreeningGuidelines.Add(smokerGuideline);
     // Seed the user to satisfy FK when adding UserScreenings
@@ -498,7 +509,18 @@ public class ScreeningGuidelineServiceCriteriaTests
             LastUpdated = DateOnly.FromDateTime(DateTime.UtcNow),
             IsRecurring = true,
             IsActive = true,
-            ConditionsRequired = "{\"All\":[{\"Factor\":\"Age\",\"Operator\":\"GreaterOrEqual\",\"Min\":50}],\"Any\":[]}"
+            ConditionsRequired = new CriteriaGroup
+            {
+                All = new List<Criterion>
+                {
+                    new Criterion
+                    {
+                        Factor = LifestyleFactorType.Age,
+                        Operator = ComparisonOperator.GreaterOrEqual,
+                        Min = 50
+                    }
+                }
+            }
         };
         var general = CreateGeneralGuideline();
         ctx.ScreeningGuidelines.AddRange(ageSpecific, general);
@@ -540,7 +562,18 @@ public class ScreeningGuidelineServiceCriteriaTests
             LastUpdated = DateOnly.FromDateTime(DateTime.UtcNow),
             IsRecurring = true,
             IsActive = true,
-            ConditionsRequired = "{\"All\":[{\"Factor\":\"Age\",\"Operator\":\"GreaterOrEqual\",\"Min\":50}],\"Any\":[]}"
+            ConditionsRequired = new CriteriaGroup
+            {
+                All = new List<Criterion>
+                {
+                    new Criterion
+                    {
+                        Factor = LifestyleFactorType.Age,
+                        Operator = ComparisonOperator.GreaterOrEqual,
+                        Min = 50
+                    }
+                }
+            }
         };
         var general = CreateGeneralGuideline();
         ctx.ScreeningGuidelines.AddRange(ageSpecific, general);
@@ -583,7 +616,18 @@ public class ScreeningGuidelineServiceCriteriaTests
             IsRecurring = true,
             IsActive = true,
             PregnancyApplicable = PregnancyApplicable.pregnant,
-            ConditionsRequired = "{\"All\":[{\"Factor\":\"PregnancyStatus\",\"Operator\":\"Equals\",\"Values\":[\"pregnant\"]}],\"Any\":[]}"
+            ConditionsRequired = new CriteriaGroup
+            {
+                All = new List<Criterion>
+                {
+                    new Criterion
+                    {
+                        Factor = LifestyleFactorType.PregnancyStatus,
+                        Operator = ComparisonOperator.Equals,
+                        Values = new List<string> { "pregnant" }
+                    }
+                }
+            }
         };
         var general = CreateGeneralGuideline();
         ctx.ScreeningGuidelines.AddRange(pregnancyGuideline, general);
@@ -668,7 +712,18 @@ public class ScreeningGuidelineServiceCriteriaTests
             IsRecurring = true,
             IsActive = true,
             PregnancyApplicable = PregnancyApplicable.pregnant,
-            ConditionsRequired = "{\"All\":[{\"Factor\":\"PregnancyStatus\",\"Operator\":\"Equals\",\"Values\":[\"pregnant\"]}],\"Any\":[]}"
+            ConditionsRequired = new CriteriaGroup
+            {
+                All = new List<Criterion>
+                {
+                    new Criterion
+                    {
+                        Factor = LifestyleFactorType.PregnancyStatus,
+                        Operator = ComparisonOperator.Equals,
+                        Values = new List<string> { "pregnant" }
+                    }
+                }
+            }
         };
         var general = CreateGeneralGuideline();
         ctx.ScreeningGuidelines.AddRange(pregnancyGuideline, general);
@@ -710,7 +765,18 @@ public class ScreeningGuidelineServiceCriteriaTests
             IsRecurring = true,
             IsActive = true,
             PregnancyApplicable = PregnancyApplicable.any,
-            ConditionsRequired = "{\"All\":[{\"Factor\":\"SmokingStatus\",\"Operator\":\"In\",\"Values\":[\"current\",\"former\"]}],\"Any\":[]}"
+            ConditionsRequired = new CriteriaGroup
+            {
+                All = new List<Criterion>
+                {
+                    new Criterion
+                    {
+                        Factor = LifestyleFactorType.SmokingStatus,
+                        Operator = ComparisonOperator.In,
+                        Values = new List<string> { "current", "former" }
+                    }
+                }
+            }
         };
         var general = CreateGeneralGuideline();
         ctx.ScreeningGuidelines.AddRange(smokerGuideline, general);
@@ -752,7 +818,18 @@ public class ScreeningGuidelineServiceCriteriaTests
             IsRecurring = true,
             IsActive = true,
             PregnancyApplicable = PregnancyApplicable.any,
-            ConditionsRequired = "{\"All\":[{\"Factor\":\"SmokingStatus\",\"Operator\":\"In\",\"Values\":[\"current\",\"former\"]}],\"Any\":[]}"
+            ConditionsRequired = new CriteriaGroup
+            {
+                All = new List<Criterion>
+                {
+                    new Criterion
+                    {
+                        Factor = LifestyleFactorType.SmokingStatus,
+                        Operator = ComparisonOperator.In,
+                        Values = new List<string> { "current", "former" }
+                    }
+                }
+            }
         };
         var general = CreateGeneralGuideline();
         ctx.ScreeningGuidelines.AddRange(smokerGuideline, general);
@@ -794,7 +871,18 @@ public class ScreeningGuidelineServiceCriteriaTests
             IsRecurring = true,
             IsActive = true,
             PregnancyApplicable = PregnancyApplicable.any,
-            ConditionsRequired = "{\"All\":[{\"Factor\":\"SmokingStatus\",\"Operator\":\"In\",\"Values\":[\"current\",\"former\"]}],\"Any\":[]}"
+            ConditionsRequired = new CriteriaGroup
+            {
+                All = new List<Criterion>
+                {
+                    new Criterion
+                    {
+                        Factor = LifestyleFactorType.SmokingStatus,
+                        Operator = ComparisonOperator.In,
+                        Values = new List<string> { "current", "former" }
+                    }
+                }
+            }
         };
         var general = CreateGeneralGuideline();
         ctx.ScreeningGuidelines.AddRange(smokerGuideline, general);

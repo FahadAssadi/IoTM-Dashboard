@@ -61,11 +61,11 @@ namespace IoTM.Models
         /// </summary>
         public PregnancyApplicable PregnancyApplicable { get; set; }
 
-        /// <summary>
-        /// Recommendation Criteria
-        /// </summary>
-        public string? ConditionsRequired { get; set; } // e.g. "smoker", "family history"
-        public string? ConditionsExcluded { get; set; }
+    /// <summary>
+    /// Additional criteria that must be met for this guideline (typed, persisted as JSON).
+    /// </summary>
+    public CriteriaGroup? ConditionsRequired { get; set; }
+    public CriteriaGroup? ConditionsExcluded { get; set; }
         public string? RiskFactors { get; set; }
 
         [Required]

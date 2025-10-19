@@ -19,13 +19,6 @@ namespace IoTM.Services
         private readonly ApplicationDbContext _context;
         private readonly ILogger<ScreeningGuidelineService> _logger;
 
-        // TODO: Remove this once migration is performed for criteria model
-        private static readonly JsonSerializerOptions ConditionsRequiredOptions = new()
-        {
-            PropertyNameCaseInsensitive = true,
-            Converters = { new JsonStringEnumConverter() }
-        };
-
         public ScreeningGuidelineService(ApplicationDbContext context, ILogger<ScreeningGuidelineService> logger)
         {
             _context = context;
@@ -77,19 +70,8 @@ namespace IoTM.Services
                             continue;
                     }
 
-                    if (!string.IsNullOrWhiteSpace(g.ConditionsRequired))
-                    {
-                        try
-                        {
-                            var group = JsonSerializer.Deserialize<CriteriaGroup>(g.ConditionsRequired, ConditionsRequiredOptions) ?? new();
-                            if (!MatchesCriteriaGroup(ctx, group)) continue;
-                        }
-                        catch (Exception ex)
-                        {
-                            // If criteria JSON is invalid, skip or log and treat as no extra constraints
-                            _logger.LogWarning(ex, "Invalid criteria for guideline {Id}", g.GuidelineId);
-                        }
-                    }
+                    if (g.ConditionsRequired is not null && !MatchesCriteriaGroup(ctx, g.ConditionsRequired))
+                        continue;
 
                     recommended.Add(g);
                 }
@@ -140,9 +122,7 @@ namespace IoTM.Services
 
                         var importedGuidelines = JsonSerializer.Deserialize<List<ScreeningGuideline>>(json, jsonOptions);
                         if (importedGuidelines != null)
-                        {
                             allGuidelines.AddRange(importedGuidelines);
-                        }
                     }
                     catch (Exception ex)
                     {
@@ -163,8 +143,13 @@ namespace IoTM.Services
                         existing.ScreeningType = imported.ScreeningType;
                         existing.DefaultFrequencyMonths = imported.DefaultFrequencyMonths;
                         existing.Category = imported.Category;
+                        existing.MinAge = imported.MinAge;
+                        existing.MaxAge = imported.MaxAge;
                         existing.SexApplicable = imported.SexApplicable;
                         existing.PregnancyApplicable = imported.PregnancyApplicable;
+                        existing.ConditionsRequired = imported.ConditionsRequired;
+                        existing.ConditionsExcluded = imported.ConditionsExcluded;
+                        existing.RiskFactors = imported.RiskFactors;
                         existing.Description = imported.Description;
                         existing.Cost = imported.Cost;
                         existing.Delivery = imported.Delivery;
@@ -182,7 +167,8 @@ namespace IoTM.Services
                     }
                     else
                     {
-                        imported.GuidelineId = Guid.NewGuid();
+                        if (imported.GuidelineId == Guid.Empty)
+                            imported.GuidelineId = Guid.NewGuid();
                         _context.ScreeningGuidelines.Add(imported);
                     }
                 }
