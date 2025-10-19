@@ -58,6 +58,7 @@ namespace IoTM.Models
 
         // Navigation properties for relationships
         public virtual UserMedicalProfile? MedicalProfile { get; set; }
+        
         public virtual ICollection<MedicalCondition> MedicalConditions { get; set; } = new List<MedicalCondition>();
         public virtual ICollection<FamilyHistory> FamilyHistories { get; set; } = new List<FamilyHistory>();
         public virtual ICollection<Medication> Medications { get; set; } = new List<Medication>();

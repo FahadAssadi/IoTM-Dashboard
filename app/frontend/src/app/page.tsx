@@ -6,13 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { TimelineItem } from "./screenings/health-screenings-timeline"
 import timelineData from "./screenings/timeline-data.json"
-import { devices as importedDevices, Device } from "./devices/device-data"
 import { useRouter } from "next/navigation"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const timelineItems: TimelineItem[] = timelineData as any[] // TODO: connect backend to get real scheduled screening data
 
-const BADGE_MAP: Record<TimelineItem["status"], { bg: string; text: string; border: string; label: string }> = {
+const BADGE_MAP: Record<"upcoming" | "due-soon" | "overdue", { bg: string; text: string; border: string; label: string }> = {
   "upcoming": {
     bg: "bg-teal-100",
     text: "text-teal-700",
@@ -36,7 +35,7 @@ const BADGE_MAP: Record<TimelineItem["status"], { bg: string; text: string; bord
 function HealthScreeningCard({
   item,
 }: { item: TimelineItem }) {
-  const badge = BADGE_MAP[item.status]
+  const badge = BADGE_MAP[item.status as "upcoming" | "due-soon" | "overdue"] ?? BADGE_MAP["upcoming"]
   return (
     <div className="flex items-center gap-4 rounded-lg border border-slate-200 p-4">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
@@ -62,35 +61,10 @@ function HealthScreeningCard({
   )
 }
 
-function DeviceCard({ device }: { device: Device }) {
-  const Icon = device.icon
-  return (
-    <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
-      <div className="flex items-center gap-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-100">
-          <Icon className="h-5 w-5 text-teal-600" />
-        </div>
-        <div>
-          <p className="font-medium text-slate-800">{device.name}</p>
-          <p className="text-sm text-slate-600">Last synced: {device.lastSync}</p>
-        </div>
-      </div>
-      <Badge variant="outline" className={device.connected ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-gray-100 text-gray-400 border-gray-200"}>
-        {device.connected ? "Connected" : "Disconnected"}
-      </Badge>
-    </div>
-  )
-}
 
 export default function DashboardPage() {
 
   const router = useRouter();
-
-  const deviceList: Device[] = importedDevices.map(device => ({
-    ...device,
-    status: device.status === "active" ? "active" : "inactive"
-  }))
-
   const redirect = ( page: string ) => {
     router.push(page);
   }
@@ -154,28 +128,6 @@ export default function DashboardPage() {
         </CardFooter>
       </Card>
 
-      {/* Connected Devices */}
-      <Card className="border-slate-200">
-        <CardHeader>
-          <CardTitle className="text-slate-800">Connected Health Devices</CardTitle>
-          <CardDescription className="text-slate-600">
-            Devices currently syncing data with your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {deviceList.map(device => (
-            <DeviceCard key={device.id} device={device} />
-          ))}
-        </CardContent>
-        <CardFooter>
-          <Button variant="outline" 
-            className="w-full border-teal-700 text-teal-800 hover:bg-teal-50"
-            onClick={() => redirect("devices")}
-            >
-            Connect New Device
-          </Button>
-        </CardFooter>
-      </Card>
     </main>
   )
 }

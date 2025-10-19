@@ -1,8 +1,8 @@
 using IoTM.Models;
 using IoTM.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using IoTM.Dtos;
 
 namespace IoTM.Services
@@ -45,42 +45,38 @@ namespace IoTM.Services
                     return new List<ScreeningGuideline>();
                 }
 
-                // Fetch all screening guidelines with frequency rules
+                // Shape the user context once for evaluation
+                var ctx = BuildUserContext(user);
+
+                // Load guidelines + basic filters you already have (age/sex/pregnancy)
                 var guidelines = await _context.ScreeningGuidelines
                     .Include(g => g.FrequencyRules)
                     .Where(g => g.IsActive)
                     .ToListAsync();
 
-                // Filter for eligibility
-                var eligibleGuidelines = guidelines.Where(g =>
-                    (!g.MinAge.HasValue || user.Age() >= g.MinAge) &&
-                    (!g.MaxAge.HasValue || user.Age() <= g.MaxAge) &&
-                    (g.SexApplicable == SexApplicable.both || (user.Sex != null && (int)g.SexApplicable == (int)user.Sex)) &&
-                    (
-                        user.MedicalProfile == null || user.MedicalProfile.PregnancyStatus == null
-                            ? g.PregnancyApplicable == PregnancyApplicable.not_pregnant
-                            : (int)g.PregnancyApplicable == (int)user.MedicalProfile.PregnancyStatus
-                    )
-                ).ToList();
-
-                // Determine recommended frequency for each guideline
-                foreach (var guideline in eligibleGuidelines)
+                var recommended = new List<ScreeningGuideline>();
+                foreach (var g in guidelines)
                 {
-                    var matchingRule = guideline.FrequencyRules.FirstOrDefault(r =>
-                        (!r.MinAge.HasValue || user.Age() >= r.MinAge) &&
-                        (!r.MaxAge.HasValue || user.Age() <= r.MaxAge) &&
-                        (!r.SexApplicable.HasValue || (user.Sex != null && (int)r.SexApplicable == (int)user.Sex)) &&
-                        (!r.PregnancyApplicable.HasValue ||
-                            (user.MedicalProfile?.PregnancyStatus == null
-                                ? r.PregnancyApplicable == PregnancyApplicable.not_pregnant
-                                : (int)r.PregnancyApplicable == (int)user.MedicalProfile.PregnancyStatus)
-                        )
-                    );
+                    // Optional: still enforce MinAge/MaxAge/SexApplicable/PregnancyApplicable here
+                    if (g.MinAge.HasValue && ctx.Age.HasValue && ctx.Age < g.MinAge) continue;
+                    if (g.MaxAge.HasValue && ctx.Age.HasValue && ctx.Age > g.MaxAge) continue;
+                    if (!string.Equals(g.SexApplicable.ToString(), "both", StringComparison.OrdinalIgnoreCase) &&
+                        !string.Equals(g.SexApplicable.ToString(), ctx.Sex, StringComparison.OrdinalIgnoreCase)) continue;
+                    // Pregnancy applicability: 'any' means universally applicable; otherwise must match user's status
+                    if (g.PregnancyApplicable != PregnancyApplicable.any)
+                    {
+                        var requiredPreg = g.PregnancyApplicable.ToString();
+                        if (!string.Equals(requiredPreg, ctx.PregnancyStatus, StringComparison.OrdinalIgnoreCase))
+                            continue;
+                    }
 
-                    guideline.DefaultFrequencyMonths = matchingRule?.FrequencyMonths ?? guideline.DefaultFrequencyMonths;
+                    if (g.ConditionsRequired is not null && !MatchesCriteriaGroup(ctx, g.ConditionsRequired))
+                        continue;
+
+                    recommended.Add(g);
                 }
 
-                return eligibleGuidelines;
+                return recommended;
             }
             catch (Exception ex)
             {
@@ -126,9 +122,7 @@ namespace IoTM.Services
 
                         var importedGuidelines = JsonSerializer.Deserialize<List<ScreeningGuideline>>(json, jsonOptions);
                         if (importedGuidelines != null)
-                        {
                             allGuidelines.AddRange(importedGuidelines);
-                        }
                     }
                     catch (Exception ex)
                     {
@@ -149,8 +143,13 @@ namespace IoTM.Services
                         existing.ScreeningType = imported.ScreeningType;
                         existing.DefaultFrequencyMonths = imported.DefaultFrequencyMonths;
                         existing.Category = imported.Category;
+                        existing.MinAge = imported.MinAge;
+                        existing.MaxAge = imported.MaxAge;
                         existing.SexApplicable = imported.SexApplicable;
                         existing.PregnancyApplicable = imported.PregnancyApplicable;
+                        existing.ConditionsRequired = imported.ConditionsRequired;
+                        existing.ConditionsExcluded = imported.ConditionsExcluded;
+                        existing.RiskFactors = imported.RiskFactors;
                         existing.Description = imported.Description;
                         existing.Cost = imported.Cost;
                         existing.Delivery = imported.Delivery;
@@ -168,7 +167,8 @@ namespace IoTM.Services
                     }
                     else
                     {
-                        imported.GuidelineId = Guid.NewGuid();
+                        if (imported.GuidelineId == Guid.Empty)
+                            imported.GuidelineId = Guid.NewGuid();
                         _context.ScreeningGuidelines.Add(imported);
                     }
                 }
@@ -214,6 +214,95 @@ namespace IoTM.Services
             {
                 return months == 1 ? "1 month" : $"{months} months";
             }
+        }
+
+        // Shape the user context once for evaluation. 
+        // This allows data from User and UserMedicalProfile to be placed in one object.
+        private sealed class UserContext
+        {
+            public int? Age { get; init; }
+            public string Sex { get; init; } = "both"; // "male" | "female" | "both"
+            public string PregnancyStatus { get; init; } = "not_pregnant";
+            public string SmokingStatus { get; init; } = "unknown";
+            public string AlcoholFrequency { get; init; } = "unknown";
+            public string ActivityLevel { get; init; } = "moderately_active";
+        }
+
+        private UserContext BuildUserContext(User user)
+        {
+            // Pull data from User and UserMedicalProfile
+            return new UserContext
+            {
+                Age = user.Age(),
+                Sex = user.Sex?.ToString() ?? "both",
+                PregnancyStatus = user.MedicalProfile?.PregnancyStatus?.ToString()?.ToLower() ?? "not_pregnant",
+                SmokingStatus = user.MedicalProfile?.SmokingStatus.ToString()?.ToLower() ?? "unknown",
+                AlcoholFrequency = user.MedicalProfile?.AlcoholFrequency.ToString()?.ToLower() ?? "unknown",
+                ActivityLevel = user.MedicalProfile?.ActivityLevel.ToString()?.ToLower() ?? "moderately_active"
+            };
+        }
+
+        private static bool MatchesCriterion(UserContext ctx, Criterion c)
+        {
+            // Resolve the left-hand value as string or number based on factor
+            string? sval = null;
+            double? nval = null;
+
+            switch (c.Factor)
+            {
+                case LifestyleFactorType.SmokingStatus: sval = ctx.SmokingStatus; break;
+                case LifestyleFactorType.Sex: sval = ctx.Sex; break;
+                case LifestyleFactorType.PregnancyStatus: sval = ctx.PregnancyStatus; break;
+                case LifestyleFactorType.AlcoholFrequency: sval = ctx.AlcoholFrequency; break;
+                case LifestyleFactorType.ActivityLevel: sval = ctx.ActivityLevel; break;
+                case LifestyleFactorType.Age: nval = ctx.Age; break;
+                default: return false;
+            }
+
+            // String-based ops
+            if (sval is not null)
+            {
+                var vals = c.Values?.Select(v => v.ToLower()).ToHashSet() ?? new HashSet<string>();
+                var left = sval.ToLower();
+
+                return c.Operator switch
+                {
+                    ComparisonOperator.Equals => vals.Count == 1 && vals.Contains(left),
+                    ComparisonOperator.NotEquals => vals.Count == 1 && !vals.Contains(left),
+                    ComparisonOperator.In => vals.Contains(left),
+                    ComparisonOperator.NotIn => !vals.Contains(left),
+                    ComparisonOperator.Exists => !string.IsNullOrWhiteSpace(left),
+                    ComparisonOperator.NotExists => string.IsNullOrWhiteSpace(left),
+                    _ => false
+                };
+            }
+
+            // Numeric-based ops
+            if (nval is double d)
+            {
+                return c.Operator switch
+                {
+                    ComparisonOperator.GreaterOrEqual => d >= (c.Min ?? double.MinValue),
+                    ComparisonOperator.LessOrEqual => d <= (c.Max ?? double.MaxValue),
+                    ComparisonOperator.Between => d >= (c.Min ?? double.MinValue) && d <= (c.Max ?? double.MaxValue),
+                    _ => false
+                };
+            }
+
+            return false;
+        }
+
+        private static bool MatchesCriteriaGroup(UserContext ctx, CriteriaGroup group)
+        {
+            // All (AND)
+            if (group.All.Any() && !group.All.All(c => MatchesCriterion(ctx, c)))
+                return false;
+
+            // Any (OR)
+            if (group.Any.Any() && !group.Any.Any(c => MatchesCriterion(ctx, c)))
+                return false;
+
+            return true;
         }
     }
 }

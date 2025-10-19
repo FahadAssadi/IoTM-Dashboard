@@ -47,7 +47,11 @@ namespace IoTM.Controllers
         {
             // TODO: Replace with authenticated user ID when available
             Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-            await _userScreeningsService.ScheduleScreening(userId, guidelineId, scheduledDate);
+            var scheduled = await _userScreeningsService.ScheduleScreening(userId, guidelineId, scheduledDate);
+            if (!scheduled)
+            {
+                return Conflict("You’ve already scheduled this screening for that date.");
+            }
             return Ok("Screening scheduled.");
         }
 
@@ -59,7 +63,19 @@ namespace IoTM.Controllers
             // TODO: Replace with authenticated user ID when available
             Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
             await _userScreeningsService.EditScheduledScreening(scheduledScreeningId, newDate);
-            return Ok("Scheduled screening updated.");
+            try
+            {
+                var updated = await _userScreeningsService.EditScheduledScreening(scheduledScreeningId, newDate);
+                if (!updated)
+                {
+                    return Conflict("A screening is already scheduled for that date.");
+                }
+                return Ok("Scheduled screening updated.");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         // Remove a scheduled screening
@@ -100,13 +116,10 @@ namespace IoTM.Controllers
             return Ok(scheduledScreenings);
         }
 
-        // Archive a scheduled screening (mark as inactive)
-        [HttpPut("archive/{scheduledScreeningId}")]
+        // Archive a scheduled screening
+        [HttpPut("schedule/{scheduledScreeningId:guid}/archive")]
         public async Task<IActionResult> ArchiveScheduledScreening(Guid scheduledScreeningId)
         {
-            // TODO: Replace with authenticated user ID when available
-            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-
             await _userScreeningsService.ArchiveScheduledScreening(scheduledScreeningId);
             return Ok("Scheduled screening archived.");
         }
@@ -134,6 +147,14 @@ namespace IoTM.Controllers
             var screenings = await _userScreeningsService.GetHiddenScreeningsForUserAsync(userId);
             var dto = _userScreeningsService.MapToDto(screenings);
             return Ok(dto);
+        }
+
+        [HttpGet("archived")]
+        public async Task<ActionResult<Dictionary<Guid, List<ScheduledScreeningDto>>>> GetArchivedScreenings()
+        {
+            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111"); // Replace with authenticated user
+            var archived = await _userScreeningsService.GetArchivedScreeningsForUserAsync(userId);
+            return Ok(archived);
         }
     }
 }

@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using IoTM.Data; // This is the new namespace for your DbContext
+using IoTM.Data;
 using DotNetEnv;
 using IoTM.Config;
-using IoTM.Services;
+using IoTM.Services.HealthConnect;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +25,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.Configure<HealthThresholds>(
     builder.Configuration.GetSection("HealthThresholds"));
 // Register HealthSegmenter as singleton (safe if thresholds don't change)
-builder.Services.AddSingleton<HealthSegmenter>();
+// builder.Services.AddSingleton<HealthSegmenter>();
+builder.Services.AddSingleton<BPMSegmenter>();
 
 
 // Add services to the container.
@@ -86,6 +87,12 @@ app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 
+// Static files configuration - SIMPLIFIED VERSION
+app.UseStaticFiles();
+
 app.MapControllers();
 
 app.Run();
+
+// Expose Program class for WebApplicationFactory in integration tests
+public partial class Program { }

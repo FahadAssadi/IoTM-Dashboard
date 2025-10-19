@@ -12,8 +12,7 @@
     "ConditionsExcluded": null,
     "RiskFactors": null,
     "Description": "This program aims to reduce deaths from bowel cancer by detecting early signs of the disease. If found early, more than 90% of cases can be successfully treated. Eligible Australians aged 45 to 74 can do a free test at home every 2 years. Learn about the program and how to do the test.",
-    "CountrySpecific": "AUS",
-    "LastUpdated": "2025-08-25",
+    "LastUpdated": "2025-09-10",
     "Cost": "Free for eligible Australians",
     "Delivery": "at home",
     "Link": "https://www.health.gov.au/our-work/national-bowel-cancer-screening-program",
@@ -48,8 +47,7 @@
     "ConditionsExcluded": null,
     "RiskFactors": null,
     "Description": "The National Cervical Screening Program reduces illness and death from cervical cancer. Women and people with a cervix aged 25 to 74 years of age are invited to have a Cervical Screening Test every 5 years through their healthcare provider.",
-    "CountrySpecific": "AUS",
-    "LastUpdated": "2025-08-25",
+    "LastUpdated": "2025-09-10",
     "Cost": null,
     "Delivery": "healthcare provider",
     "Link": "https://www.health.gov.au/our-work/national-cervical-screening-program",
@@ -84,8 +82,7 @@
     "ConditionsExcluded": null,
     "RiskFactors": null,
     "Description": "BreastScreen Australia is a joint initiative of the Australian and state and territory governments and aims to reduce illness and death from breast cancer by detecting the disease early. Women over 40 can have a free mammogram every 2 years and we actively invite women aged 50 to 74 to screen.",
-    "CountrySpecific": "AUS",
-    "LastUpdated": "2025-08-25",
+    "LastUpdated": "2025-09-10",
     "Cost": "Free for eligible Australians",
     "Delivery": null,
     "Link": "https://www.health.gov.au/our-work/breastscreen-australia-program",
@@ -134,12 +131,11 @@
     "ConditionsExcluded": null,
     "RiskFactors": null,
     "Description": "Healthcare providers offer bloodspot screening for all babies born in Australia. This simple test identifies babies at risk of becoming seriously ill from a rare condition. Screening aims to improve the health of these babies by allowing early intervention.",
-    "CountrySpecific": "AUS",
-    "LastUpdated": "2025-08-25",
+    "LastUpdated": "2025-09-10",
     "Cost": "Free for eligible Australians",
     "Delivery": "Healthcare provider",
     "Link": "https://www.health.gov.au/our-work/newborn-bloodspot-screening",
-    "isRecurring": true,
+    "isRecurring": false,
     "FrequencyRules": []
   },
   {
@@ -155,12 +151,11 @@
     "ConditionsExcluded": null,
     "RiskFactors": null,
     "Description": "This framework outlines Australia's national approach to screening all babies for hearing impairment, to ensure they can access early intervention and minimise the impact of hearing impairment.",
-    "CountrySpecific": "AUS",
-    "LastUpdated": "2025-08-25",
+    "LastUpdated": "2025-09-10",
     "Cost": null,
     "Delivery": null,
     "Link": "https://www.health.gov.au/resources/publications/national-framework-for-newborn-hearing-screening",
-    "isRecurring": true,
+    "isRecurring": false,
     "FrequencyRules": []
   },
   {
@@ -172,12 +167,23 @@
     "MaxAge": null,
     "SexApplicable": "both",
     "PregnancyApplicable": "not_pregnant",
-    "ConditionsRequired": "smoker",
+    "ConditionsRequired": {
+      "All": [
+        {
+          "Factor": "SmokingStatus",
+          "Operator": "In",
+          "Values": [
+            "current",
+            "former"
+          ]
+        }
+      ],
+      "Any": []
+    },
     "ConditionsExcluded": null,
     "RiskFactors": null,
     "Description": "The National Lung Cancer Screening Program (NLCSP) is a screening program using low-dose computed tomography (low-dose CT) scans to look for lung cancer in high-risk people without any symptoms. It aims to find lung cancer early and save lives. Screening for eligible people is available now.",
-    "CountrySpecific": "AUS",
-    "LastUpdated": "2025-08-25",
+    "LastUpdated": "2025-09-10",
     "Cost": null,
     "Delivery": "healthcare provider",
     "Link": "https://www.health.gov.au/our-work/nlcsp",

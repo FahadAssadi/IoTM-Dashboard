@@ -1,5 +1,23 @@
 {
+  "newborn-bloodspot": {
+    "isRecurring": false
+  },
+  "newborn-hearing": {
+    "isRecurring": false
+  },
   "nlcsp": {
-    "ConditionsRequired": "smoker"
+    "ConditionsRequired": {
+      "All": [
+        {
+          "Factor": "SmokingStatus",
+          "Operator": "In",
+          "Values": [
+            "current",
+            "former"
+          ]
+        }
+      ],
+      "Any": []
+    }
   }
 }
