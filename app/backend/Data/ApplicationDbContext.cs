@@ -25,7 +25,6 @@ namespace IoTM.Data
         public DbSet<ScreeningGuideline> ScreeningGuidelines { get; set; }
         public DbSet<UserScreening> UserScreenings { get; set; }
         public DbSet<HealthAlert> HealthAlerts { get; set; }
-        public DbSet<NewsArticle> NewsArticles { get; set; }
         public DbSet<HealthSegmentBPM> HealthSegmentBPMs { get; set; }
         public DbSet<LifestyleFactor> LifestyleFactors { get; set; }
 
@@ -54,7 +53,6 @@ namespace IoTM.Data
             modelBuilder.Entity<UserScreening>().Property(s => s.Status).HasConversion<string>();
             modelBuilder.Entity<HealthAlert>().Property(a => a.AlertType).HasConversion<string>();
             modelBuilder.Entity<HealthAlert>().Property(a => a.Severity).HasConversion<string>();
-            modelBuilder.Entity<NewsArticle>().Property(n => n.Category).HasConversion<string>();
 
             // Configure CriteriaGroup typed properties to be stored as JSON text
             var jsonOptions = new JsonSerializerOptions
