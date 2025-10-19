@@ -43,6 +43,20 @@ function formatDateForInput(dateStr?: string) {
   return localDate.toISOString().slice(0, 10);
 }
 
+// Today in local timezone formatted for <input type="date"> (YYYY-MM-DD)
+function todayForInput(): string {
+  const now = new Date();
+  const offset = now.getTimezoneOffset();
+  const local = new Date(now.getTime() - offset * 60 * 1000);
+  return local.toISOString().slice(0, 10);
+}
+
+// Returns true if a is before b (both in YYYY-MM-DD format)
+function isBefore(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  return a < b;
+}
+
 function formatDateDDMMYYYY(dateStr?: string) {
   if (!dateStr) return "";
   const date = new Date(dateStr);
@@ -198,14 +212,19 @@ export default function HealthScreenings() {
   const handleSchedule = (screening: ScreeningItem) => {
     setErrorMessage("")
     setDatePickerOpen({ open: true, screening })
-    setSelectedDate(formatDateForInput(screening.lastScheduled))
+    const min = todayForInput();
+    const initial = formatDateForInput(screening.lastScheduled);
+    // Coerce to today if last scheduled is in the past
+    setSelectedDate(initial && !isBefore(initial, min) ? initial : min)
   }
 
   // Handle editing a timeline item
   const handleEditTimelineItem = (item: TimelineItem) => {
     setErrorMessage("")
     setDatePickerOpen({ open: true, timelineItemId: item.scheduledScreeningId })
-    setSelectedDate(formatDateForInput(item.scheduledDate))
+    const min = todayForInput();
+    const initial = formatDateForInput(item.scheduledDate);
+    setSelectedDate(initial && !isBefore(initial, min) ? initial : min)
   }
 
   // Handle removing a timeline item
@@ -250,6 +269,13 @@ export default function HealthScreenings() {
   // Handle date selection and add/update timeline
   const handleDateSelect = async () => {
     if (!selectedDate) return;
+
+    // Guard: prevent scheduling in the past
+    const min = todayForInput();
+    if (isBefore(selectedDate, min)) {
+      setErrorMessage("Please select today or a future date.");
+      return;
+    }
 
     if (datePickerOpen.timelineItemId) {
       // Editing an existing timeline item
@@ -660,9 +686,16 @@ export default function HealthScreenings() {
               type="date"
               className="border rounded px-3 py-2"
               value={selectedDate}
+              min={todayForInput()}
               onChange={e => {
                 setSelectedDate(e.target.value)
-                setErrorMessage("")
+                // Validate against past dates
+                const min = todayForInput();
+                if (isBefore(e.target.value, min)) {
+                  setErrorMessage("Please select today or a future date.");
+                } else {
+                  setErrorMessage("")
+                }
               }}
             />
             {errorMessage && (
