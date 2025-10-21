@@ -42,7 +42,7 @@ export async function loadBloodPressure(): Promise<BloodPressureDataPoint[]> {
     console.log("Fetched BPM data:", data_json);
     return data_json;
   } catch (err) {
-    toast.error("Error: Could not load user data");
+    toast.error("Error: Could not load user Blood Pressure data");
     console.error("Error fetching BPM data:", err);
     return [];
   }

@@ -40,7 +40,7 @@ export async function loadBPM(): Promise<BPMDataPoint[]> {
 		console.log("Fetched BPM data:", data_json);
 		return data_json;
 	} catch (err) {
-		toast.error("Error: Could not load user data");
+		toast.error("Error: Could not load user BPM data");
 		console.error("Error fetching BPM data:", err);
 		return [];
 	}

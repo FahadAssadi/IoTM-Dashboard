@@ -40,7 +40,7 @@ export async function loadSpO2(): Promise<SpO2DataPoint[]> {
     console.log("Fetched BPM data:", data_json);
     return data_json;
   } catch (err) {
-    toast.error("Error: Could not load user data");
+    toast.error("Error: Could not load user SpO2 data");
     console.error("Error fetching BPM data:", err);
     return [];
   }
