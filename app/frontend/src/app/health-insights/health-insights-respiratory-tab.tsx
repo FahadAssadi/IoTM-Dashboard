@@ -9,7 +9,7 @@ export default function HealthInsightsRespiratoryTab () {
                     <CardTitle>Respiratory Health</CardTitle>
                     <CardDescription>Blood oxygen and breathing rate</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[400px]">
+        <CardContent className="min-h-[220px] sm:min-h-[280px] md:min-h-[360px]">
                     <RespiratoryHealthChart />
                 </CardContent>
             </Card>
@@ -34,7 +34,7 @@ function RespiratoryHealthChart() {
       valueFormatter={(value, category) => (category === "bloodOxygen" ? `${value}%` : `${value} br/min`)}
       showAnimation
       showLegend
-      className="h-[400px]"
+      className="h-full"
     />
   )
 }

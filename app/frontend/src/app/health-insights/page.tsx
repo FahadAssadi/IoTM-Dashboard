@@ -98,7 +98,7 @@ export default function HealthInsightsPage() {
 
       {/* Tabs for different health metrics */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 bg-slate-100">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 bg-slate-100">
           <TabsTrigger value="overview" className="data-[state=active]:bg-teal-700 data-[state=active]:text-white">
             Overview
           </TabsTrigger>

@@ -9,7 +9,7 @@ export default function HealthInsightsHeartTab () {
                     <CardTitle>Heart Rate Detailed Analysis</CardTitle>
                     <CardDescription>Comprehensive view of your heart rate patterns</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[400px]">
+                <CardContent className="min-h-[220px] sm:min-h-[280px] md:min-h-[360px]">
                     <HeartRateDetailedChart />
                 </CardContent>
             </Card>
@@ -19,7 +19,7 @@ export default function HealthInsightsHeartTab () {
                 <CardTitle>Resting Heart Rate</CardTitle>
                 <CardDescription>30-day trend</CardDescription>
               </CardHeader>
-              <CardContent className="h-[300px]">
+              <CardContent className="min-h-[200px] sm:min-h-[220px] md:min-h-[260px]">
                 <RestingHeartRateChart />
               </CardContent>
             </Card>
@@ -29,7 +29,7 @@ export default function HealthInsightsHeartTab () {
                 <CardTitle>Heart Rate Variability</CardTitle>
                 <CardDescription>Measure of heart health</CardDescription>
               </CardHeader>
-              <CardContent className="h-[300px]">
+              <CardContent className="min-h-[200px] sm:min-h-[220px] md:min-h-[260px]">
                 <HeartRateVariabilityChart />
               </CardContent>
             </Card>
@@ -76,7 +76,7 @@ function HeartRateDetailedChart() {
       valueFormatter={(value) => (value ? `${value} bpm` : "N/A")}
       showAnimation
       showLegend
-      className="h-[400px]"
+      className="h-full"
     />
   )
 }
@@ -97,7 +97,7 @@ function RestingHeartRateChart() {
       valueFormatter={(value) => `${value} bpm`}
       showAnimation
       showLegend={false}
-      className="h-[300px]"
+      className="h-full"
     />
   )
 }
@@ -118,7 +118,7 @@ function HeartRateVariabilityChart() {
       valueFormatter={(value) => `${value} ms`}
       showAnimation
       showLegend={false}
-      className="h-[300px]"
+      className="h-full"
     />
   )
 }

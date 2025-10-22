@@ -16,7 +16,7 @@ export default function HealthInsightsSleepTab () {
                         <h3 className="text-sm font-medium text-slate-800">Sleep Stages</h3>
                         <span className="text-xs text-slate-500">Last night</span>
                       </div>
-                      <div className="h-[200px] w-full rounded-md border border-slate-200 bg-white p-4">
+                      <div className="min-h-[200px] sm:min-h-[220px] md:min-h-[240px] w-full rounded-md border border-slate-200 bg-white p-4">
                         <div className="flex h-full flex-col">
                           <div className="relative flex-1">
                             {/* Sleep Stages */}
@@ -75,7 +75,7 @@ export default function HealthInsightsSleepTab () {
                         <h3 className="text-sm font-medium text-slate-800">Sleep Schedule</h3>
                         <span className="text-xs text-slate-500">Last 7 days</span>
                       </div>
-                      <div className="h-[220px] w-full rounded-md border border-slate-200 bg-white p-6">
+                      <div className="min-h-[220px] sm:min-h-[240px] md:min-h-[260px] w-full rounded-md border border-slate-200 bg-white p-6">
                         <div className="flex h-full flex-col">
                           <div className="relative flex-1">
                             {/* Sleep Schedule Bars */}

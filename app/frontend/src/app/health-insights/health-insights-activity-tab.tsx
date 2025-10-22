@@ -9,7 +9,7 @@ export default function HealthInsightsActivityTab () {
                 <CardTitle>Activity Tracking</CardTitle>
                 <CardDescription>Steps, distance, and active minutes</CardDescription>
               </CardHeader>
-              <CardContent className="h-[400px]">
+              <CardContent className="min-h-[220px] sm:min-h-[280px] md:min-h-[360px]">
                 <ActivityTrackingChart />
               </CardContent>
             </Card>
@@ -42,7 +42,7 @@ function ActivityTrackingChart() {
       }}
       showAnimation
       showLegend
-      className="h-[400px]"
+      className="h-full"
     />
   )
 }

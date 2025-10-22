@@ -24,7 +24,7 @@ export default function HealthInsightsOverviewTab () {
                     {/* Heart Rate Chart TODO: FIX CHART COMPONENTS */}
                     {/* <HeartRateChart /> */}
                     <div className="space-y-2">
-                      <div className="h-[180px] w-full rounded-md border border-slate-200 bg-white p-4">
+                      <div className="min-h-[200px] sm:min-h-[220px] md:min-h-[240px] w-full rounded-md border border-slate-200 bg-white p-4">
                         <div className="flex h-full flex-col">
                           <div className="relative flex-1">
                             {/* Heart Rate Line */}
@@ -90,7 +90,7 @@ export default function HealthInsightsOverviewTab () {
                   <CardContent className="pb-2">
                     {/* Blood Oxygen Chart TODO: FIX CHART COMPONENTS */}
                     {/* <BloodOxygenChart /> */}
-                    <div className="h-[180px] w-full rounded-md border border-slate-200 bg-white p-4">
+                    <div className="min-h-[200px] sm:min-h-[220px] md:min-h-[240px] w-full rounded-md border border-slate-200 bg-white p-4">
                         <div className="flex h-full flex-col">
                           <div className="relative flex-1">
                             {/* Blood Oxygen Line */}
@@ -155,7 +155,7 @@ export default function HealthInsightsOverviewTab () {
                   <CardContent className="pb-2">
                     {/* Steps chart TODO: fix chart components */}
                     {/* <ActivityChart /> */}
-                    <div className="h-[180px] w-full rounded-md border border-slate-200 bg-white p-4">
+                    <div className="min-h-[200px] sm:min-h-[220px] md:min-h-[240px] w-full rounded-md border border-slate-200 bg-white p-4">
                         <div className="flex h-full flex-col">
                           <div className="relative flex-1">
                             {/* Steps Bars */}
@@ -205,7 +205,7 @@ export default function HealthInsightsOverviewTab () {
                   </CardHeader>
                   <CardContent className="pb-2">
                     {/* TODO: add temperature chart component */}
-                    <div className="h-[180px] w-full rounded-md border border-slate-200 bg-white p-4">
+                    <div className="min-h-[200px] sm:min-h-[220px] md:min-h-[240px] w-full rounded-md border border-slate-200 bg-white p-4">
                         <div className="flex h-full flex-col">
                           <div className="relative flex-1">
                             {/* Temperature Line */}
