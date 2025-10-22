@@ -1,4 +1,5 @@
 using IoTM.Data;
+using IoTM.Services.HealthConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,11 +9,12 @@ namespace IoTM.Controllers.HealthConnect
     [ApiController]
     [Route("api/healthconnect/healthSummary")]
     [Authorize]
-    public class HealthSummaryController(ApplicationDbContext context) : ControllerBase
+    public class HealthSummaryController(ApplicationDbContext context, HealthSummaryService service) : ControllerBase
     {
         private readonly ApplicationDbContext _context = context;
+        private readonly HealthSummaryService _service = service;
 
-        [HttpGet("{userId}")]
+        [HttpGet("recent/{userId}")]
         public async Task<IActionResult> GetRecentValues(Guid userId)
         {
             // Retrieve the most recent segments for the user (by End time)
@@ -29,7 +31,6 @@ namespace IoTM.Controllers.HealthConnect
                 .OrderByDescending(s => s.End)
                 .FirstOrDefaultAsync();
 
-
             var result = new
             {
                 BPM = recentBpmSegment?.AverageBpm,
@@ -38,6 +39,34 @@ namespace IoTM.Controllers.HealthConnect
                 DiastolicBloodPressure = recentBloodPressureSegment?.AverageDiastolic
             };
             return Ok(result);
+        }
+
+        [HttpGet("{userId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetHealthSummary(Guid userId)
+        {
+            var segments = await _context.HealthSegmentSummarys
+                .Where(s => s.UserId == userId)
+                .OrderByDescending(s => s.Start) // optional: sort latest first
+                .ToListAsync();
+
+            if (segments == null || segments.Count == 0)
+            {
+                return NotFound($"No health segments found for user {userId}");
+            }
+
+            return Ok(segments.Select(s => new
+            {
+                s.Id,
+                s.Start,
+                s.End,
+                s.Points,
+                s.AverageSpO2,
+                s.AverageBpm,
+                s.AverageDiastolic,
+                s.AverageSystolic,
+                s.DurationHours,
+            }));
         }
     }
 }

@@ -1,69 +1,64 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
-import { useEffect, useState } from "react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } from "recharts";
-import { TooltipProps } from "recharts";
-import { loadBPM, BPMDataPoint } from "./backend";
+import { BPMDataPoint, BPMCategory } from "./activity-components/load-bpm-data";
+import { HeartRateDetailedChart } from "./activity-components/heart-rate-chart";
+import { HeartRateTimeline } from "./activity-components/heart-rate-timeline";
 
-export default function HealthInsightsActivityTab () {
-  const [bpmData, setBpmData ] = useState<BPMDataPoint[]>([]);
-  useEffect(() => {
-    async function fetchData() {
-      const data = await loadBPM();
-      setBpmData(data);
-    }
-    fetchData();
-  }, []);
+export default function HealthInsightsActivityTab ({ data = [] }: { data?: BPMDataPoint[] }) {
+	const chartCategorisor = (bpmValue : number): BPMCategory => {
+		if (bpmValue < 60){
+			return "0 - 60"
+		} else if (bpmValue < 80){
+			return "60 - 80"
+		} else if (bpmValue < 100){
+			return "80 - 100"
+		} else if (bpmValue < 120){
+			return "100 - 120"
+		} else if (bpmValue < 140){
+			return "120 - 140"
+		} else if (bpmValue < 160){
+			return "140 - 160"
+		} else if (bpmValue < 180){
+			return "160 - 180"
+		} else if (bpmValue < 200){
+			return "180 - 200"
+		} else if (bpmValue < 220){
+			return "200 - 220"
+		} else {
+			return "220+"
+		}
+	}
+    
+    const chartData: BPMDataPoint[] = data.map(d => ({
+        start: new Date(d.start).getTime(),
+        end: new Date(d.end).getTime(),
+        category: chartCategorisor(d.averageBpm),
+        averageBpm: d.averageBpm,
+        standardDeviation: d.standardDeviation,
+        points: d.points,
+        durationHours: d.durationHours
+    }));
 
     return (
         <div className="grid gap-6 md:grid-cols-2">
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle>Activity Tracking</CardTitle>
-                <CardDescription>Steps, distance, and active minutes</CardDescription>
-              </CardHeader>
-              <CardContent className="h-[400px]">
-                <HeartRateDetailedChart bpmData={bpmData}/>
-              </CardContent>
+            <Card>
+				<CardHeader>
+					<CardTitle>Average Heart Rate</CardTitle>
+					<CardDescription>Heart rate information</CardDescription>
+				</CardHeader>
+				<CardContent className="md:col-span-1">
+					<HeartRateDetailedChart data={chartData}/>
+				</CardContent>
+            </Card>
+
+            <Card>
+				<CardHeader>
+					<CardTitle>Activity Tracking</CardTitle>
+					<CardDescription>Steps, distance, and active minutes</CardDescription>
+				</CardHeader>
+				<CardContent className="md:col-span-1">
+					<HeartRateTimeline data={chartData}/>
+				</CardContent>
             </Card>
           </div>
     )
-}
-
-function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
-  if (active && payload && payload.length) {
-    const dataPoint = payload[0].payload; // your data point object
-    return (
-      <div className="bg-white p-2 border rounded shadow">
-        <p>{new Date(label).toLocaleString()}</p>
-        <p className="text-purple-700">Period Length: {dataPoint.durationHours.toFixed(2)} hours</p>
-        <p className="text-purple-600">Average BPM: {dataPoint.averageBpm}</p>
-        <p className="text-purple-400">Deviation: {dataPoint.standardDeviation}</p>
-        <p className="text-purple-300">Activity Level: {dataPoint.category}</p>
-      </div>
-    );
-  }
-  return null;
-}
-
-function HeartRateDetailedChart({ bpmData }: { bpmData: BPMDataPoint[] }) {
-  const sortedData = [...bpmData].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
-  return (
-    <div className="w-full h-92">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={sortedData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="start" tickFormatter={(value) => new Date(value).toLocaleDateString()} />
-          <YAxis >
-            <Label value="Heart Rate (BPM)" angle={-90} position="insideLeft" />
-          </YAxis>
-          <Tooltip content={<CustomTooltip />}/>
-          <Legend />
-          <Line type="monotone" name="Average Heart Rate BPM" dataKey="averageBpm" stroke="#8884d8" />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
 }

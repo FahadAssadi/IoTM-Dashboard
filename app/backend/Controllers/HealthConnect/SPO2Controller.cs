@@ -49,7 +49,6 @@ namespace IoTM.Controllers.HealthConnect
         }
 
         [HttpPost("{userId}")]
-        [AllowAnonymous]
         public async Task<IActionResult> PostSpO2Data(Guid userId, [FromBody] SpO2Dto dataDto)
         {
             if (dataDto == null || dataDto.Points == null || !dataDto.Points.Any())
@@ -76,6 +75,8 @@ namespace IoTM.Controllers.HealthConnect
             // Save to DB
             await _context.HealthSegmentSpO2s.AddRangeAsync(segments);
             await _context.SaveChangesAsync();
+            // update the health summary (await not needed because we don't care)
+            await _service.UpdateHealthSummary(_context, segments, userId);
             return Ok(segments.Select(s => new
             {
                 s.Start,

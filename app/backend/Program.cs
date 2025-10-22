@@ -37,6 +37,7 @@ builder.Services.AddSingleton<BPMService>();
 builder.Services.AddSingleton<SpO2Service>();
 builder.Services.AddSingleton<BloodPressureService>();
 builder.Services.AddSingleton<SleepService>();
+builder.Services.AddSingleton<HealthSummaryService>();
 
 // Authentication and Authorisation
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -87,15 +88,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Add HttpClient for external API calls
-builder.Services.AddHttpClient<IoTM.Services.INewsService, IoTM.Services.NewsService>(client =>
-{
-    client.DefaultRequestHeaders.Add("User-Agent", "IoTM-Dashboard/1.0");
-    client.Timeout = TimeSpan.FromSeconds(30);
-});
-
 // Register custom services
-builder.Services.AddScoped<IoTM.Services.INewsService, IoTM.Services.NewsService>();
 builder.Services.AddScoped<IoTM.Services.IScreeningGuidelineService, IoTM.Services.ScreeningGuidelineService>();
 builder.Services.AddScoped<IoTM.Services.IUserScreeningsService, IoTM.Services.UserScreeningsService>();
 

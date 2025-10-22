@@ -27,9 +27,17 @@ namespace IoTM.Models.HealthSegments
         public double DurationHours => (End - Start).TotalHours;
 
         // BPM
-        public double AverageBpm { get; set; }
-        public double BpmStandardDeviation { get; set; }
-        // BloodPressure
-        
+        public double? AverageBpm { get; set; }
+        public double? BpmStandardDeviation { get; set; }
+
+        // SpO2
+        public double? AverageSpO2 { get; set; }
+        public double? SpO2StandardDeviation { get; set; }
+
+        // Blood Pressure
+        public double? AverageSystolic { get; set; }
+        public double? AverageDiastolic { get; set; }
+        public double? BloodPressureStandardDeviation { get; set; }
+
     }
 }

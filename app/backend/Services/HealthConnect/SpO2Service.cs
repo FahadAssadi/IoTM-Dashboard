@@ -2,12 +2,46 @@ using IoTM.Config;
 using IoTM.Models.HealthSegments;
 using Microsoft.Extensions.Options;
 using IoTM.Dtos.HealthPoints;
+using IoTM.Data;
+using Microsoft.EntityFrameworkCore;
+using IoTM.Models;
 
 namespace IoTM.Services.HealthConnect;
 
 public class SpO2Service(IOptions<HealthThresholds> options)
 {
     private readonly SpO2Thresholds _thresholds = options.Value.SpO2;
+
+    public async Task<List<HealthSegmentSummary>> UpdateHealthSummary(ApplicationDbContext context, List<HealthSegmentSpO2> healthSegmentSpO2s, Guid userId)
+    {
+        var earliestDate = healthSegmentSpO2s.Min(s => s.Start);
+        // Update Existing Health Segments
+        var healthSummaryService = new HealthSummaryService();
+        await healthSummaryService.GenerateBlankHealthSummarys(context, earliestDate, userId);
+        // Retrieve and filter HealthSegments
+        var healthSummarySegments = await context.HealthSegmentSummarys.ToListAsync();
+        var filteredSegments = healthSummarySegments
+            .Where(s => s.UserId == userId) // Sort by userId
+            .Where(s => s.End > earliestDate) // All values preceeding the earlist SpO2 date
+            .OrderBy(s => s.End) // Ordered
+            .ToList();
+        // For each health summary segment, find all SpO2 segments that overlap with it
+        foreach (var summary in healthSummarySegments)
+        {
+            // Get all SpO2 segments where the time ranges overlap
+            var overlappingSpO2Segments = healthSegmentSpO2s
+                .Where(spo2 => spo2.Start <= summary.End && spo2.End >= summary.Start)
+                .ToList();
+            if (overlappingSpO2Segments.Count != 0)
+            {
+                // Calculate average of the overlapping SpO2 segment averages
+                summary.AverageSpO2 = overlappingSpO2Segments.Average(spo2 => spo2.AverageSpO2);
+                summary.SpO2StandardDeviation = overlappingSpO2Segments.Average(spo2 => spo2.StandardDeviation);
+            }
+        }
+        await context.SaveChangesAsync();
+        return filteredSegments;
+    }
 
     private void CategoriseSegment(HealthSegmentSpO2 healthSegmentSpO2)
     {

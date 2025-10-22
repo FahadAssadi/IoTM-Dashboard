@@ -23,11 +23,11 @@ namespace IoTM.Data
         public DbSet<ScreeningGuideline> ScreeningGuidelines { get; set; }
         public DbSet<UserScreening> UserScreenings { get; set; }
         public DbSet<HealthAlert> HealthAlerts { get; set; }
-        public DbSet<NewsArticle> NewsArticles { get; set; }
         public DbSet<HealthSegmentBPM> HealthSegmentBPMs { get; set; }
         public DbSet<HealthSegmentSpO2> HealthSegmentSpO2s { get; set; }
         public DbSet<HealthSegmentBloodPressure> HealthSegmentBloodPressures { get; set; }
         public DbSet<HealthSegmentSleep> HealthSegmentSleeps { get; set; }
+        public DbSet<HealthSegmentSummary> HealthSegmentSummarys { get; set; }
         public DbSet<LifestyleFactor> LifestyleFactors { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -55,7 +55,6 @@ namespace IoTM.Data
             modelBuilder.Entity<UserScreening>().Property(s => s.Status).HasConversion<string>();
             modelBuilder.Entity<HealthAlert>().Property(a => a.AlertType).HasConversion<string>();
             modelBuilder.Entity<HealthAlert>().Property(a => a.Severity).HasConversion<string>();
-            modelBuilder.Entity<NewsArticle>().Property(n => n.Category).HasConversion<string>();
         }
     }
 }

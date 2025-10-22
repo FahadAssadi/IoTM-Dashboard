@@ -1,30 +1,24 @@
 "use client"
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label, TooltipProps } from "recharts";
-import { loadBloodPressure, BloodPressureDataPoint } from "./backend";
-import { useEffect, useState } from "react";
+import { BloodPressureDataPoint } from "./blood-pressure-components/load-blood-pressure-data"
+import { BloodPressureChart } from "./blood-pressure-components/blood-pressure-chart";
+import { HeartRateVariabilityChart } from "./blood-pressure-components/heart-rate-variability-chart";
+import { BloodPressureTimeline } from "./blood-pressure-components/blood-pressure-timeline";
 
-export default function HealthInsightsHeartTab () {
-  // const testData: BloodPressureDataPoint[] = Array.from({ length: 9 }, (_, i) => ({
-  //   start: `2025-09-0${i + 1}T17:07:04.568Z`,
-  //   end: `2025-09-0${i + 1}T17:07:04.568Z`,
-  //   points: Math.floor(Math.random() * 10),
-  //   averageSystolic: Math.floor(Math.random() * 10) + 110,
-  //   averageDiastolic: Math.floor(Math.random() * 10) + 70,
-  //   systolicStandardDeviation: Math.random() * 5,
-  //   diastolicStandardDeviation: Math.random() * 5,
-  //   durationHours: 1,
-  //   category: "Generated - No Data",
-  // }));
-  const [bloodPressureData, setBloodPressureData ] = useState<BloodPressureDataPoint[]>([]);
-    useEffect(() => {
-      async function fetchData() {
-        const data = await loadBloodPressure();
-        setBloodPressureData(data);
-      }
-      fetchData();
-    }, []);
+export default function HealthInsightsHeartTab ({ data = [] } : { data? : BloodPressureDataPoint[] }) {
+
+	const chartData: BloodPressureDataPoint[] = data.map(d => ({
+        start: new Date(d.start).getTime(),
+        end: new Date(d.end).getTime(),
+        category: d.category,
+		averageSystolic: d.averageSystolic,
+		averageDiastolic: d.averageDiastolic,
+		diastolicStandardDeviation: d.diastolicStandardDeviation,
+		systolicStandardDeviation: d.systolicStandardDeviation,
+        points: d.points,
+        durationHours: d.durationHours
+    }));
 
     return (
         <div className="grid gap-6 md:grid-cols-2">
@@ -33,18 +27,18 @@ export default function HealthInsightsHeartTab () {
                     <CardTitle>Blood Pressure Detailed Analysis</CardTitle>
                     <CardDescription>Comprehensive view of your blood pressure patterns</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[400px]">
-                  <BloodPressureChart bloodPressureData={bloodPressureData}/>
+                <CardContent className="md:col-span-2">
+                  <BloodPressureChart data={data}/>
                 </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Resting Heart Rate</CardTitle>
-                <CardDescription>30-day trend</CardDescription>
+                <CardTitle>Blood Pressure Category Timeline</CardTitle>
+                <CardDescription>14-day trend</CardDescription>
               </CardHeader>
-              <CardContent className="h-[300px]">
-                <RestingHeartRateChart />
+              <CardContent className="md:col-span-1">
+                <BloodPressureTimeline data={chartData} timeframe={14}/>
               </CardContent>
             </Card>
 
@@ -53,101 +47,15 @@ export default function HealthInsightsHeartTab () {
                 <CardTitle>Blood Pressure Variability</CardTitle>
                 <CardDescription>Measure of heart health</CardDescription>
               </CardHeader>
-              <CardContent className="h-[300px]">
-                <HeartRateVariabilityChart bloodPressureData={bloodPressureData}/>
+              <CardContent className="md:col-span-1">
+                <HeartRateVariabilityChart data={data}/>
               </CardContent>
             </Card>
           </div>
-
     )
 }
 
-function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
-  if (active && payload && payload.length) {
-    const dataPoint = payload[0].payload; // your data point object
-    return (
-      <div className="bg-white p-2 border rounded shadow">
-        <p>{new Date(label).toLocaleString()}</p>
-        <p className="text-black-700">Period Length: {dataPoint.durationHours.toFixed(2)} hours</p>
-        <p className="text-red-600">systolic: {dataPoint.averageSystolic}</p>
-        <p className="text-blue-600">diastolic: {dataPoint.averageDiastolic}</p>
-        <p className="text-black-600">Deviation: {(dataPoint.systolicStandardDeviation + dataPoint.diastolicStandardDeviation) / 2}</p>
-        <p className="text-orange-300">RiskLevel: {dataPoint.category}</p>
-      </div>
-    );
-  }
-  return null;
-}
 
-function BloodPressureChart({ bloodPressureData }: { bloodPressureData: BloodPressureDataPoint[] }) {
-  return (
-    <div className="w-full h-96">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={bloodPressureData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="start" 
-            tickFormatter={(value) => new Date(value).toLocaleDateString()} />
-          <YAxis />
-          <Tooltip content={<CustomTooltip />}/>
-          <Legend />
-          <Line type="monotone" name="Systolic Blood Pressure" dataKey="averageSystolic" stroke="#726cf5" />
-          <Line type="monotone" name="Diastolic Blood Pressure" dataKey="averageDiastolic" stroke="#f76e4f" />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-function RestingHeartRateChart() {
-  // 30-day resting heart rate trend
-  const data = Array.from({ length: 30 }, (_, i) => ({
-    day: `Day ${i + 1}`,
-    value: Math.floor(Math.random() * 10) + 60,
-  }))
-
-  return (
-    <div className="w-full h-72">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={data}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="day" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="value" stroke="#e11d48" />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  )
-}
-
-function HeartRateVariabilityChart({ bloodPressureData }: { bloodPressureData: BloodPressureDataPoint[] }) {
-  return (
-    <div className="w-full h-72">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={bloodPressureData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="day"/>
-          <YAxis>
-            <Label value="Variance" angle={-90} position="insideLeft" />
-          </YAxis>
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" name="Blood Pressure Variance" dataKey="systolicStandardDeviation" stroke="#8b5cf6" />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  )
-}
 
 // function HeartRateChart() {
 //   const data = [

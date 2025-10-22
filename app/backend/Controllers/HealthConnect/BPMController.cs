@@ -75,6 +75,8 @@ namespace IoTM.Controllers.HealthConnect
             // Save to DB
             await _context.HealthSegmentBPMs.AddRangeAsync(segments);
             await _context.SaveChangesAsync();
+            // update the health summary (await not needed because we don't care)
+            await _service.UpdateHealthSummary(_context, segments, userId);
             return Ok(segments.Select(s => new
             {
                 s.Start,
