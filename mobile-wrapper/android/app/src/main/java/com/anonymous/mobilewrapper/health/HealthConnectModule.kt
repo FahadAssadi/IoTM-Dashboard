@@ -133,7 +133,7 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
   }
 
   @ReactMethod
-  fun extractBaselineAndStoreToken(promise: Promise) {
+  fun extractBaselineAndStoreToken(userId: String, token: String, promise: Promise) {
     scope.launch {
       try {
         val status = HealthConnectClient.getSdkStatus(reactContext)
@@ -167,9 +167,9 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
         HealthJsonWriters.writeExerciseSessionsWindow(hc, tr, exerciseFile, 2000)
 
         // Start periodic sync every 15 minutes
-        HealthConnectSyncWorker.schedule(reactContext, 15L)
+        HealthConnectSyncWorker.schedulePeriodic(reactContext, 15L, userId, token)
         // Run one-time work immediately
-        HealthConnectSyncWorker.enqueueOneTime(reactContext)
+        HealthConnectSyncWorker.enqueueOneTime(reactContext, userId, token)
 
         withContext(Dispatchers.Main) { promise.resolve(true) }
       } catch (e: Exception) {
@@ -180,12 +180,12 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
 
 
   @ReactMethod
-  fun runHealthSyncNow(promise: Promise) {
-    try {
-      HealthConnectSyncWorker.enqueueOneTime(reactContext)
-      promise.resolve(true)
-    } catch (t: Throwable) {
-      promise.reject("RUN_NOW_ERROR", t.message, t)
+  fun runHealthSyncNow(userId: String, token: String, promise: Promise) {
+     try {
+        HealthConnectSyncWorker.enqueueOneTime(reactContext, userId, token)
+        promise.resolve(true)
+      } catch (t: Throwable) {
+        promise.reject("RUN_NOW_ERROR", t.message, t)
     }
   }
 }

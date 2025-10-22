@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { useIsEmbeddedRN } from "./device-embeddedRN";
 import { useRNBridge, RNSyncSnapshot } from "./device-RNBridge";
+import { supabase } from "@/lib/supabase/client";
 
 function Card(props: React.HTMLAttributes<HTMLDivElement>) {
   return (
@@ -143,9 +144,28 @@ export default function DevicesPage() {
             </div>
             {isEmbedded ? (
               <Button
-                onClick={() => {
-                  setLinking(true);
-                  post("EXTRACT_BASELINE");
+                onClick={async () => {
+                  try {
+                    setLinking(true);
+                    const {
+                      data: { user },
+                    } = await supabase.auth.getUser();
+                    const {
+                      data: { session },
+                    } = await supabase.auth.getSession();
+
+                    if (!user || !session?.access_token) {
+                      alert("Missing user session. Please re-login.");
+                      setLinking(false);
+                      return;
+                    }
+                    post("EXTRACT_BASELINE", { userId: user.id, token: session.access_token});
+                  } catch (err) {
+                    console.error("Error linking:", err);
+                    alert("Failed to link Health Connect");
+                  } finally {
+                    setLinking(false);
+                  }
                 }}
                 disabled={linking}
               >
@@ -173,9 +193,33 @@ export default function DevicesPage() {
             </div>
             {isEmbedded ? (
               <Button
-                onClick={() => {
-                  setSyncing(true);
-                  post("RUN_SYNC_NOW");
+                onClick={async () => {
+                  try {
+                    setSyncing(true);
+
+                    // Get the current Supabase user and session
+                    const {
+                      data: { user },
+                    } = await supabase.auth.getUser();
+                    const {
+                      data: { session },
+                    } = await supabase.auth.getSession();
+
+                    if (!user || !session?.access_token) {
+                      alert("Missing user session. Please re-login.");
+                      setSyncing(false);
+                      return;
+                    }
+
+                    // Let RN WebView know sync started
+                    post("RUN_SYNC_NOW", { userId: user.id, token: session.access_token});
+
+                  } catch (err) {
+                    console.error("Error running sync:", err);
+                    alert("Failed to start sync");
+                  } finally {
+                    setSyncing(false);
+                  }
                 }}
                 disabled={syncing}
               >

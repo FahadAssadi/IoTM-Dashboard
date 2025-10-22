@@ -4,8 +4,8 @@ type HealthConnectNative = {
   isAvailable: () => Promise<boolean>;
   hasRequiredPermissions: () => Promise<boolean>;
   requestPermissions: () => Promise<void>;
-  extractBaselineAndStoreToken: () => Promise<boolean>;
-  runHealthSyncNow: () => Promise<boolean>;
+  extractBaselineAndStoreToken: (userId: string, token: string) => Promise<boolean>;
+  runHealthSyncNow: (userId: string, token: string) => Promise<boolean>;
 };
 
 const native = NativeModules.HealthConnectModule as Partial<HealthConnectNative> | undefined;
@@ -26,15 +26,15 @@ export const Health: HealthConnectNative = {
     }
     return native.requestPermissions();
   },
-  async extractBaselineAndStoreToken() {
+  async extractBaselineAndStoreToken(userId: string, token: string) {
     if (Platform.OS !== "android" || !native?.extractBaselineAndStoreToken)
       throw new Error("HealthConnectModule not available");
-    return native.extractBaselineAndStoreToken();
+    return native.extractBaselineAndStoreToken(userId, token);
   },
-  async runHealthSyncNow() {
+  async runHealthSyncNow(userId: string, token: string) {
     if (Platform.OS !== "android" || !native?.runHealthSyncNow)
       throw new Error("HealthConnectModule not available");
-    return native.runHealthSyncNow();
+    return native.runHealthSyncNow(userId, token);
   },
 
 };
