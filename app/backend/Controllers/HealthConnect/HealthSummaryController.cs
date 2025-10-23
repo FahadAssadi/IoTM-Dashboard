@@ -42,7 +42,6 @@ namespace IoTM.Controllers.HealthConnect
         }
 
         [HttpGet("{userId}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetHealthSummary(Guid userId)
         {
             var segments = await _context.HealthSegmentSummarys
