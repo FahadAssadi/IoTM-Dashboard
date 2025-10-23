@@ -98,8 +98,6 @@ namespace IoTM.Controllers
             }
         }
 
-// Add these methods to your UsersController class
-
         // POST: api/users/{id}/avatar - Upload avatar image
         [HttpPost("{id}/avatar")]
         public async Task<IActionResult> UploadAvatar(Guid id, IFormFile avatar)
@@ -260,7 +258,7 @@ namespace IoTM.Controllers
             return Ok(user);
         }
 
-        // Replace your UpdateUserProfile method with this corrected version
+        // PUT: api/users/{id}/profile
         [HttpPut("{id}/profile")]
         public async Task<IActionResult> UpdateUserProfile(Guid id, [FromBody] UpdateUserProfileRequest request)
         {
@@ -478,6 +476,7 @@ namespace IoTM.Controllers
                 return StatusCode(500, new { Success = false, Message = $"Internal server error: {ex.Message}" });
             }
         }
+
         // GET: api/users/medical-conditions/available
         [HttpGet("medical-conditions/available")]
         public ActionResult<List<string>> GetAvailableMedicalConditions()
@@ -519,7 +518,183 @@ namespace IoTM.Controllers
 
             return Ok(conditions);
         }
-    }
+
+        // GET: api/users/{id}/onboarding - Check onboarding status
+        [HttpGet("{id}/onboarding")]
+        public async Task<IActionResult> GetOnboardingStatus(Guid id)
+        {
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == id);
+                
+                if (user == null)
+                {
+                    return NotFound(new { success = false, message = "User not found" });
+                }
+
+                return Ok(new { 
+                    success = true,
+                    isOnboarded = user.IsOnboarded ?? false,
+                    onboardingTime = user.OnboardingTime
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking onboarding status for userId: {UserId}", id);
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Error checking onboarding status" 
+                });
+            }
+        }
+
+        // POST: api/users/{id}/onboarding
+        [HttpPost("{id}/onboarding")]
+        public async Task<IActionResult> CompleteOnboarding(Guid id, [FromBody] OnboardingRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Onboarding submission for userId: {UserId}", id);
+
+                // Step 1: Find user
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == id);
+                
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found for userId: {UserId}", id);
+                    return NotFound(new { success = false, message = "User not found" });
+                }
+
+                // Check if already onboarded
+                if (user.IsOnboarded == true)
+                {
+                    _logger.LogWarning("User already onboarded: {UserId}", id);
+                    return BadRequest(new { 
+                        success = false, 
+                        message = "User has already completed onboarding" 
+                    });
+                }
+
+                // Step 2: Update user basic info
+                _logger.LogInformation("Updating basic user info for onboarding");
+                user.FirstName = request.FirstName;
+                user.LastName = request.LastName;
+                
+                if (!string.IsNullOrEmpty(request.Dob))
+                {
+                    if (DateOnly.TryParse(request.Dob, out var dob))
+                    {
+                        user.DateOfBirth = dob;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(request.Sex))
+                {
+                    if (Enum.TryParse<Sex>(request.Sex, true, out var sex))
+                    {
+                        user.Sex = sex;
+                    }
+                }
+
+                user.Height = request.Height;
+                user.Weight = request.Weight;
+                user.State = request.State;
+                user.Postcode = request.Postcode;
+                user.IsOnboarded = true;
+                user.OnboardingTime = DateTime.UtcNow;
+                user.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Basic user info saved");
+
+                // Step 3: Save health conditions
+                if (request.HealthConditions != null && request.HealthConditions.Any())
+                {
+                    _logger.LogInformation("Processing {Count} health conditions", request.HealthConditions.Count);
+
+                    // Get selected conditions (where status is true)
+                    var selectedConditions = request.HealthConditions
+                        .Where(hc => hc.Status)
+                        .Select(hc => hc.Condition)
+                        .ToList();
+
+                    if (selectedConditions.Any())
+                    {
+                        foreach (var conditionName in selectedConditions)
+                        {
+                            var condition = new MedicalCondition
+                            {
+                                ConditionId = Guid.NewGuid(),
+                                UserId = id,
+                                ConditionName = conditionName,
+                                Severity = Severity.unknown,
+                                Status = ConditionStatus.active,
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow
+                            };
+                            
+                            _context.MedicalConditions.Add(condition);
+                        }
+
+                        await _context.SaveChangesAsync();
+                        _logger.LogInformation("Health conditions saved");
+                    }
+                }
+
+                // Step 4: Save lifestyle factors
+                if (request.LifestyleFactors != null && request.LifestyleFactors.Any())
+                {
+                    _logger.LogInformation("Processing {Count} lifestyle factors", request.LifestyleFactors.Count);
+
+                    // Only save lifestyle factors that have a selection
+                    var selectedFactors = request.LifestyleFactors
+                        .Where(lf => !string.IsNullOrEmpty(lf.Selection))
+                        .ToList();
+
+                    if (selectedFactors.Any())
+                    {
+                        foreach (var factor in selectedFactors)
+                        {
+                            var lifestyleFactor = new LifestyleFactor
+                            {
+                                LifestyleFactorId = Guid.NewGuid(),
+                                UserId = id,
+                                Factor = factor.Factor,
+                                Selection = factor.Selection!,
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow
+                            };
+                            
+                            _context.LifestyleFactors.Add(lifestyleFactor);
+                        }
+
+                        await _context.SaveChangesAsync();
+                        _logger.LogInformation("Lifestyle factors saved");
+                    }
+                }
+
+                _logger.LogInformation("Onboarding completed successfully for userId: {UserId}", id);
+                
+                return Ok(new { 
+                    success = true, 
+                    message = "Onboarding completed successfully" 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error completing onboarding for userId: {UserId}", id);
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = $"Error completing onboarding: {ex.Message}" 
+                });
+            }
+        }
+
+    } // ← UsersController class ends HERE
+
+    // ========================================================================
+    // DTOs - PLACE THESE OUTSIDE THE CLASS BUT INSIDE THE NAMESPACE
+    // ========================================================================
 
     // Response and request models
     public class UserProfileResponse
@@ -542,10 +717,23 @@ namespace IoTM.Controllers
         public string? CountryCode { get; set; }
         public string? City { get; set; }
         public string? Timezone { get; set; }
-        public string? AvatarUrl { get; set; } // Add this line
+        public string? AvatarUrl { get; set; }
     }
 
     public class UpdateUserProfileRequest
+    {
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? DateOfBirth { get; set; }
+        public string? Sex { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? CountryCode { get; set; }
+        public string? Timezone { get; set; }
+        public List<string>? MedicalConditions { get; set; }
+        public List<string>? FamilyHistory { get; set; }
+    }
+
+    public class OnboardingRequest
     {
         [Required]
         [StringLength(100)]
@@ -555,24 +743,38 @@ namespace IoTM.Controllers
         [StringLength(100)]
         public string LastName { get; set; } = string.Empty;
 
-        public string? DateOfBirth { get; set; } // Accept as string from frontend
+        [EmailAddress]
+        public string? Email { get; set; }
+
+        public string? Dob { get; set; }
         
         public string? Sex { get; set; }
         
-        [StringLength(20)]
-        public string? PhoneNumber { get; set; }
+        public int? Height { get; set; }
         
-        [StringLength(3)]
-        public string? CountryCode { get; set; }
-
-        [StringLength(100)]
-        public string? City { get; set; }
+        public decimal? Weight { get; set; }
         
         [StringLength(50)]
-        public string? Timezone { get; set; }
-
-        public List<string>? MedicalConditions { get; set; }
+        public string? State { get; set; }
         
-        public List<string>? FamilyHistory { get; set; }
+        [StringLength(10)]
+        public string? Postcode { get; set; }
+        
+        public List<OnboardingHealthCondition>? HealthConditions { get; set; }
+        
+        public List<OnboardingLifestyleFactor>? LifestyleFactors { get; set; }
     }
+
+    public class OnboardingHealthCondition
+    {
+        public string Condition { get; set; } = string.Empty;
+        public bool Status { get; set; }
+    }
+
+    public class OnboardingLifestyleFactor
+    {
+        public string Factor { get; set; } = string.Empty;
+        public string? Selection { get; set; }
+    }
+
 }
