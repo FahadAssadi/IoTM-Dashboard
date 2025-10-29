@@ -17,7 +17,7 @@ Navigate to the backend directory and follow the instructions in its README.md:
 cd app
 ```
 
-## Deployed Frontend Instance 
+## Deployed Frontend Instance
 In addition to the local instances an online vercel deployement of the frontend is available from the following link
 
 [Live Demo](https://previe-ten.vercel.app/)
