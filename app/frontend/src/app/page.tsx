@@ -91,7 +91,7 @@ export default function DashboardPage() {
         const url = `https://api.thenewsapi.com/v1/news/top?language=en&api_token=Yp283VIGzf6HKaXRh3X2gOfB41HDp9f1tlgFJGSo&locale=au&search=health+alert&limit=3`;
 
         const res = await fetch(url);
-        if (!res.ok) throw new Error("Failed to fetch emergency alerts");
+        // if (!res.ok) throw new Error("Failed to fetch emergency alerts");
         const data = await res.json();
 
         const alerts = data.data || [];

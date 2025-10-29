@@ -548,6 +548,17 @@ namespace IoTM.Controllers
             }
         }
 
+        [HttpGet("{userId}/onboarding/status")]
+        public async Task<IActionResult> GetOnboardingStatus(string userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            
+            if (user == null)
+                return NotFound();
+            
+            return Ok(new { hasCompletedOnboarding = user.HasCompletedOnboarding });
+        }
+
         // POST: api/users/{id}/onboarding
         [HttpPost("{id}/onboarding")]
         public async Task<IActionResult> CompleteOnboarding(Guid id, [FromBody] OnboardingRequest request)

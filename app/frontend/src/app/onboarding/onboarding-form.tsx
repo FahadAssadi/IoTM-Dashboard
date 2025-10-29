@@ -22,6 +22,7 @@ export default function OnboardingForm() {
     const [currentStep, setCurrentStep] = useState(1)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
     const router = useRouter()
     const [onboardingForm, setOnboardingForm] = useState<OnboardingFormType>(
         onboardingScaffold as OnboardingFormType);
@@ -29,7 +30,76 @@ export default function OnboardingForm() {
     const totalSteps = 3
     const progressPercentage = (currentStep / totalSteps) * 100
 
+    // Validate age is at least 13 years old
+    const validateAge = (dob: string): boolean => {
+        if (!dob) return false
+        
+        const birthDate = new Date(dob)
+        const today = new Date()
+        let age = today.getFullYear() - birthDate.getFullYear()
+        const monthDiff = today.getMonth() - birthDate.getMonth()
+        
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--
+        }
+        
+        return age >= 13
+    }
+
+    // Validate Step 1 fields
+    const validateStep1 = (): boolean => {
+        if (!onboardingForm.firstName?.trim()) {
+            toast.error("Please enter your first name")
+            return false
+        }
+        
+        if (!onboardingForm.lastName?.trim()) {
+            toast.error("Please enter your last name")
+            return false
+        }
+        
+        if (!onboardingForm.dob) {
+            toast.error("Please enter your date of birth")
+            return false
+        }
+        
+        if (!validateAge(onboardingForm.dob)) {
+            toast.error("You must be at least 13 years old to use this service")
+            return false
+        }
+        
+        if (!onboardingForm.sex) {
+            toast.error("Please select your sex")
+            return false
+        }
+        
+        return true
+    }
+
+    // Validate Step 2 fields
+    const validateStep2 = (): boolean => {
+        if (!onboardingForm.state?.trim()) {
+            toast.error("Please enter your state/territory")
+            return false
+        }
+        
+        if (!onboardingForm.postcode?.trim()) {
+            toast.error("Please enter your postcode")
+            return false
+        }
+        
+        return true
+    }
+
     const nextStep = () => {
+        if (currentStep === 1 && !validateStep1()) {
+            return
+        }
+        
+        if (currentStep === 2 && !validateStep2()) {
+            return
+        }
+        
         if (currentStep < totalSteps) {
             setCurrentStep(currentStep + 1)
         }
@@ -53,6 +123,42 @@ export default function OnboardingForm() {
 
         getCurrentUser()
     }, [router])
+
+    // Fetch user profile data when userId is available
+    useEffect(() => {
+        if (!currentUserId) return
+
+        const fetchUserProfile = async () => {
+            setIsLoading(true)
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/${currentUserId}/profile`)
+                
+                if (response.ok) {
+                    const profileResponse = await response.json()
+                    
+                    if (profileResponse.success && profileResponse.user) {
+                        const user = profileResponse.user
+                        
+                        // Update form with fetched user data
+                        setOnboardingForm(prev => ({
+                            ...prev,
+                            firstName: user.firstName || '',
+                            lastName: user.lastName || '',
+                        }))
+                    }
+                } else {
+                    console.log("Profile not found or error fetching, using empty form")
+                }
+            } catch (error) {
+                console.error("Error fetching user profile:", error)
+                // Continue with empty form if fetch fails
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        fetchUserProfile()
+    }, [currentUserId])
 
     const prevStep = () => {
         if (currentStep > 1) {
@@ -119,18 +225,11 @@ export default function OnboardingForm() {
         }
 
         // Validate required fields
-        if (!onboardingForm.firstName || !onboardingForm.lastName) {
-            toast.error("Please fill in your first and last name")
+        if (!validateStep1()) {
             return
         }
 
-        if (!onboardingForm.dob) {
-            toast.error("Please enter your date of birth")
-            return
-        }
-
-        if (!onboardingForm.sex) {
-            toast.error("Please select your sex")
+        if (!validateStep2()) {
             return
         }
 
@@ -181,14 +280,14 @@ export default function OnboardingForm() {
 
             toast.success("Welcome! Your profile has been set up successfully")
 
-            // Redirect to dashboard after successful onboarding
+            // Redirect to home page after successful onboarding
             setTimeout(() => {
-                router.push('/dashboard')
+                router.push('/')
             }, 1000)
 
         } catch (error) {
-            console.error("Error submitting onboarding:", error)
-            toast.error(error instanceof Error ? error.message : "Failed to complete onboarding")
+            console.error("Onboarding error:", error)
+            toast.error(error instanceof Error ? error.message : "Failed to complete onboarding. Please try again.")
         } finally {
             setIsSubmitting(false)
         }
@@ -200,28 +299,21 @@ export default function OnboardingForm() {
             return
         }
 
-        // Still need basic info for skip
-        if (!onboardingForm.firstName || !onboardingForm.lastName) {
-            toast.error("Please fill in your first and last name before skipping")
+        // Still validate required fields from Steps 1 and 2
+        if (!validateStep1()) {
             return
         }
 
-        if (!onboardingForm.dob) {
-            toast.error("Please enter your date of birth before skipping")
-            return
-        }
-
-        if (!onboardingForm.sex) {
-            toast.error("Please select your sex before skipping")
+        if (!validateStep2()) {
             return
         }
 
         setIsSubmitting(true)
 
         try {
-            console.log("Skipping health information, submitting basic data only")
+            console.log("Skipping Step 3, submitting with empty health data")
 
-            // Transform to PascalCase - send basic info only, skip health conditions
+            // Transform camelCase to PascalCase for C# backend
             const payload = {
                 FirstName: onboardingForm.firstName,
                 LastName: onboardingForm.lastName,
@@ -232,11 +324,11 @@ export default function OnboardingForm() {
                 Weight: isNaN(onboardingForm.weight) ? null : onboardingForm.weight,
                 State: onboardingForm.state,
                 Postcode: onboardingForm.postcode,
-                HealthConditions: [],  // Empty array when skipping
-                LifestyleFactors: []   // Empty array when skipping
+                HealthConditions: [],
+                LifestyleFactors: []
             }
 
-            console.log("Sending skip payload to backend:", payload)
+            console.log("Sending payload to backend:", payload)
 
             const response = await fetch(`${API_BASE_URL}/users/${currentUserId}/onboarding`, {
                 method: 'POST',
@@ -253,35 +345,34 @@ export default function OnboardingForm() {
             }
 
             const data = await response.json()
-            console.log("Skip response:", data)
+            console.log("Onboarding response:", data)
 
-            toast.success("Profile created successfully")
-            
+            toast.success("Welcome! Your profile has been set up successfully")
+
+            // Redirect to home page after successful onboarding
             setTimeout(() => {
-                router.push('/dashboard')
+                router.push('/')
             }, 1000)
 
         } catch (error) {
-            console.error("Error skipping onboarding:", error)
-            toast.error(error instanceof Error ? error.message : "Failed to complete setup")
+            console.error("Onboarding error:", error)
+            toast.error(error instanceof Error ? error.message : "Failed to complete onboarding. Please try again.")
         } finally {
             setIsSubmitting(false)
         }
     }
 
     const renderProgressBar = () => (
-        <div className="mb-8">
-            <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">
+        <div className="w-full mb-8">
+            <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-600">
                     Step {currentStep} of {totalSteps}
                 </span>
-                <span className="text-sm font-medium text-gray-700">
-                    {Math.round(progressPercentage)}%
-                </span>
+                <span className="text-sm text-gray-600">{Math.round(progressPercentage)}% Complete</span>
             </div>
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                    className="h-full bg-teal-600 transition-all duration-300 ease-in-out"
+                    className="bg-teal-600 h-2 rounded-full transition-all duration-300 ease-in-out"
                     style={{ width: `${progressPercentage}%` }}
                 />
             </div>
@@ -289,18 +380,18 @@ export default function OnboardingForm() {
     )
 
     const renderStep1 = () => (
-        <div className="space-y-6">
-            <div className="text-center">
+        <div className="text-center space-y-6">
+            <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome!</h1>
-                <p className="text-gray-600">Let&apos;s get started by setting up your profile</p>
+                <p className="text-gray-600">{"Let's get started by setting up your profile"}</p>
             </div>
 
-            <Card>
+            <Card className="text-left">
                 <CardHeader>
-                    <CardTitle>Basic Information</CardTitle>
+                    <CardTitle className="text-xl">Basic Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col">
                             <label
                                 htmlFor="firstName"
@@ -311,10 +402,10 @@ export default function OnboardingForm() {
                                 <Input
                                     id="firstName"
                                     type="text"
-                                    autoComplete="given-name"
-                                    required
+                                    autoCorrect="off"
                                     value={onboardingForm.firstName}
                                     onChange={(e) => handleStringChange("firstName", e.target.value)}
+                                    disabled={isLoading}
                                 />
                             </div>
                         </div>
@@ -328,30 +419,33 @@ export default function OnboardingForm() {
                                 <Input
                                     id="lastName"
                                     type="text"
-                                    autoComplete="family-name"
-                                    required
+                                    autoCorrect="off"
                                     value={onboardingForm.lastName}
                                     onChange={(e) => handleStringChange("lastName", e.target.value)}
+                                    disabled={isLoading}
                                 />
                             </div>
                         </div>
                     </div>
+
                     <div className="flex flex-col">
                         <label
                             htmlFor="email"
                             className="font-medium text-gray-700 ml-1">
-                            Email<span className="text-sm text-gray-500"> (optional)</span>
+                            Email<span className="text-sm text-gray-500"> (change if required)</span>
                         </label>
                         <div className="relative mt-1">
                             <Input
                                 id="email"
                                 type="email"
-                                autoComplete="email"
+                                autoCorrect="off"
                                 value={onboardingForm.email}
                                 onChange={(e) => handleStringChange("email", e.target.value)}
+                                disabled={isLoading}
                             />
                         </div>
                     </div>
+
                     <div className="flex flex-col">
                         <label
                             htmlFor="dob"
@@ -362,56 +456,75 @@ export default function OnboardingForm() {
                             <Input
                                 id="dob"
                                 type="date"
-                                required
+                                autoCorrect="off"
                                 value={onboardingForm.dob}
                                 onChange={(e) => handleStringChange("dob", e.target.value)}
+                                disabled={isLoading}
                             />
                         </div>
+                        <p className="text-xs text-gray-500 mt-1 ml-1">You must be at least 13 years old</p>
                     </div>
+
                     <div className="flex flex-col">
-                        <label className="font-medium text-gray-700 mb-2">
+                        <label className="font-medium text-gray-700 ml-1 mb-2">
                             Sex<span className="text-red-500">*</span>
                         </label>
-                        <RadioGroup
-                            value={onboardingForm.sex}
-                            onValueChange={(value) => handleStringChange("sex", value)}
-                        >
+                        <div className="flex gap-6">
                             <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="male" id="male" />
-                                <Label htmlFor="male">Male</Label>
+                                <input
+                                    type="radio"
+                                    id="male"
+                                    name="sex"
+                                    value="Male"
+                                    checked={onboardingForm.sex === "Male"}
+                                    onChange={(e) => handleStringChange("sex", e.target.value)}
+                                    disabled={isLoading}
+                                    className="w-4 h-4"
+                                />
+                                <label htmlFor="male" className="text-sm">Male</label>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="female" id="female" />
-                                <Label htmlFor="female">Female</Label>
+                                <input
+                                    type="radio"
+                                    id="female"
+                                    name="sex"
+                                    value="Female"
+                                    checked={onboardingForm.sex === "Female"}
+                                    onChange={(e) => handleStringChange("sex", e.target.value)}
+                                    disabled={isLoading}
+                                    className="w-4 h-4"
+                                />
+                                <label htmlFor="female" className="text-sm">Female</label>
                             </div>
-                        </RadioGroup>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
 
-            <div className="flex">
-                <Button onClick={nextStep} className="w-full bg-teal-600 hover:bg-teal-700 text-white">
-                    Continue
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-            </div>
+            <Button 
+                onClick={nextStep} 
+                className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+                disabled={isLoading}
+            >
+                Continue
+                <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
         </div>
     )
 
     const renderStep2 = () => (
         <div className="space-y-6">
             <div className="text-center">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Physical Information</h1>
-                <p className="text-gray-600">This information helps us provide personalized health recommendations</p>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Additional Information</h1>
+                <p className="text-gray-600">Help us personalize your experience</p>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Physical Details</CardTitle>
-                    <p className="text-sm text-gray-600">All fields are optional</p>
+                    <CardTitle>Health Metrics & Location</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col">
                             <label
                                 htmlFor="height"
@@ -450,7 +563,7 @@ export default function OnboardingForm() {
                             <label
                                 htmlFor="state"
                                 className="font-medium text-gray-700 ml-1">
-                                State/Territory
+                                State/Territory<span className="text-red-500">*</span>
                             </label>
                             <div className="relative mt-1">
                                 <Input
@@ -466,7 +579,7 @@ export default function OnboardingForm() {
                             <label
                                 htmlFor="postcode"
                                 className="font-medium text-gray-700 ml-1">
-                                Postcode
+                                Postcode<span className="text-red-500">*</span>
                             </label>
                             <div className="relative mt-1">
                                 <Input
