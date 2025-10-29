@@ -20,4 +20,4 @@ cd app
 ## Deployed Frontend Instance 
 In addition to the local instances an online vercel deployement of the frontend is available from the following link
 
-https://previe-ten.vercel.app/
+[Live Demo](https://previe-ten.vercel.app/)
