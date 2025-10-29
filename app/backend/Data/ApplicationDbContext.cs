@@ -3,8 +3,9 @@ using IoTM.Models;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using IoTM.Models.HealthSegments;
 
-namespace IoTM.Data 
+namespace IoTM.Data
 {
     public class ApplicationDbContext : DbContext
     {
@@ -25,8 +26,11 @@ namespace IoTM.Data
         public DbSet<ScreeningGuideline> ScreeningGuidelines { get; set; }
         public DbSet<UserScreening> UserScreenings { get; set; }
         public DbSet<HealthAlert> HealthAlerts { get; set; }
-        public DbSet<NewsArticle> NewsArticles { get; set; }
         public DbSet<HealthSegmentBPM> HealthSegmentBPMs { get; set; }
+        public DbSet<HealthSegmentSpO2> HealthSegmentSpO2s { get; set; }
+        public DbSet<HealthSegmentBloodPressure> HealthSegmentBloodPressures { get; set; }
+        public DbSet<HealthSegmentSleep> HealthSegmentSleeps { get; set; }
+        public DbSet<HealthSegmentSummary> HealthSegmentSummarys { get; set; }
         public DbSet<LifestyleFactor> LifestyleFactors { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -54,7 +58,6 @@ namespace IoTM.Data
             modelBuilder.Entity<UserScreening>().Property(s => s.Status).HasConversion<string>();
             modelBuilder.Entity<HealthAlert>().Property(a => a.AlertType).HasConversion<string>();
             modelBuilder.Entity<HealthAlert>().Property(a => a.Severity).HasConversion<string>();
-            modelBuilder.Entity<NewsArticle>().Property(n => n.Category).HasConversion<string>();
 
             // Configure CriteriaGroup typed properties to be stored as JSON text
             var jsonOptions = new JsonSerializerOptions
@@ -83,6 +86,68 @@ namespace IoTM.Data
                 .Property(g => g.ConditionsExcluded)
                 .HasConversion(criteriaConverter)
                 .Metadata.SetValueComparer(criteriaComparer);
+
+            // Configure User entity and relationships
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(e => e.UserId);
+                entity.Property(e => e.UserId).ValueGeneratedNever(); // Supabase generates the GUID
+                
+                // Configure relationships with cascade delete for profile-related data
+                entity.HasMany(u => u.MedicalConditions)
+                    .WithOne(mc => mc.User)
+                    .HasForeignKey(mc => mc.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(u => u.FamilyHistories)
+                    .WithOne(fh => fh.User)
+                    .HasForeignKey(fh => fh.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(u => u.Medications)
+                    .WithOne(m => m.User)
+                    .HasForeignKey(m => m.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(u => u.Allergies)
+                    .WithOne(a => a.User)
+                    .HasForeignKey(a => a.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(u => u.ConnectedDevices)
+                    .WithOne(cd => cd.User)
+                    .HasForeignKey(cd => cd.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(u => u.HealthMetrics)
+                    .WithOne(hm => hm.User)
+                    .HasForeignKey(hm => hm.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(u => u.UserScreenings)
+                    .WithOne(us => us.User)
+                    .HasForeignKey(us => us.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(u => u.HealthAlerts)
+                    .WithOne(ha => ha.User)
+                    .HasForeignKey(ha => ha.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Configure MedicalCondition entity
+            modelBuilder.Entity<MedicalCondition>(entity =>
+            {
+                entity.HasKey(e => e.ConditionId);
+                entity.HasIndex(e => e.UserId); // Add index for better query performance
+            });
+
+            // Configure FamilyHistory entity
+            modelBuilder.Entity<FamilyHistory>(entity =>
+            {
+                entity.HasKey(e => e.HistoryId);
+                entity.HasIndex(e => e.UserId); // Add index for better query performance
+            });
         }
     }
 }

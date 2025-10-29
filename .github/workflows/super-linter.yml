@@ -71,7 +71,7 @@ jobs:
 
       # FRONTEND
       - name: Install root dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
         working-directory: app/frontend
 
       - name: Build frontend
