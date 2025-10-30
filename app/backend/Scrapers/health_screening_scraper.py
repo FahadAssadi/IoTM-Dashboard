@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import re
 from urllib.parse import urljoin
 import json
+from datetime import date
 
 OVERRIDES_PATH = os.getenv("SCREENING_OVERRIDES_PATH", "app/backend/Scrapers/overrides.json")
 
@@ -73,14 +74,27 @@ def program_key(program: dict) -> str:
 
 def deep_merge(base: dict, override: dict) -> dict:
     """
-    Deep-merge override into base. Lists are replaced by default.
+    Deep-merge override into base (override always wins).
+    - Case-insensitive key matching (maps to base key casing when present).
+    - If both sides are dicts -> merge recursively.
+    - Otherwise (None, scalar, list, or mismatched types) -> replace with override.
     """
-    for k, v in override.items():
-        if isinstance(v, dict) and isinstance(base.get(k), dict):
-            base[k] = deep_merge(base[k], v)
+    # Keys that can contain JSON strings we want to parse into objects
+    json_payload_keys = {"conditionsrequired", "conditionsexcluded", "criteriajson"}
+
+    # Map base keys (lowercased) to their original casing for case-insensitive replace
+    base_key_map = {k.lower(): k for k in base.keys()}
+
+    for ok, ov in override.items():
+        # Normalize override key to match base casing if present
+        bk = base_key_map.get(ok.lower(), ok)
+
+        # If both are dicts, recurse; otherwise, override
+        if isinstance(ov, dict) and isinstance(base.get(bk), dict):
+            base[bk] = deep_merge(base[bk], ov)
         else:
-            # Replace lists/scalars entirely
-            base[k] = v
+            base[bk] = ov
+
     return base
 
 def normalize_pregnancy(value: str) -> str:
@@ -199,19 +213,18 @@ def extract_screening_info(program, overrides=None):
             if default_frequency and "year" in default_frequency.lower()
             else int(re.search(r"\d+", default_frequency).group())
             if default_frequency and "month" in default_frequency.lower()
-            else None
+            else 0 # TODO: change this to none when default frequency is nullable
         ),
         "Category": "screening",
         "MinAge": eligibility.get("age", {}).get("min"),
         "MaxAge": eligibility.get("age", {}).get("max"),
         "SexApplicable": eligibility.get("gender", ["both"])[0] if "gender" in eligibility else "both",
         "PregnancyApplicable": normalize_pregnancy(pregnancy_applicable),
-        "ConditionsRequired": None,
-        "ConditionsExcluded": None,
-        "RiskFactors": None,
+        "ConditionsRequired": None, # TODO: Extract ConditionsRequired
+        "ConditionsExcluded": None, # TODO: Extract ConditionsExcluded
+        "RiskFactors": None, # TODO: Extract RiskFactors
         "Description": description,
-        "CountrySpecific": "AUS",
-        "LastUpdated": "2025-08-25",
+        "LastUpdated": date.today().isoformat(),
         "Cost": cost,
         "Delivery": delivery,
         "Link": main_url,
@@ -238,7 +251,7 @@ def extract_screening_info(program, overrides=None):
         ]
     }
 
-    # Apply overrides if provided
+    # Apply overrides last — override always wins
     if overrides:
         key = program_key(program)
         ov = overrides.get(key)
@@ -264,7 +277,6 @@ if __name__ == "__main__":
     for program in programs:
         data = extract_screening_info(program, overrides=overrides)
         all_data.append(data)
-        print(f"Scraped: {data['Name']}\n", json.dumps(data, indent=4, ensure_ascii=False), "\n")
 
     output_path = "app/backend/Scrapers/health-screenings.json"
     with open(output_path, "w", encoding="utf-8") as f:

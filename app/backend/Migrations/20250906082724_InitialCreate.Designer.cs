@@ -38,7 +38,8 @@ namespace IoTM.Migrations
 
                     b.Property<string>("AllergyType")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
