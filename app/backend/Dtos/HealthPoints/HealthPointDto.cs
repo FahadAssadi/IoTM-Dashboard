@@ -1,13 +1,10 @@
 using System.Text.Json.Serialization;
 
-namespace IoTM.Config
+namespace IoTM.Dtos.HealthPoints
 {
-    public class PointDto
+    public abstract class HealthPointDto
     {
         [JsonPropertyName("time")]
         public DateTime Time { get; set; }
-
-        [JsonPropertyName("bpm")]
-        public int Bpm { get; set; }
     }
 }

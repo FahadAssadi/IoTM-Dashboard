@@ -29,6 +29,10 @@ but in order to access login and signup functionality create a .env file in the 
 NEXT_PUBLIC_SUPABASE_URL=https://vetwwtmxcdiotjxhdeza.supabase.co/
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZldHd3dG14Y2Rpb3RqeGhkZXphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4NTczMjIsImV4cCI6MjA2OTQzMzMyMn0.0FvdBUM6K3rMWtT-b-4xz-w1ILsbHxXuyY9GGq7LoyA
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5225
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+# NEWS API KEY
+NEXT_PUBLIC_NEWS_API_KEY=
+GEMINI_API_KEY=
 ````
 
 ## Learn More
@@ -40,8 +44,8 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deployment on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+In addition to the local instances an online vercel deployement of the frontend is available from the following link
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[Live Demo](https://previe-ten.vercel.app/)
