@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace IoTM.Dtos.HealthData
+namespace IoTM.Dtos.HealthConnect
 {
     public class RangeDto
 {

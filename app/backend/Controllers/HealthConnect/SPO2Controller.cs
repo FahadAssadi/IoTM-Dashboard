@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using IoTM.Data;
 using IoTM.Services.HealthConnect;
 using IoTM.Dtos.HealthPoints;
-using IoTM.Dtos.HealthData;
+using IoTM.Dtos.HealthConnect;
 
 namespace IoTM.Controllers.HealthConnect
 {
