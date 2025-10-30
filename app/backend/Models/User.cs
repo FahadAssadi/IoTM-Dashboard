@@ -29,6 +29,20 @@ namespace IoTM.Models
 
         public Sex? Sex { get; set; }
 
+        // Onboarding fields
+        public int? Height { get; set; } // in cm
+        public decimal? Weight { get; set; } // in kg
+        
+        [StringLength(50)]
+        public string? State { get; set; }
+
+        public bool? IsOnboarded { get; set; }
+
+        public DateTime? OnboardingTime { get; set; }
+        
+        [StringLength(10)]
+        public string? Postcode { get; set; }
+
         [StringLength(20)]
         public string? PhoneNumber { get; set; }
 
@@ -37,12 +51,14 @@ namespace IoTM.Models
 
         [StringLength(50)]
         public string? Timezone { get; set; } = "Australia/Sydney";
+        public string? AvatarUrl { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation properties for relationships
         public virtual UserMedicalProfile? MedicalProfile { get; set; }
+        
         public virtual ICollection<MedicalCondition> MedicalConditions { get; set; } = new List<MedicalCondition>();
         public virtual ICollection<FamilyHistory> FamilyHistories { get; set; } = new List<FamilyHistory>();
         public virtual ICollection<Medication> Medications { get; set; } = new List<Medication>();
@@ -51,6 +67,7 @@ namespace IoTM.Models
         public virtual ICollection<HealthMetric> HealthMetrics { get; set; } = new List<HealthMetric>();
         public virtual ICollection<UserScreening> UserScreenings { get; set; } = new List<UserScreening>();
         public virtual ICollection<HealthAlert> HealthAlerts { get; set; } = new List<HealthAlert>();
+        public bool HasCompletedOnboarding { get; set; } = false;
 
         public int? Age()
         {

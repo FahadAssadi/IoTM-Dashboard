@@ -12,6 +12,7 @@
     "ci-check": "rimraf node_modules && npm ci && npm run build && npm run test:coverage"
   },
   "dependencies": {
+    "@radix-ui/react-avatar": "^1.1.10",
     "@google/genai": "^1.25.0",
     "@radix-ui/react-checkbox": "^1.3.2",
     "@radix-ui/react-label": "^2.1.7",
@@ -22,6 +23,7 @@
     "@radix-ui/react-tabs": "^1.1.9",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.53.0",
+    "@visx/visx": "^3.12.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.501.0",
@@ -62,5 +64,23 @@
     "rimraf": "^6.0.1",
     "tailwindcss": "^4.1.4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "@visx/axis": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+    },
+    "@visx/group": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+    },
+    "@visx/scale": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+    },
+    "@visx/tooltip": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+    }
   }
 }

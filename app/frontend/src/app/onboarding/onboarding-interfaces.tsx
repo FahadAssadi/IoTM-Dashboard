@@ -18,7 +18,7 @@ export interface OnboardingFormType {
     height: number;
     weight: number;
     state: string | undefined;
-    postcode: number | undefined | string; // Required format is currently unclear
+    postcode: string; // Required format is currently unclear
     healthConditions: HealthCondition[];
     lifestyleFactors: LifestyleFactor[];
 }

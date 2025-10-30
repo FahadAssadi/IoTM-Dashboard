@@ -1,127 +1,61 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
-import { LineChart } from "@/components/ui/chart"
+"use client"
 
-export default function HealthInsightsHeartTab () {
+import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
+import { BloodPressureDataPoint } from "./blood-pressure-components/load-blood-pressure-data"
+import { BloodPressureChart } from "./blood-pressure-components/blood-pressure-chart";
+import { HeartRateVariabilityChart } from "./blood-pressure-components/heart-rate-variability-chart";
+import { BloodPressureTimeline } from "./blood-pressure-components/blood-pressure-timeline";
+
+export default function HealthInsightsHeartTab ({ data = [] } : { data? : BloodPressureDataPoint[] }) {
+
+	const chartData: BloodPressureDataPoint[] = data.map(d => ({
+        start: new Date(d.start).getTime(),
+        end: new Date(d.end).getTime(),
+        category: d.category,
+		averageSystolic: d.averageSystolic,
+		averageDiastolic: d.averageDiastolic,
+		diastolicStandardDeviation: d.diastolicStandardDeviation,
+		systolicStandardDeviation: d.systolicStandardDeviation,
+        points: d.points,
+        durationHours: d.durationHours
+    }));
+
     return (
         <div className="grid gap-6 md:grid-cols-2">
             <Card className="md:col-span-2">
                 <CardHeader>
-                    <CardTitle>Heart Rate Detailed Analysis</CardTitle>
-                    <CardDescription>Comprehensive view of your heart rate patterns</CardDescription>
+                    <CardTitle>Blood Pressure Detailed Analysis</CardTitle>
+                    <CardDescription>Comprehensive view of your blood pressure patterns</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[400px]">
-                    <HeartRateDetailedChart />
+                <CardContent className="md:col-span-2">
+                  	<BloodPressureChart data={data}/>
                 </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Resting Heart Rate</CardTitle>
-                <CardDescription>30-day trend</CardDescription>
-              </CardHeader>
-              <CardContent className="h-[300px]">
-                <RestingHeartRateChart />
-              </CardContent>
+				<CardHeader>
+					<CardTitle>Blood Pressure Category Timeline</CardTitle>
+					<CardDescription>14-day trend</CardDescription>
+				</CardHeader>
+				<CardContent className="md:col-span-1">
+					<BloodPressureTimeline data={chartData} timeframe={14}/>
+				</CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Heart Rate Variability</CardTitle>
-                <CardDescription>Measure of heart health</CardDescription>
-              </CardHeader>
-              <CardContent className="h-[300px]">
-                <HeartRateVariabilityChart />
-              </CardContent>
+				<CardHeader>
+					<CardTitle>Blood Pressure Variability</CardTitle>
+					<CardDescription>Measure of heart health</CardDescription>
+				</CardHeader>
+				<CardContent className="md:col-span-1">
+					<HeartRateVariabilityChart data={data}/>
+				</CardContent>
             </Card>
           </div>
-
     )
 }
 
-function HeartRateDetailedChart() {
-  // More detailed heart rate data
-  const data = [
-    { time: "12 AM", resting: 62, active: null },
-    { time: "1 AM", resting: 60, active: null },
-    { time: "2 AM", resting: 58, active: null },
-    { time: "3 AM", resting: 58, active: null },
-    { time: "4 AM", resting: 60, active: null },
-    { time: "5 AM", resting: 62, active: null },
-    { time: "6 AM", resting: 65, active: null },
-    { time: "7 AM", resting: 68, active: null },
-    { time: "8 AM", resting: null, active: 110 },
-    { time: "9 AM", resting: null, active: 115 },
-    { time: "10 AM", resting: 75, active: null },
-    { time: "11 AM", resting: 72, active: null },
-    { time: "12 PM", resting: 70, active: null },
-    { time: "1 PM", resting: 68, active: null },
-    { time: "2 PM", resting: 70, active: null },
-    { time: "3 PM", resting: null, active: 105 },
-    { time: "4 PM", resting: null, active: 112 },
-    { time: "5 PM", resting: 78, active: null },
-    { time: "6 PM", resting: 72, active: null },
-    { time: "7 PM", resting: 70, active: null },
-    { time: "8 PM", resting: 68, active: null },
-    { time: "9 PM", resting: 65, active: null },
-    { time: "10 PM", resting: 64, active: null },
-    { time: "11 PM", resting: 62, active: null },
-  ]
 
-  return (
-    <LineChart
-      data={data}
-      categories={["resting", "active"]}
-      index="time"
-      colors={["#94a3b8", "#e11d48"]}
-      valueFormatter={(value) => (value ? `${value} bpm` : "N/A")}
-      showAnimation
-      showLegend
-      className="h-[400px]"
-    />
-  )
-}
-
-function RestingHeartRateChart() {
-  // 30-day resting heart rate trend
-  const data = Array.from({ length: 30 }, (_, i) => ({
-    day: `Day ${i + 1}`,
-    value: Math.floor(Math.random() * 10) + 60,
-  }))
-
-  return (
-    <LineChart
-      data={data}
-      categories={["value"]}
-      index="day"
-      colors={["#e11d48"]}
-      valueFormatter={(value) => `${value} bpm`}
-      showAnimation
-      showLegend={false}
-      className="h-[300px]"
-    />
-  )
-}
-
-function HeartRateVariabilityChart() {
-  // Heart rate variability data
-  const data = Array.from({ length: 30 }, (_, i) => ({
-    day: `Day ${i + 1}`,
-    value: Math.floor(Math.random() * 20) + 40,
-  }))
-
-  return (
-    <LineChart
-      data={data}
-      categories={["value"]}
-      index="day"
-      colors={["#8b5cf6"]}
-      valueFormatter={(value) => `${value} ms`}
-      showAnimation
-      showLegend={false}
-      className="h-[300px]"
-    />
-  )
-}
 
 // function HeartRateChart() {
 //   const data = [
