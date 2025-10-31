@@ -1,7 +1,7 @@
 {
    "firstName": "Jane",
    "lastName": "Doe",
-   "email": "jane.doe@example.com",
+   "email": "",
    "dob": "",
    "sex": "female",
    "height": 165,
