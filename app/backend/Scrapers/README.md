@@ -42,7 +42,7 @@ python app/backend/Scrapers/health_screening_scraper.py
 
 On success, you should see a message similar to:
 
-```
+```text
 Saved N screenings to app/backend/Scrapers/health-screenings.json
 ```
 
