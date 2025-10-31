@@ -8,6 +8,11 @@ namespace IoTM.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    /// <summary>
+    /// Endpoints for managing a user's health screenings, including listing, scheduling,
+    /// editing, hiding, and archiving. Each endpoint accepts an optional <c>userId</c>
+    /// query parameter. When omitted, a mock user ID is used for development.
+    /// </summary>
     public class UserScreeningsController : ControllerBase
     {
         private readonly IUserScreeningsService _userScreeningsService;
@@ -18,6 +23,12 @@ namespace IoTM.Controllers
             _userScreeningsService = userScreeningsService;
         }
 
+        /// <summary>
+        /// Resolves the effective user ID by using the provided value when available,
+        /// otherwise falling back to a fixed mock user for development.
+        /// </summary>
+        /// <param name="userId">Optional user ID from the query string.</param>
+        /// <returns>The effective user ID to use for operations.</returns>
         private static Guid EffectiveUserId(Guid? userId)
         {
             return userId ?? MockUserId;
@@ -29,6 +40,7 @@ namespace IoTM.Controllers
         /// <returns></returns>
         //[Authorize]
         [HttpGet]
+        [ProducesResponseType(typeof(PagedResult<UserScreeningDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<PagedResult<UserScreeningDto>>> GetUserScreenings([FromQuery] int page = 1, [FromQuery] int pageSize = 4, [FromQuery] Guid? userId = null)
         {
             var (items, total) = await _userScreeningsService.GetVisibleScreeningsForUserPagedAsync(EffectiveUserId(userId), page, pageSize);
@@ -48,7 +60,9 @@ namespace IoTM.Controllers
         // Schedule a screening
         // [Authorize]
         [HttpPost("schedule")]
-        public async Task<IActionResult> ScheduleScreening(Guid guidelineId, DateOnly scheduledDate, [FromQuery] Guid? userId = null)
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> ScheduleScreening([FromQuery] Guid guidelineId, [FromQuery] DateOnly scheduledDate, [FromQuery] Guid? userId = null)
         {
             var scheduled = await _userScreeningsService.ScheduleScreening(EffectiveUserId(userId), guidelineId, scheduledDate);
             if (!scheduled)
@@ -60,8 +74,11 @@ namespace IoTM.Controllers
 
         // Edit a scheduled screening
         //[Authorize]
-        [HttpPut("schedule/{scheduledScreeningId}")]
-        public async Task<IActionResult> EditScheduledScreening(Guid scheduledScreeningId, DateOnly newDate, [FromQuery] Guid? userId = null)
+        [HttpPut("schedule/{scheduledScreeningId:guid}")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> EditScheduledScreening(Guid scheduledScreeningId, [FromQuery] DateOnly newDate, [FromQuery] Guid? userId = null)
         {
             try
             {
@@ -80,7 +97,8 @@ namespace IoTM.Controllers
 
         // Remove a scheduled screening
         //[Authorize]
-        [HttpDelete("schedule/{scheduledScreeningId}")]
+        [HttpDelete("schedule/{scheduledScreeningId:guid}")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public async Task<IActionResult> RemoveScheduledScreening(Guid scheduledScreeningId, [FromQuery] Guid? userId = null)
         {
             await _userScreeningsService.CancelScheduledScreening(scheduledScreeningId);
@@ -94,7 +112,8 @@ namespace IoTM.Controllers
         /// </summary>
         //[Authorize]
         [HttpPost("new-screenings")]
-        public async Task<ActionResult<IEnumerable<UserScreening>>> GetNewScreeningsForUser([FromQuery] Guid? userId = null)
+        [ProducesResponseType(typeof(IEnumerable<UserScreeningDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<UserScreeningDto>>> GetNewScreeningsForUser([FromQuery] Guid? userId = null)
         {
             var newScreenings = await _userScreeningsService.GetNewScreeningsForUserAsync(EffectiveUserId(userId));
             var dto = _userScreeningsService.MapToDto(newScreenings);
@@ -103,6 +122,7 @@ namespace IoTM.Controllers
 
         // Get all scheduled screenings for the user
         [HttpGet("scheduled")]
+        [ProducesResponseType(typeof(IEnumerable<ScheduledScreeningDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<ScheduledScreeningDto>>> GetScheduledScreenings([FromQuery] Guid? userId = null)
         {
             var scheduledScreenings = await _userScreeningsService.GetScheduledScreenings(EffectiveUserId(userId));
@@ -111,20 +131,23 @@ namespace IoTM.Controllers
 
         // Archive a scheduled screening
         [HttpPut("schedule/{scheduledScreeningId:guid}/archive")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public async Task<IActionResult> ArchiveScheduledScreening(Guid scheduledScreeningId, [FromQuery] Guid? userId = null)
         {
             await _userScreeningsService.ArchiveScheduledScreening(scheduledScreeningId);
             return Ok("Scheduled screening archived.");
         }
 
-        [HttpPut("hide/{guidelineId}")]
+        [HttpPut("hide/{guidelineId:guid}")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public async Task<IActionResult> HideScreening(Guid guidelineId, [FromQuery] Guid? userId = null)
         {
             await _userScreeningsService.HideScreening(EffectiveUserId(userId), guidelineId);
             return Ok("Screening hidden.");
         }
 
-        [HttpPut("unhide/{guidelineId}")]
+        [HttpPut("unhide/{guidelineId:guid}")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public async Task<IActionResult> UnhideScreening(Guid guidelineId, [FromQuery] Guid? userId = null)
         {
             await _userScreeningsService.UnhideScreening(EffectiveUserId(userId), guidelineId);
@@ -132,6 +155,7 @@ namespace IoTM.Controllers
         }
 
         [HttpGet("hidden")]
+        [ProducesResponseType(typeof(IEnumerable<UserScreeningDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<UserScreeningDto>>> GetHiddenScreenings([FromQuery] Guid? userId = null)
         {
             var screenings = await _userScreeningsService.GetHiddenScreeningsForUserAsync(EffectiveUserId(userId));
@@ -140,6 +164,7 @@ namespace IoTM.Controllers
         }
 
         [HttpGet("archived")]
+        [ProducesResponseType(typeof(Dictionary<Guid, List<ScheduledScreeningDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<Dictionary<Guid, List<ScheduledScreeningDto>>>> GetArchivedScreenings([FromQuery] Guid? userId = null)
         {
             var archived = await _userScreeningsService.GetArchivedScreeningsForUserAsync(EffectiveUserId(userId));
