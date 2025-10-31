@@ -15,6 +15,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         // Set required env var so Program.cs doesn't throw
         builder.UseEnvironment("Development");
         Environment.SetEnvironmentVariable("SUPABASE_DB_CONNECTION", "Host=localhost;Database=test;Username=test;Password=test");
+    Environment.SetEnvironmentVariable("SUPABASE_URL", "http://localhost");
+    Environment.SetEnvironmentVariable("SUPABASE_JWT_SECRET", "test_secret_for_integration_tests");
 
         builder.ConfigureServices(services =>
         {

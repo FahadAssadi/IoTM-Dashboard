@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import HealthScreeningTimeline, { getTimelineStatus, TimelineItem } from "./health-screenings-timeline"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { supabase } from "@/lib/supabase/client"
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -78,6 +79,7 @@ export default function HealthScreenings() {
   const [allScreenings, setAllScreenings] = useState<ScreeningItem[]>([])
   const [visibleScreenings, setVisibleScreenings] = useState<ScreeningItem[]>([]);
   const [feedbackMessage, setFeedbackMessage] = useState<string>("") // feedback message for fetching new screenings
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   // Pagination state
   const [page, setPage] = React.useState(1);
@@ -87,10 +89,29 @@ export default function HealthScreenings() {
   // Compute if there is a next page (based on totalCount from server)
   const hasNext = page * pageSize < totalCount;
 
+  // Helper: append userId to URL if available; backend will fall back to mock if not provided
+  const withUser = React.useCallback((url: string) => (
+    currentUserId ? `${url}${url.includes("?") ? "&" : "?"}userId=${encodeURIComponent(currentUserId)}` : url
+  ), [currentUserId])
+
+  // Load current user from Supabase
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (mounted) setCurrentUserId(user?.id ?? null);
+      } catch {
+        if (mounted) setCurrentUserId(null);
+      }
+    })();
+    return () => { mounted = false };
+  }, [])
+
   // Fetch timeline items from backend
-  const fetchTimelineItems = async () => {
+  const fetchTimelineItems = React.useCallback(async () => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/scheduled`);
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/scheduled`));
       const data = await res.json();
       // Map backend data to TimelineItem[]
       setTimelineItems(
@@ -110,16 +131,16 @@ export default function HealthScreenings() {
     } catch {
       setTimelineItems([]);
     }
-  };
+  }, [withUser]);
 
   useEffect(() => {
     fetchTimelineItems();
-  }, []);
+  }, [fetchTimelineItems]);
 
   // Fetch visible (non-hidden) screenings with backend pagination
   const fetchAllScreenings = React.useCallback(async (): Promise<number> => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/?page=${page}&pageSize=${pageSize}`);
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/?page=${page}&pageSize=${pageSize}`));
       const payload = await res.json(); // { items, totalCount, page, pageSize }
       const data = Array.isArray(payload.items) ? payload.items : [];
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -163,7 +184,7 @@ export default function HealthScreenings() {
       setTotalCount(0);
       return 0;
     }
-  }, [page]);
+  }, [page, withUser]);
 
   useEffect(() => {
     fetchAllScreenings();
@@ -172,7 +193,7 @@ export default function HealthScreenings() {
   // Fetch hidden screenings only when showHidden is true
   const fetchHiddenScreenings = React.useCallback(async () => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/hidden`);
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/hidden`));
       const data = await res.json();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const screenings = (Array.isArray(data) ? data : []).map((item: any) => ({
@@ -197,7 +218,7 @@ export default function HealthScreenings() {
     } catch {
       setHiddenScreenings([]);
     }
-  }, []);
+  }, [withUser]);
 
   // Drive fetches from showHidden/page
   useEffect(() => {
@@ -230,7 +251,7 @@ export default function HealthScreenings() {
   // Handle removing a timeline item
   const handleRemoveTimelineItem = async (id: string) => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/schedule/${id}`, {
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/schedule/${id}`), {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -250,7 +271,7 @@ export default function HealthScreenings() {
   // Archive a timeline item (scheduled screening)
   const handleArchiveTimelineItem = async (scheduledScreeningId: string) => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/schedule/${scheduledScreeningId}/archive`, {
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/schedule/${scheduledScreeningId}/archive`), {
         method: "PUT"
       });
       if (!res.ok) throw new Error();
@@ -281,7 +302,7 @@ export default function HealthScreenings() {
       // Editing an existing timeline item
       try {
         const res = await fetch(
-          `${apiBaseUrl}/api/UserScreenings/schedule/${datePickerOpen.timelineItemId}?newDate=${selectedDate}`,
+          withUser(`${apiBaseUrl}/api/UserScreenings/schedule/${datePickerOpen.timelineItemId}?newDate=${selectedDate}`),
           { method: "PUT" }
         );
         if (res.status === 409) {
@@ -307,7 +328,7 @@ export default function HealthScreenings() {
 
       try {
         const res = await fetch(
-          `${apiBaseUrl}/api/UserScreenings/schedule?guidelineId=${screeningId}&scheduledDate=${dueDate}`,
+          withUser(`${apiBaseUrl}/api/UserScreenings/schedule?guidelineId=${screeningId}&scheduledDate=${dueDate}`),
           { method: "POST" }
         );
         if (res.status === 409) {
@@ -335,7 +356,7 @@ export default function HealthScreenings() {
   // Hide a screening
   const handleHideScreening = async (screening: ScreeningItem) => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/hide/${screening.guidelineId}`, { method: "PUT" });
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/hide/${screening.guidelineId}`), { method: "PUT" });
       if (!res.ok) throw new Error();
       await fetchAllScreenings();
       await fetchHiddenScreenings();
@@ -347,7 +368,7 @@ export default function HealthScreenings() {
   // Unhide a screening
   const handleUnhideScreening = async (screening: ScreeningItem) => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/unhide/${screening.guidelineId}`, { method: "PUT" });
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/unhide/${screening.guidelineId}`), { method: "PUT" });
       if (!res.ok) throw new Error();
       await fetchHiddenScreenings();
       await fetchAllScreenings();
@@ -363,7 +384,7 @@ export default function HealthScreenings() {
       // Unhide each hidden screening via backend
       await Promise.all(
         hiddenScreenings.map(screening =>
-          fetch(`${apiBaseUrl}/api/UserScreenings/unhide/${screening.guidelineId}`, { method: "PUT" })
+          fetch(withUser(`${apiBaseUrl}/api/UserScreenings/unhide/${screening.guidelineId}`), { method: "PUT" })
         )
       );
       await fetchAllScreenings();
@@ -390,7 +411,7 @@ export default function HealthScreenings() {
 
   const fetchArchivedScreenings = React.useCallback(async () => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/archived`);
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/archived`));
       const data = await res.json();
       const items: TimelineItem[] = [];
       Object.values(data).forEach((value: unknown) => {
@@ -411,7 +432,7 @@ export default function HealthScreenings() {
     } catch {
       setArchivedTimelineItems([]);
     }
-  }, []);
+  }, [withUser]);
 
   useEffect(() => {
     if (showArchived) {
@@ -422,7 +443,7 @@ export default function HealthScreenings() {
   // Handle delete of an archived screening
   const handleDeleteArchivedScreening = async (scheduledScreeningId: string) => {
     await fetch(
-      `${apiBaseUrl}/api/UserScreenings/schedule/${scheduledScreeningId}`,
+      withUser(`${apiBaseUrl}/api/UserScreenings/schedule/${scheduledScreeningId}`),
       { method: "DELETE" }
     );
     await fetchArchivedScreenings();
@@ -452,7 +473,7 @@ export default function HealthScreenings() {
                     try {
                       const prevTotal = totalCount;
 
-                      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/new-screenings`, { method: "POST" });
+                      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/new-screenings`), { method: "POST" });
                       const data = await res.json();
                       const addedCount = Array.isArray(data) ? data.length : 0;
 

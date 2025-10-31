@@ -11,10 +11,16 @@ namespace IoTM.Controllers
     public class UserScreeningsController : ControllerBase
     {
         private readonly IUserScreeningsService _userScreeningsService;
+        private static readonly Guid MockUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
         public UserScreeningsController(IUserScreeningsService userScreeningsService)
         {
             _userScreeningsService = userScreeningsService;
+        }
+
+        private static Guid EffectiveUserId(Guid? userId)
+        {
+            return userId ?? MockUserId;
         }
 
         /// <summary>
@@ -23,10 +29,9 @@ namespace IoTM.Controllers
         /// <returns></returns>
         //[Authorize]
         [HttpGet]
-        public async Task<ActionResult<PagedResult<UserScreeningDto>>> GetUserScreenings([FromQuery] int page = 1, [FromQuery] int pageSize = 4)
+        public async Task<ActionResult<PagedResult<UserScreeningDto>>> GetUserScreenings([FromQuery] int page = 1, [FromQuery] int pageSize = 4, [FromQuery] Guid? userId = null)
         {
-            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111"); // TODO: replace with auth user
-            var (items, total) = await _userScreeningsService.GetVisibleScreeningsForUserPagedAsync(userId, page, pageSize);
+            var (items, total) = await _userScreeningsService.GetVisibleScreeningsForUserPagedAsync(EffectiveUserId(userId), page, pageSize);
             var itemDtos = _userScreeningsService.MapToDto(items);
 
             var result = new PagedResult<UserScreeningDto>
@@ -43,11 +48,9 @@ namespace IoTM.Controllers
         // Schedule a screening
         // [Authorize]
         [HttpPost("schedule")]
-        public async Task<IActionResult> ScheduleScreening(Guid guidelineId, DateOnly scheduledDate)
+        public async Task<IActionResult> ScheduleScreening(Guid guidelineId, DateOnly scheduledDate, [FromQuery] Guid? userId = null)
         {
-            // TODO: Replace with authenticated user ID when available
-            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-            var scheduled = await _userScreeningsService.ScheduleScreening(userId, guidelineId, scheduledDate);
+            var scheduled = await _userScreeningsService.ScheduleScreening(EffectiveUserId(userId), guidelineId, scheduledDate);
             if (!scheduled)
             {
                 return Conflict("You’ve already scheduled this screening for that date.");
@@ -58,11 +61,8 @@ namespace IoTM.Controllers
         // Edit a scheduled screening
         //[Authorize]
         [HttpPut("schedule/{scheduledScreeningId}")]
-        public async Task<IActionResult> EditScheduledScreening(Guid scheduledScreeningId, DateOnly newDate)
+        public async Task<IActionResult> EditScheduledScreening(Guid scheduledScreeningId, DateOnly newDate, [FromQuery] Guid? userId = null)
         {
-            // TODO: Replace with authenticated user ID when available
-            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-            await _userScreeningsService.EditScheduledScreening(scheduledScreeningId, newDate);
             try
             {
                 var updated = await _userScreeningsService.EditScheduledScreening(scheduledScreeningId, newDate);
@@ -81,11 +81,8 @@ namespace IoTM.Controllers
         // Remove a scheduled screening
         //[Authorize]
         [HttpDelete("schedule/{scheduledScreeningId}")]
-        public async Task<IActionResult> RemoveScheduledScreening(Guid scheduledScreeningId)
+        public async Task<IActionResult> RemoveScheduledScreening(Guid scheduledScreeningId, [FromQuery] Guid? userId = null)
         {
-            // TODO: Replace with authenticated user ID when available
-            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-
             await _userScreeningsService.CancelScheduledScreening(scheduledScreeningId);
             return Ok("Scheduled screening removed.");
         }
@@ -97,63 +94,55 @@ namespace IoTM.Controllers
         /// </summary>
         //[Authorize]
         [HttpPost("new-screenings")]
-        public async Task<ActionResult<IEnumerable<UserScreening>>> GetNewScreeningsForUser()
+        public async Task<ActionResult<IEnumerable<UserScreening>>> GetNewScreeningsForUser([FromQuery] Guid? userId = null)
         {
-            // TODO: Replace with authenticated user ID when available
-            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-
-            var newScreenings = await _userScreeningsService.GetNewScreeningsForUserAsync(userId);
+            var newScreenings = await _userScreeningsService.GetNewScreeningsForUserAsync(EffectiveUserId(userId));
             var dto = _userScreeningsService.MapToDto(newScreenings);
             return Ok(dto);
         }
 
         // Get all scheduled screenings for the user
         [HttpGet("scheduled")]
-        public async Task<ActionResult<IEnumerable<ScheduledScreeningDto>>> GetScheduledScreenings()
+        public async Task<ActionResult<IEnumerable<ScheduledScreeningDto>>> GetScheduledScreenings([FromQuery] Guid? userId = null)
         {
-            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111"); // Replace with authenticated user
-            var scheduledScreenings = await _userScreeningsService.GetScheduledScreenings(userId);
+            var scheduledScreenings = await _userScreeningsService.GetScheduledScreenings(EffectiveUserId(userId));
             return Ok(scheduledScreenings);
         }
 
         // Archive a scheduled screening
         [HttpPut("schedule/{scheduledScreeningId:guid}/archive")]
-        public async Task<IActionResult> ArchiveScheduledScreening(Guid scheduledScreeningId)
+        public async Task<IActionResult> ArchiveScheduledScreening(Guid scheduledScreeningId, [FromQuery] Guid? userId = null)
         {
             await _userScreeningsService.ArchiveScheduledScreening(scheduledScreeningId);
             return Ok("Scheduled screening archived.");
         }
 
         [HttpPut("hide/{guidelineId}")]
-        public async Task<IActionResult> HideScreening(Guid guidelineId)
+        public async Task<IActionResult> HideScreening(Guid guidelineId, [FromQuery] Guid? userId = null)
         {
-            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-            await _userScreeningsService.HideScreening(userId, guidelineId);
+            await _userScreeningsService.HideScreening(EffectiveUserId(userId), guidelineId);
             return Ok("Screening hidden.");
         }
 
         [HttpPut("unhide/{guidelineId}")]
-        public async Task<IActionResult> UnhideScreening(Guid guidelineId)
+        public async Task<IActionResult> UnhideScreening(Guid guidelineId, [FromQuery] Guid? userId = null)
         {
-            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-            await _userScreeningsService.UnhideScreening(userId, guidelineId);
+            await _userScreeningsService.UnhideScreening(EffectiveUserId(userId), guidelineId);
             return Ok("Screening unhidden.");
         }
 
         [HttpGet("hidden")]
-        public async Task<ActionResult<IEnumerable<UserScreeningDto>>> GetHiddenScreenings()
+        public async Task<ActionResult<IEnumerable<UserScreeningDto>>> GetHiddenScreenings([FromQuery] Guid? userId = null)
         {
-            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111"); // Replace with authenticated user
-            var screenings = await _userScreeningsService.GetHiddenScreeningsForUserAsync(userId);
+            var screenings = await _userScreeningsService.GetHiddenScreeningsForUserAsync(EffectiveUserId(userId));
             var dto = _userScreeningsService.MapToDto(screenings);
             return Ok(dto);
         }
 
         [HttpGet("archived")]
-        public async Task<ActionResult<Dictionary<Guid, List<ScheduledScreeningDto>>>> GetArchivedScreenings()
+        public async Task<ActionResult<Dictionary<Guid, List<ScheduledScreeningDto>>>> GetArchivedScreenings([FromQuery] Guid? userId = null)
         {
-            Guid userId = Guid.Parse("11111111-1111-1111-1111-111111111111"); // Replace with authenticated user
-            var archived = await _userScreeningsService.GetArchivedScreeningsForUserAsync(userId);
+            var archived = await _userScreeningsService.GetArchivedScreeningsForUserAsync(EffectiveUserId(userId));
             return Ok(archived);
         }
     }
