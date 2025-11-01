@@ -1,3 +1,20 @@
+// signup-form.tsx
+
+/**
+ * @file Provides the 'signupForm' component - a user registration form
+ * that integrates with Supabase authentication
+ * 
+ * @remarks
+ * This component handles:
+ * - Client-side form validation via `react-hook-form`
+ * - Supabase email/password sign-up
+ * - Displaying field-specific validation and API errors
+ * - Redirects and UI state changes after successful signup
+ *
+ * Used within the authentication tab view to switch between sign-up,
+ * login, and password recovery forms.
+ */
+
 "use client"
 
 import { useState } from "react"

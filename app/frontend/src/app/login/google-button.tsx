@@ -1,3 +1,10 @@
+// google-button.tsx
+
+
+/**
+ * @file Provides the `GoogleButton` component - a user interface
+ * for signing in and registering with a connected google account
+ */
 "use client"
 
 import { Button } from "@/components/ui/button"
