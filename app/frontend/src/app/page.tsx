@@ -13,7 +13,7 @@ import { useEffect, useState } from "react"
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const timelineItems: TimelineItem[] = timelineData as any[] // TODO: connect backend to get real scheduled screening data
 
-const BADGE_MAP: Record<TimelineItem["status"], { bg: string; text: string; border: string; label: string }> = {
+const BADGE_MAP: Record<"upcoming" | "due-soon" | "overdue", { bg: string; text: string; border: string; label: string }> = {
   "upcoming": {
     bg: "bg-teal-100",
     text: "text-teal-700",
@@ -39,7 +39,7 @@ const BADGE_MAP: Record<TimelineItem["status"], { bg: string; text: string; bord
 function HealthScreeningCard({
   item,
 }: { item: TimelineItem }) {
-  const badge = BADGE_MAP[item.status]
+  const badge = BADGE_MAP[item.status as "upcoming" | "due-soon" | "overdue"] ?? BADGE_MAP["upcoming"]
   return (
     <div className="flex items-center gap-4 rounded-lg border border-slate-200 p-4">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
