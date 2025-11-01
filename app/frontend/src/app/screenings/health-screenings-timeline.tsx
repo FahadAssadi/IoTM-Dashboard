@@ -3,11 +3,6 @@ import { Calendar, CalendarClock, Sprout, Pencil, Trash2, Archive, X } from "luc
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import ICalendarLink from "react-icalendar-link"
-
-const ICalendarLinkAny = ICalendarLink as unknown as React.FC<
-  React.PropsWithChildren<{ event: ICalEvent; rawContent?: string; filename?: string }>
->
 
 export interface TimelineItem {
   scheduledScreeningId: string
@@ -18,13 +13,36 @@ export interface TimelineItem {
   status?: "due-soon" | "overdue" | "upcoming"
 }
 
-type ICalEvent = {
+type CalEvent = {
   title: string
   description?: string
   startTime: string
   endTime?: string
   location?: string
   timezone?: string
+}
+
+// Google Calendar helper: format Date to YYYYMMDDTHHMMSSZ
+function formatGoogleDate(date: Date): string {
+  return date
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}Z$/, "Z");
+}
+
+// Build a Google Calendar "Add event" URL (opens Google Calendar UI in a new tab)
+function getGoogleCalendarUrl(event: CalEvent): string {
+  const start = formatGoogleDate(new Date(event.startTime));
+  const end = event.endTime ? formatGoogleDate(new Date(event.endTime)) : start;
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: event.title || "",
+    details: event.description || "",
+    location: event.location || "",
+    dates: `${start}/${end}`,
+    ctz: event.timezone || "UTC",
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
 interface HealthScreeningTimelineProps {
@@ -170,14 +188,14 @@ export default function HealthScreeningTimeline({
 
                     <div className="space-y-4 pl-4 ml-4 border-l border-dashed">
                       {items.map((item) => {
-                        // Prepare event object for react-icalendar-link
+                        // Prepare event object for Google Calendar link
                         const startDate = new Date(item.scheduledDate)
                         const endDate = new Date(item.scheduledDate)
                         endDate.setHours(endDate.getHours() + 1) // 1 hour event by default
 
                         const computedStatus = item.status ?? getTimelineStatus(item.scheduledDate)
 
-                        const event: ICalEvent = {
+                        const event: CalEvent = {
                           title: item.guidelineName,
                           description: "Health screening reminder",
                           startTime: startDate.toISOString(),
@@ -241,9 +259,13 @@ export default function HealthScreeningTimeline({
                                       <Trash2 className="w-4 h-4" />
                                     </Button>
                                   )}
-                                  <ICalendarLinkAny event={event}>
+                                  <a
+                                    href={getGoogleCalendarUrl(event)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
                                     <Button variant="default">Export</Button>
-                                  </ICalendarLinkAny>
+                                  </a>
                                 </div>
                               </div>
                             </div>
