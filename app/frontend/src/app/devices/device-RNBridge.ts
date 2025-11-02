@@ -19,7 +19,7 @@ type RNInMsg =
   | { type: "BASELINE_ERROR"; payload?: { error?: string } }
   | { type: "HC_SYNC_ERROR"; payload?: { error?: string } }
   | { type: "SYNC_SNAPSHOT"; payload: RNSyncSnapshot }
-  | { type: string; payload?: unknown }; 
+  | { type: string; payload?: Record<string, unknown> }; 
 
 declare global {
   interface Window {

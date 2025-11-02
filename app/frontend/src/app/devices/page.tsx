@@ -59,6 +59,13 @@ function formatIso(iso?: string) {
   const dt = new Date(iso);
   return dt.toLocaleString();
 }
+function isRNSyncSnapshot(payload: unknown): payload is RNSyncSnapshot {
+  return (
+    typeof payload === "object" &&
+    payload !== null &&
+    ("lastSync" in payload || "origins" in payload)
+  );
+}
 
 export default function DevicesPage() {
   const isEmbedded = useIsEmbeddedRN();
@@ -86,10 +93,15 @@ export default function DevicesPage() {
         break;
       case "SYNC_SNAPSHOT":
         setSyncing(false);
-        setSnapshot(msg.payload ?? null);
-        setLastSyncMs(msg.payload?.lastSync ?? Date.now());
+        if (isRNSyncSnapshot(msg.payload)) {
+          setSnapshot(msg.payload);
+          setLastSyncMs(msg.payload.lastSync ?? Date.now());
+        } else {
+          // fallback safety
+          setSnapshot(null);
+          setLastSyncMs(Date.now());
+        }
         break;
-      case "BASELINE_ERROR":
       case "HC_SYNC_ERROR":
         alert(`Error: ${msg.payload?.error ?? "Unknown error"}`);
         setLinking(false);
