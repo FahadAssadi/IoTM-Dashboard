@@ -41,7 +41,7 @@ export function HealthNewsPage() {
               {/* Category tabs */}
               <div className="mb-6 overflow-x-auto">
                 <Tabs defaultValue="All" value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <TabsList className="mb-4">
+                  <TabsList className="mb-4 w-max">
                     {categories.map((category) => (
                       <TabsTrigger key={category} value={category}>
                         {category}
@@ -52,7 +52,7 @@ export function HealthNewsPage() {
               </div>
 
               {/* News articles */}
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                 {filteredNews.map((article) => (
                   <Card key={article.id} className="overflow-hidden">
                     <CardHeader className="pb-3">

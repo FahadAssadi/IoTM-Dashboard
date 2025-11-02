@@ -122,7 +122,7 @@ export default function DevicesPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <main className="flex-1 space-y-6 p-8 pt-6">
+      <main className="flex-1 space-y-6 p-4 md:p-8 pt-6">
         <div className="mb-2">
           <h1 className="text-2xl font-bold tracking-tight">Connected Devices</h1>
           <p className="text-muted-foreground">
@@ -189,7 +189,7 @@ export default function DevicesPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[540px] text-sm">
               <thead>
                 <tr className="text-left text-muted-foreground">
                   <th className="pb-2 pr-3">Origin</th>

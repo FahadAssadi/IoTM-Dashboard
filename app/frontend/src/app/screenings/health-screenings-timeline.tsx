@@ -123,7 +123,7 @@ export default function HealthScreeningTimeline({
                       <div key={item.scheduledScreeningId} className="relative">
                         <div className="absolute -left-[22px] top-6 w-3 h-3 rounded-full border-2 border-primary bg-white"></div>
                         <div className="pl-6 p-2 border border-gray-300 rounded">
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                               <div className="flex items-center gap-2">
                                 <h3 className="font-medium">{item.guidelineName}</h3>
@@ -148,7 +148,7 @@ export default function HealthScreeningTimeline({
                                 </span>
                               </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 sm:self-auto">
                               {onEdit && (
                                 <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => onEdit(item)}>
                                   <Pencil className="w-4 h-4" />
