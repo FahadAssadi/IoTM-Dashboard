@@ -74,7 +74,7 @@ class HealthConnectSyncWorker(
       if (!dir.exists()) dir.mkdirs()
 
       val now = ZonedDateTime.now(ZoneOffset.UTC).toInstant()
-      val start = now.minus(7, ChronoUnit.DAYS)
+      val start = now.minus(30, ChronoUnit.DAYS)
       val tr = TimeRangeFilter.between(start, now)
 
       val bpFile = File(dir, "blood_pressure_data.json")

@@ -19,7 +19,15 @@ type RNInMsg =
   | { type: "BASELINE_ERROR"; payload?: { error?: string } }
   | { type: "HC_SYNC_ERROR"; payload?: { error?: string } }
   | { type: "SYNC_SNAPSHOT"; payload: RNSyncSnapshot }
-  | { type: string; payload?: any }; // future-proof
+  | { type: string; payload?: unknown }; 
+
+declare global {
+  interface Window {
+    ReactNativeWebView?: {
+      postMessage: (message: string) => void;
+    };
+  }
+}
 
 export function useRNBridge(onMessage?: (msg: RNInMsg) => void) {
   useEffect(() => {
@@ -46,8 +54,8 @@ export function useRNBridge(onMessage?: (msg: RNInMsg) => void) {
     };
   }, [onMessage]);
 
-  const post = useCallback((type: string, payload?: any) => {
-    (window as any).ReactNativeWebView?.postMessage(
+  const post = useCallback((type: string, payload?: unknown) => {
+    window.ReactNativeWebView?.postMessage(
       JSON.stringify({ type, ...(payload ? { payload } : {}) })
     );
   }, []);

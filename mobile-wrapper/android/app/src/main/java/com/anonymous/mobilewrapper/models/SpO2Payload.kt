@@ -3,7 +3,7 @@ import com.anonymous.mobilewrapper.models.Range
 
 data class SpO2Point(
     val time: String,
-    val percentage: Double
+    val percentage: Int
 )
 
 data class SpO2Payload(

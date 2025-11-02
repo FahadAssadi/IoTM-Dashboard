@@ -117,7 +117,7 @@ object HealthJsonWriters {
 
     var pageToken: String? = null
     var pagesFetched = 0
-    val maxPages = 5
+    val maxPages = 1
     do {
       if (pagesFetched >= maxPages) {
           break
@@ -164,7 +164,7 @@ object HealthJsonWriters {
 
     var pageToken: String? = null
     var pagesFetched = 0
-    val maxPages = 5
+    val maxPages = 1
     do {
       if (pagesFetched >= maxPages) {
           break
@@ -210,7 +210,7 @@ object HealthJsonWriters {
 
     var pageToken: String? = null
     var pagesFetched = 0
-    val maxPages = 5
+    val maxPages = 1
     do {
       if (pagesFetched >= maxPages) {
           break
@@ -255,7 +255,7 @@ object HealthJsonWriters {
 
     var pageToken: String? = null
     var pagesFetched = 0
-    val maxPages = 5
+    val maxPages = 1
     do {
       if (pagesFetched >= maxPages) {
           break
@@ -298,7 +298,7 @@ object HealthJsonWriters {
 
     var pageToken: String? = null
     var pagesFetched = 0
-    val maxPages = 5
+    val maxPages = 1
     do {
       if (pagesFetched >= maxPages) {
           break
@@ -347,7 +347,7 @@ object HealthJsonWriters {
 
     var pageToken: String? = null
     var pagesFetched = 0
-    val maxPages = 5
+    val maxPages = 1
     do {
       if (pagesFetched >= maxPages) break
 

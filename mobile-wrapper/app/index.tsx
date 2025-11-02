@@ -3,7 +3,7 @@ import { Alert, SafeAreaView, StyleSheet, View, Pressable, Text } from "react-na
 import WebView, { WebViewMessageEvent } from "react-native-webview";
 import { Health } from "../lib/health";
 
-const WEB_URL = "http://192.168.1.106:3000"; 
+const WEB_URL = "https://previe-ten.vercel.app/"; 
 
 export default function Screen() {
   const webRef = useRef<WebView>(null);
