@@ -1,3 +1,22 @@
+// health-screenings-timeline.tsx
+
+/**
+ * @file Provides the 'HealthScreeningTimeline' component - a timeline view
+ * for upcoming and archived health screenings with calendar export.
+ * 
+ * @remarks
+ * This component handles:
+ * - Grouping scheduled screenings by month and year, sorted chronologically
+ * - Computing item status badges (due soon, overdue, upcoming) via `getTimelineStatus`
+ * - Inline actions: edit date, archive, remove, and delete archived entries
+ * - Optional display of archived screenings grouped by guideline
+ * - Building a Google Calendar event URL for quick export
+ * - Basic timezone awareness for calendar exports (defaults to AEST)
+ *
+ * Used by the screenings page to visualise the user’s schedule and manage items.
+ * Exports the helper `getTimelineStatus` for reuse in data mapping.
+ */
+
 import React from "react"
 import { Calendar, CalendarClock, Sprout, Pencil, Trash2, Archive, X } from "lucide-react"
 import { Button } from "@/components/ui/button"

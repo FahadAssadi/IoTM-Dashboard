@@ -1,3 +1,23 @@
+// health-screenings.tsx
+
+/**
+ * @file Provides the 'HealthScreenings' component - the main UI and data
+ * orchestrator for recommended health screenings.
+ * 
+ * @remarks
+ * This component handles:
+ * - Fetching screenings, scheduled items, and archived/hidden lists from the backend
+ * - Pagination of visible screenings with server-provided total counts
+ * - Scheduling, editing, archiving, and removing scheduled screenings
+ * - Hiding/unhiding screenings and "unhide all" behavior
+ * - Client-side filtering by screening type and basic status formatting
+ * - A date picker modal with validation preventing past dates
+ * - Supabase auth integration to attach the current `userId` to requests
+ *
+ * Used as the primary content of the `/screenings` route and renders
+ * `HealthScreeningTimeline` to show upcoming and archived items.
+ */
+
 "use client"
 
 import React, { useState, useEffect } from "react"
