@@ -1,6 +1,22 @@
+// respiratory-health-summary.tsx
+
+/**
+ * @file Provides the `RespiratoryHealthSummary` component – summarizes the user’s SpO₂ (blood oxygen) data over a timeframe.
+ *
+ * @remarks
+ * This component handles:
+ * - Filtering SpO₂ data points to the specified timeframe (default 7 days)
+ * - Calculating total duration spent in each SpO₂ category ("Normal", "Insufficient", "Decreased", "Severe")
+ * - Computing total tracked time across all categories
+ * - Rendering a color-coded summary list of stages with corresponding durations
+ * - Displaying a placeholder message if no data is available
+ *
+ * Used within respiratory health sections of the dashboard to give users a clear overview of their oxygen saturation patterns.
+ */
+
 import { SpO2DataPoint } from "./load-spo2-data";
 
-export function RespiratoryHealthSummary({ data, timeframe = 7 }: {data : SpO2DataPoint[], timeframe? : number }) {
+export default function RespiratoryHealthSummary({ data, timeframe = 7 }: {data : SpO2DataPoint[], timeframe? : number }) {
     // ✅ Step 1: Filter data within timeframe
     const now = new Date();
     const cutoff = new Date(now.getTime() - timeframe * 24 * 60 * 60 * 1000);

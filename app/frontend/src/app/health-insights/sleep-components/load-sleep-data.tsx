@@ -1,6 +1,20 @@
+// load-sleep-data.tsx
+
+/**
+ * @file Provides the `loadSleepData` function – fetches the user’s sleep data from HealthConnect.
+ *
+ * @remarks
+ * This module handles:
+ * - Authenticating requests using the current Supabase session token
+ * - Returning structured sleep data points with start/end times, stage category, duration, and numeric stage value
+ * - Returning an empty array if no data is available or an error occurs
+ * - Logging errors and displaying notifications via `react-toastify`
+ *
+ * Used within sleep health components to visualize sleep patterns and summarize time spent in each sleep stage.
+ */
+
 import { supabase } from "@/lib/supabase/client";
 import { toast } from "react-toastify";
-
 
 export type SleepStageName = "DEEP" | "LIGHT" | "AWAKE" | "REM";
 

@@ -1,7 +1,23 @@
+// sleep-summary.tsx
+
+/**
+ * @file Provides the `SleepSummary` component – summarizes the user’s sleep data over a specified timeframe.
+ *
+ * @remarks
+ * This component handles:
+ * - Filtering sleep data points to the specified timeframe (default 1 day)
+ * - Calculating total duration spent in each sleep stage ("AWAKE", "REM", "LIGHT", "DEEP")
+ * - Computing total sleep time (excluding "AWAKE")
+ * - Rendering a color-coded summary list of stages with corresponding durations
+ * - Displaying a placeholder message if no data is available
+ *
+ * Used within sleep health sections of the dashboard to give users a clear overview of their sleep patterns and quality.
+ */
+
 import React from "react";
 import { SleepDataPoint } from "./load-sleep-data";
 
-export function SleepSummary({data, timeframe=1}: { data: SleepDataPoint[], timeframe?: number }) {
+export default function SleepSummary({data, timeframe=1}: { data: SleepDataPoint[], timeframe?: number }) {
     // ✅ Step 1: Filter data within timeframe
     const now = new Date();
     const cutoff = new Date(now.getTime() - timeframe * 24 * 60 * 60 * 1000);

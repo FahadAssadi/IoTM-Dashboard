@@ -1,3 +1,12 @@
+// src/components/auth/AuthTabs.tsx
+/**
+ * @file Provides the `AuthTabs` component — a tabbed interface for user authentication.
+ *
+ * @remarks
+ * This component allows switching between login, signup, and password reset forms.
+ * It manages the active tab state and renders the appropriate child form.
+ */
+
 "use client"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"

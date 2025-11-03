@@ -1,5 +1,5 @@
 using IoTM.Data;
-using IoTM.Dtos.HealthData;
+using IoTM.Dtos.HealthConnect;
 using IoTM.Dtos.HealthPoints;
 using IoTM.Services.HealthConnect;
 using Microsoft.AspNetCore.Authorization;

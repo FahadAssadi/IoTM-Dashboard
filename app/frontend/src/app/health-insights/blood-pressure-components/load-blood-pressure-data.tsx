@@ -1,3 +1,20 @@
+// load-blood-pressure-data.tsx
+
+/**
+ * @file Provides the `loadBloodPressure` function – retrieves the user’s blood pressure data
+ * including systolic and diastolic readings, variability, and category.
+ *
+ * @remarks
+ * This module handles:
+ * - Authenticating requests with the current Supabase session token
+ * - Fetching blood pressure data points with start/end times, averages, standard deviations, duration, and category
+ * - Returning an empty array if no data is available or an error occurs
+ * - Displaying error notifications via `react-toastify`
+ *
+ * Used within heart health dashboard components to visualize blood pressure trends
+ * and assess cardiovascular risk over time.
+ */
+
 import { toast } from "react-toastify";
 import { supabase } from "@/lib/supabase/client";
 

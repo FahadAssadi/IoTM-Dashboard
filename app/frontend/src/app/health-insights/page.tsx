@@ -8,19 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import { VitalCard } from "./general-components/vital-card"
 
-import HealthInsightsOverviewTab from "./health-insights-overview-tab"
-import HealthInsightsHeartTab from "./health-insights-heart-tab"
-import HealthInsightsRespiratoryTab from "./health-insights-respiratory-tab"
-import HealthInsightsActivityTab from "./health-insights-activity-tab"
-import HealthInsightsSleepTab from "./health-insights-sleep-tab"
+import OverviewTab from "./overview-tab"
+import HeartTab from "./heart-tab"
+import RespiratoryTab from "./respiratory-tab"
+import ActivityTab from "./activity-tab"
+import SleepTab from "./sleep-tab"
 
-import { loadRecentSummary, RecentSummary } from "./backend"
+import { loadRecentSummary, RecentSummary } from "./general-components/load-recent-data"
 import { loadBPM, BPMDataPoint } from "./activity-components/load-bpm-data"
 import { loadSpO2, SpO2DataPoint } from "./respiratory-components/load-spo2-data"
 import { loadSleepData, SleepDataPoint } from "./sleep-components/load-sleep-data"
 import { loadBloodPressure, BloodPressureDataPoint } from "./blood-pressure-components/load-blood-pressure-data"
 import { AiHealthInsights } from "./general-components/ai-health-insights"
-import { HealthSummaryPoint, loadSummaryData } from "./summary-components/load-summary-data"
+import { HealthSummaryPoint, loadSummaryData } from "./overview-components/load-summary-data"
 
 // Renamed the component and main heading to "Health Insights"
 export default function HealthInsightsPage() {
@@ -151,27 +151,27 @@ export default function HealthInsightsPage() {
 
 			{/* Overview tab */}
 			<TabsContent value="overview" className="space-y-6">
-				<HealthInsightsOverviewTab data={summaryData} />
+				<OverviewTab data={summaryData} />
 			</TabsContent>
 
 			{/* Heart tab */}
 			<TabsContent value="heart" className="space-y-6">
-				<HealthInsightsHeartTab data={bloodPressureData} />
+				<HeartTab data={bloodPressureData} />
 			</TabsContent>
 
 			{/* Respiratory tab */}
 			<TabsContent value="respiratory">
-				<HealthInsightsRespiratoryTab data={spO2Data}/>
+				<RespiratoryTab data={spO2Data}/>
 			</TabsContent>
 
 			{/* Activity tab */}
 			<TabsContent value="activity">
-				<HealthInsightsActivityTab data={bpmData}/>
+				<ActivityTab data={bpmData}/>
 			</TabsContent>
 
 			{/* Sleep tab */}
 			<TabsContent value="sleep" className="space-y-4 pt-4">
-				<HealthInsightsSleepTab data={sleepData} />
+				<SleepTab data={sleepData} />
 			</TabsContent>
 		</Tabs>
 		<AiHealthInsights />

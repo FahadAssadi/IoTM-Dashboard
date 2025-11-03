@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using IoTM.Dtos.HealthData;
+using IoTM.Dtos.HealthConnect;
 using IoTM.Data;
 using IoTM.Services.HealthConnect;
 using Microsoft.EntityFrameworkCore;
