@@ -1,8 +1,27 @@
+/**
+ * @file Provides the `DevicesPage` component — a user interface for linking and
+ * synchronizing health data via Health Connect within a hybrid web + React Native setup.
+ *
+ * @remarks
+ * This page is designed to work both as a standalone Next.js web page and when
+ * embedded inside the React Native companion app through a WebView. It leverages:
+ *
+ * - `useIsEmbeddedRN()` to detect if running inside a native WebView
+ * - `useRNBridge()` to send and receive JSON messages from the native Android/iOS layer
+ * - Supabase authentication for user session and access token management
+ *
+ * The page provides two main sections:
+ * 1. **Health Connect Linking:** Initiates permission and baseline extraction.
+ * 2. **Sync Status:** Displays the latest synchronization summary from native health data origins.
+ *
+ */
+
 "use client";
 
 import React, { useMemo, useState } from "react";
 import { useIsEmbeddedRN } from "./device-embeddedRN";
 import { useRNBridge, RNSyncSnapshot } from "./device-RNBridge";
+import { supabase } from "@/lib/supabase/client";
 
 function Card(props: React.HTMLAttributes<HTMLDivElement>) {
   return (
@@ -40,6 +59,7 @@ function Button(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   );
 }
 
+// Maps raw Health Connect package IDs to user-friendly names
 const ORIGIN_FRIENDLY: Record<string, string> = {
   "com.google.android.apps.fitness": "Google Fit",
   "com.samsung.android.app.health": "Samsung Health",
@@ -58,13 +78,26 @@ function formatIso(iso?: string) {
   const dt = new Date(iso);
   return dt.toLocaleString();
 }
+// Type guard: checks if a message payload matches the RNSyncSnapshot shape
+function isRNSyncSnapshot(payload: unknown): payload is RNSyncSnapshot {
+  return (
+    typeof payload === "object" &&
+    payload !== null &&
+    ("lastSync" in payload || "origins" in payload)
+  );
+}
 
+// Displays the Connected Devices page for managing Health Connect integrations.
 export default function DevicesPage() {
+  // Detects if running inside RN WebView
   const isEmbedded = useIsEmbeddedRN();
+  // UI state for baseline linking
   const [linking, setLinking] = useState(false);
+  // UI state for sync in progress
   const [syncing, setSyncing] = useState(false);
-
+  // Last sync timestamp
   const [lastSyncMs, setLastSyncMs] = useState<number | null>(null);
+  // Data snapshot from native
   const [snapshot, setSnapshot] = useState<RNSyncSnapshot | null>(null);
 
   const { post } = useRNBridge((msg) => {
@@ -85,10 +118,15 @@ export default function DevicesPage() {
         break;
       case "SYNC_SNAPSHOT":
         setSyncing(false);
-        setSnapshot(msg.payload ?? null);
-        setLastSyncMs(msg.payload?.lastSync ?? Date.now());
+        if (isRNSyncSnapshot(msg.payload)) {
+          setSnapshot(msg.payload);
+          setLastSyncMs(msg.payload.lastSync ?? Date.now());
+        } else {
+          // fallback safety
+          setSnapshot(null);
+          setLastSyncMs(Date.now());
+        }
         break;
-      case "BASELINE_ERROR":
       case "HC_SYNC_ERROR":
         alert(`Error: ${msg.payload?.error ?? "Unknown error"}`);
         setLinking(false);
@@ -99,6 +137,7 @@ export default function DevicesPage() {
     }
   });
 
+  // Renders a dynamic table of origin breakdowns (e.g., Google Fit, Samsung Health).
   const originRows = useMemo(() => {
     const origins = snapshot?.origins ?? {};
     const keys = Object.keys(origins);
@@ -120,6 +159,7 @@ export default function DevicesPage() {
     });
   }, [snapshot]);
 
+  // UI
   return (
     <div className="flex min-h-screen flex-col">
       <main className="flex-1 space-y-6 p-4 md:p-8 pt-6">
@@ -143,9 +183,28 @@ export default function DevicesPage() {
             </div>
             {isEmbedded ? (
               <Button
-                onClick={() => {
-                  setLinking(true);
-                  post("EXTRACT_BASELINE");
+                onClick={async () => {
+                  try {
+                    setLinking(true);
+                    const {
+                      data: { user },
+                    } = await supabase.auth.getUser();
+                    const {
+                      data: { session },
+                    } = await supabase.auth.getSession();
+
+                    if (!user || !session?.access_token) {
+                      alert("Missing user session. Please re-login.");
+                      setLinking(false);
+                      return;
+                    }
+                    post("EXTRACT_BASELINE", { userId: user.id, token: session.access_token});
+                  } catch (err) {
+                    console.error("Error linking:", err);
+                    alert("Failed to link Health Connect");
+                  } finally {
+                    setLinking(false);
+                  }
                 }}
                 disabled={linking}
               >
@@ -173,9 +232,33 @@ export default function DevicesPage() {
             </div>
             {isEmbedded ? (
               <Button
-                onClick={() => {
-                  setSyncing(true);
-                  post("RUN_SYNC_NOW");
+                onClick={async () => {
+                  try {
+                    setSyncing(true);
+
+                    // Get the current Supabase user and session
+                    const {
+                      data: { user },
+                    } = await supabase.auth.getUser();
+                    const {
+                      data: { session },
+                    } = await supabase.auth.getSession();
+
+                    if (!user || !session?.access_token) {
+                      alert("Missing user session. Please re-login.");
+                      setSyncing(false);
+                      return;
+                    }
+
+                    // Let RN WebView know sync started
+                    post("RUN_SYNC_NOW", { userId: user.id, token: session.access_token});
+
+                  } catch (err) {
+                    console.error("Error running sync:", err);
+                    alert("Failed to start sync");
+                  } finally {
+                    setSyncing(false);
+                  }
                 }}
                 disabled={syncing}
               >
