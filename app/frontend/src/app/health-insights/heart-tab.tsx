@@ -43,7 +43,9 @@ export default function HeartTab ({ data = [] } : { data? : BloodPressureDataPoi
                     <CardDescription>Comprehensive view of your blood pressure patterns</CardDescription>
                 </CardHeader>
                 <CardContent className="md:col-span-2">
-                  	<BloodPressureChart data={data}/>
+                  	<div className="h-[260px] sm:h-[320px]">
+                    	<BloodPressureChart data={data}/>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -52,8 +54,10 @@ export default function HeartTab ({ data = [] } : { data? : BloodPressureDataPoi
 					<CardTitle>Blood Pressure Category Timeline</CardTitle>
 					<CardDescription>14-day trend</CardDescription>
 				</CardHeader>
-				<CardContent className="md:col-span-1">
-					<BloodPressureTimeline data={chartData} timeframe={14}/>
+                <CardContent className="md:col-span-1">
+                    <div className="h-[240px]">
+                      <BloodPressureTimeline data={chartData} timeframe={14}/>
+                    </div>
 				</CardContent>
             </Card>
 
@@ -62,8 +66,10 @@ export default function HeartTab ({ data = [] } : { data? : BloodPressureDataPoi
 					<CardTitle>Blood Pressure Variability</CardTitle>
 					<CardDescription>Measure of heart health</CardDescription>
 				</CardHeader>
-				<CardContent className="md:col-span-1">
-					<HeartRateVariabilityChart data={data}/>
+                <CardContent className="md:col-span-1">
+                    <div className="h-[240px] sm:h-[300px]">
+                      <HeartRateVariabilityChart data={data}/>
+                    </div>
 				</CardContent>
             </Card>
           </div>

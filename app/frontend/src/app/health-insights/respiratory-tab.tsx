@@ -39,7 +39,9 @@ export default function RespiratoryTab ({ data = [] } : { data?: SpO2DataPoint[]
                     <CardDescription>Blood oxygen and breathing rate</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <RespiratoryHealthChart data={chartData}/>
+                    <div className="h-[240px]">
+                        <RespiratoryHealthChart data={chartData}/>
+                    </div>
                 </CardContent>
             </Card>
 

@@ -40,7 +40,7 @@ export default function HeartRateVariabilityChart({ data, timeframe = 14 }: { da
     }
     
     return (
-        <div className="w-full h-72">
+        <div className="w-full h-full min-h-[240px] sm:min-h-[280px]">
         <ResponsiveContainer width="100%" height="100%">
             <LineChart
             data={data}

@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
-import { Activity, Calendar, Cog, Heart, Laptop, Newspaper, User, ChevronsRight, ChevronsLeft, Menu, X } from "lucide-react"
+import { Activity, Calendar, Heart, Laptop, Newspaper, User, ChevronsRight, ChevronsLeft, Menu, X } from "lucide-react"
 import ActiveLink from "./ActiveLink"
 import { useSupabaseUser } from "@/lib/supabase/useSupabaseUser"
 
@@ -43,7 +43,6 @@ export default function Sidebar() {
             <SidebarItem href="/devices" icon={Laptop} label="Connected Devices" isCollapsed={isCollapsed} />
             <SidebarItem href="/news" icon={Newspaper} label="Health News" isCollapsed={isCollapsed} />
             {user && <SidebarItem href="/profile" icon={User} label="Profile" isCollapsed={isCollapsed} />}
-            <SidebarItem href="/settings" icon={Cog} label="Settings" isCollapsed={isCollapsed} />
           </nav>
         </div>
       </div>
@@ -77,7 +76,6 @@ export default function Sidebar() {
               <SidebarItem href="/devices" icon={Laptop} label="Connected Devices" isCollapsed={false} />
               <SidebarItem href="/news" icon={Newspaper} label="Health News" isCollapsed={false} />
               {user && <SidebarItem href="/profile" icon={User} label="Profile" isCollapsed={false} />}
-              <SidebarItem href="/settings" icon={Cog} label="Settings" isCollapsed={false} />
             </nav>
           </div>
         </div>
