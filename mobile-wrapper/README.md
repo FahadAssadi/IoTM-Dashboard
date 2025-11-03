@@ -30,11 +30,11 @@ Option A:
 1. Enable Developer Options
 2. Enable USB Debugging
 3. Connect your device via a USB cable
-4. Verify connections via 
+4. Verify connections via
 ``` bash
 adb devices
 ```
-5. Run the app for debugging with 
+5. Run the app for debugging with
 ``` bash
 npx expo run:android
 ```
@@ -44,15 +44,15 @@ This command will build the android native project and install the development A
 Option B:
 1. Install Android Studio and created a virtual device.
 2. Start your emulator from Android Studio.
-3. Run the app with 
-```bash 
+3. Run the app with
+```bash
 npx expo run:android
 ```
 
 ## Building and Installing the App Manually
 
 1. Build Release APK (for deployment)
-From project root: 
+From project root:
 ``` bash
 cd android
 ./gradlew assembleRelease
