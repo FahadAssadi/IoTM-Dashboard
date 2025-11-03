@@ -27,26 +27,22 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <div className="flex flex-col min-h-dvh bg-background pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
-            <Header />
-            <div className="flex flex-1">
-                <Sidebar />
-                <NotificationProvider />
-                {children}
-            </div>
-        </div>
-        
-      </body>
-    </html>
-  );
+export default function RootLayout({children,}: Readonly<{children: React.ReactNode;}>) {
+    return (
+      <html lang="en">
+        <body 
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          suppressHydrationWarning={true}
+        >
+          <div className="flex flex-col h-screen bg-background">
+              <Header />
+              <div className="flex flex-1">
+                  <Sidebar />
+                  <NotificationProvider/>
+                  {children}
+              </div>
+          </div>
+        </body>
+      </html>
+    );
 }

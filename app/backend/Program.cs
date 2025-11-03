@@ -1,23 +1,92 @@
 using Microsoft.EntityFrameworkCore;
-using IoTM.Data; // This is the new namespace for your DbContext
+using IoTM.Data;
 using DotNetEnv;
+using IoTM.Config;
+using IoTM.Services.HealthConnect;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;  
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load .env variables from backend project root
-Env.Load();
+// Environment-aware configuration
+var env = builder.Environment;
 
-// Get Supabase DB connection string from environment variable
-var connectionString = Environment.GetEnvironmentVariable("SUPABASE_DB_CONNECTION");
-
-if (string.IsNullOrEmpty(connectionString))
+string? supabaseJwtSecret;
+if (env.IsEnvironment("Testing"))
 {
-    throw new Exception("SUPABASE_DB_CONNECTION environment variable not found");
+    // In testing, avoid external dependencies and use in-memory DB
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseInMemoryDatabase("IoTM_Test_Db"));
+    supabaseJwtSecret = "test_secret"; // minimal secret for auth wiring in tests
+}
+else
+{
+    // Load .env variables from backend project root
+    Env.Load();
+
+    // Get Supabase DB connection string from environment variable
+    var connectionString = Environment.GetEnvironmentVariable("SUPABASE_DB_CONNECTION")
+        ?? throw new InvalidOperationException("SUPABASE_DB_CONNECTION is missing.");
+    var supabaseUrlString = Environment.GetEnvironmentVariable("SUPABASE_URL")
+        ?? throw new InvalidOperationException("SUPABASE_URL is missing.");
+    supabaseJwtSecret = Environment.GetEnvironmentVariable("SUPABASE_JWT_SECRET")
+        ?? throw new InvalidOperationException("SUPABASE_JWT_SECRET is missing.");
+
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        throw new Exception("SUPABASE_DB_CONNECTION environment variable not found");
+    }
+
+    // Register EF Core DbContext with Npgsql using Supabase connection string
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseNpgsql(connectionString));
 }
 
-// Register EF Core DbContext with Npgsql using Supabase connection string
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+// Config stuff
+builder.Services.Configure<HealthThresholds>(
+    builder.Configuration.GetSection("HealthThresholds"));
+// Register Services as singleton (safe if thresholds don't change)
+// builder.Services.AddSingleton<HealthSegmenter>();
+builder.Services.AddSingleton<BPMService>();
+builder.Services.AddSingleton<SpO2Service>();
+builder.Services.AddSingleton<BloodPressureService>();
+builder.Services.AddSingleton<SleepService>();
+builder.Services.AddSingleton<HealthSummaryService>();
+
+// Authentication and Authorisation
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(supabaseJwtSecret))
+        };
+    });
+builder.Services.AddAuthorization();
+
+
+// builder.Services.AddAuthentication(options =>
+// {
+//     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+//     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+// })
+// .AddJwtBearer(options =>
+// {
+//     // Supabase JWT Authority URL (replace with your project ref in appsettings.json or env)
+//     options.Authority = supabaseUrlString;
+//     options.TokenValidationParameters = new TokenValidationParameters
+//     {
+//         ValidateIssuer = false,
+//         ValidateAudience = false,
+//         ValidateLifetime = true,
+//         ValidateIssuerSigningKey = true
+//     };
+// });
+// builder.Services.AddAuthorization();
+
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -33,15 +102,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Add HttpClient for external API calls
-builder.Services.AddHttpClient<IoTM.Services.INewsService, IoTM.Services.NewsService>(client =>
-{
-    client.DefaultRequestHeaders.Add("User-Agent", "IoTM-Dashboard/1.0");
-    client.Timeout = TimeSpan.FromSeconds(30);
-});
-
 // Register custom services
-builder.Services.AddScoped<IoTM.Services.INewsService, IoTM.Services.NewsService>();
 builder.Services.AddScoped<IoTM.Services.IScreeningGuidelineService, IoTM.Services.ScreeningGuidelineService>();
 builder.Services.AddScoped<IoTM.Services.IUserScreeningsService, IoTM.Services.UserScreeningsService>();
 
@@ -75,8 +136,17 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
 
+app.UseAuthentication(); // MUST go before UseAuthorization
 app.UseAuthorization();
+
+app.UseAuthorization();
+
+// Static files configuration - SIMPLIFIED VERSION
+app.UseStaticFiles();
 
 app.MapControllers();
 
 app.Run();
+
+// Expose Program class for WebApplicationFactory in integration tests
+public partial class Program { }

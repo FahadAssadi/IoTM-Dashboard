@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET Attach",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickProcess}"
+    },
+    {
+      "name": ".NET Launch (Web)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/app/backend/bin/Debug/net8.0/IoTM.dll",
+      "cwd": "${workspaceFolder}/app/backend",
+      "stopAtEntry": true,
+      "justMyCode": true,
+      "console": "integratedTerminal",
+      "logging": { "diagnosticsLog.protocolMessages": true }
+    },
+    {
+      "name": "Attach Next.js (npm run dev)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceFolder}/app/frontend",
+      "console": "integratedTerminal",
+      "autoAttachChildProcesses": true
+    }
+  ]
+}
