@@ -56,8 +56,8 @@ export default function BloodPressureChart({ data, timeframe = 14 }: { data: Blo
         );
     }
 
-    return (
-        <div className="w-full h-96">
+  return (
+    <div className="w-full h-full min-h-[240px] sm:min-h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
             <LineChart
             data={filteredData}
@@ -73,6 +73,6 @@ export default function BloodPressureChart({ data, timeframe = 14 }: { data: Blo
             <Line type="monotone" name="Diastolic Blood Pressure" dataKey="averageDiastolic" stroke="#f76e4f" />
             </LineChart>
         </ResponsiveContainer>
-        </div>
+    </div>
     );
 }

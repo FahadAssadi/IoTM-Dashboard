@@ -558,7 +558,7 @@ export default function HealthScreenings() {
     <>
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
             <div>
               <h2 className="text-lg font-semibold">Recommended Health Screenings</h2>
               <p className="text-sm text-muted-foreground">
@@ -568,7 +568,7 @@ export default function HealthScreenings() {
                 Disclaimer: This is not intended to be a substitute for professional medical advice, diagnosis, or treatment.
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="relative group">
                 <Button
                   variant="outline"
@@ -607,7 +607,7 @@ export default function HealthScreenings() {
                   <RefreshCcw className="w-4 h-4" />
                 </Button>
                 <span
-                  className="absolute left-1/2 -translate-x-1/2 -top-8 px-2 py-1 rounded bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10"
+                  className="hidden sm:block absolute left-1/2 -translate-x-1/2 -top-8 px-2 py-1 rounded bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10"
                 >
                   Update screenings list
                 </span>
@@ -616,7 +616,7 @@ export default function HealthScreenings() {
                 value={selectedType}
                 onValueChange={setSelectedType}
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
@@ -647,7 +647,7 @@ export default function HealthScreenings() {
               )}
               {screenings.map((screening) => (
                 <Card key={screening.guidelineId} className="p-2 rounded">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center h-12 w-12 rounded-full bg-slate-100">
                         <Calendar className="h-4 w-4 text-primary-500" />
@@ -683,7 +683,7 @@ export default function HealthScreenings() {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full sm:w-auto">
                       <Button variant="ghost" size="icon" aria-label="Hide" onClick={() => handleHideScreening(screening)}>
                         <EyeOff className="w-5 h-5" />
                       </Button>
@@ -705,7 +705,7 @@ export default function HealthScreenings() {
               )}
               {hiddenScreenings.map((screening) => (
                 <Card key={screening.guidelineId} className="p-2 rounded bg-slate-50">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center h-12 w-12 rounded-full bg-slate-200">
                         <Calendar className="h-4 w-4 text-primary-500" />
@@ -741,7 +741,7 @@ export default function HealthScreenings() {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full sm:w-auto">
                       <Button variant="ghost" size="icon" aria-label="Unhide" onClick={() => handleUnhideScreening(screening)}>
                         <Eye className="w-5 h-5" />
                       </Button>
@@ -807,7 +807,7 @@ export default function HealthScreenings() {
       {/* Date Picker Modal */}
       {datePickerOpen.open && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
-          <div className="bg-white p-6 rounded shadow-lg flex flex-col gap-4 min-w-[320px]">
+          <div className="bg-white p-6 rounded shadow-lg flex flex-col gap-4 w-[calc(100vw-2rem)] max-w-sm">
             <h3 className="font-semibold text-lg mb-2">
               {datePickerOpen.timelineItemId ? "Edit Due Date" : "Select Due Date"}
             </h3>

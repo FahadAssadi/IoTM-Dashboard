@@ -9,6 +9,7 @@ import {
     Tooltip,
     XAxis,
     YAxis,
+    ResponsiveContainer,
   } from "recharts"
 import { NameType } from "recharts/types/component/DefaultTooltipContent"
   
@@ -42,35 +43,39 @@ import { NameType } from "recharts/types/component/DefaultTooltipContent"
     yAxisWidth = 40,
   }: ChartProps) {
     return (
-      <RechartsLineChart data={data} className={className}>
-        <CartesianGrid strokeDasharray="3 3" strokeOpacity={showGridLines ? 1 : 0} />
-        <XAxis
-          dataKey={index}
-          tick={{ fontSize: 12 }}
-          stroke="#888888"
-          style={{ display: showXAxis ? "block" : "none" }}
-        />
-        <YAxis tick={{ fontSize: 12 }} stroke="#888888" width={yAxisWidth} />
-        <Tooltip
-          formatter={(value, name) => {
-            if (valueFormatter) {
-              return [valueFormatter(value, name), name]
-            }
-            return [value, name]
-          }}
-        />
-        {categories.map((category, i) => (
-          <Line
-            key={category}
-            type="monotone"
-            dataKey={category}
-            stroke={colors[i % colors.length]}
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 8 }}
-          />
-        ))}
-      </RechartsLineChart>
+      <div className={className}>
+        <ResponsiveContainer width="100%" height="100%">
+          <RechartsLineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" strokeOpacity={showGridLines ? 1 : 0} />
+            <XAxis
+              dataKey={index}
+              tick={{ fontSize: 12 }}
+              stroke="#888888"
+              style={{ display: showXAxis ? "block" : "none" }}
+            />
+            <YAxis tick={{ fontSize: 12 }} stroke="#888888" width={yAxisWidth} />
+            <Tooltip
+              formatter={(value, name) => {
+                if (valueFormatter) {
+                  return [valueFormatter(value, name), name]
+                }
+                return [value, name]
+              }}
+            />
+            {categories.map((category, i) => (
+              <Line
+                key={category}
+                type="monotone"
+                dataKey={category}
+                stroke={colors[i % colors.length]}
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 8 }}
+              />
+            ))}
+          </RechartsLineChart>
+        </ResponsiveContainer>
+      </div>
     )
   }
   
@@ -86,22 +91,26 @@ import { NameType } from "recharts/types/component/DefaultTooltipContent"
     layout = "horizontal",
   }: ChartProps) {
     return (
-      <RechartsBarChart data={data} className={className} layout={layout}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey={index} />
-        <YAxis />
-        <Tooltip
-          formatter={(value, name) => {
-            if (valueFormatter) {
-              return [valueFormatter(value, name), name]
-            }
-            return [value, name]
-          }}
-        />
-        {categories.map((category, i) => (
-          <Bar key={category} dataKey={category} fill={colors[i % colors.length]} />
-        ))}
-      </RechartsBarChart>
+      <div className={className}>
+        <ResponsiveContainer width="100%" height="100%">
+          <RechartsBarChart data={data} layout={layout}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey={index} />
+            <YAxis />
+            <Tooltip
+              formatter={(value, name) => {
+                if (valueFormatter) {
+                  return [valueFormatter(value, name), name]
+                }
+                return [value, name]
+              }}
+            />
+            {categories.map((category, i) => (
+              <Bar key={category} dataKey={category} fill={colors[i % colors.length]} />
+            ))}
+          </RechartsBarChart>
+        </ResponsiveContainer>
+      </div>
     )
   }
   
@@ -116,28 +125,32 @@ import { NameType } from "recharts/types/component/DefaultTooltipContent"
     className,
   }: ChartProps) {
     return (
-      <RechartsAreaChart data={data} className={className}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey={index} />
-        <YAxis />
-        <Tooltip
-          formatter={(value, name) => {
-            if (valueFormatter) {
-              return [valueFormatter(value, name), name]
-            }
-            return [value, name]
-          }}
-        />
-        {categories.map((category, i) => (
-          <Area
-            key={category}
-            type="monotone"
-            dataKey={category}
-            stroke={colors[i % colors.length]}
-            fill={colors[i % colors.length]}
-            fillOpacity={0.3}
-          />
-        ))}
-      </RechartsAreaChart>
+      <div className={className}>
+        <ResponsiveContainer width="100%" height="100%">
+          <RechartsAreaChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey={index} />
+            <YAxis />
+            <Tooltip
+              formatter={(value, name) => {
+                if (valueFormatter) {
+                  return [valueFormatter(value, name), name]
+                }
+                return [value, name]
+              }}
+            />
+            {categories.map((category, i) => (
+              <Area
+                key={category}
+                type="monotone"
+                dataKey={category}
+                stroke={colors[i % colors.length]}
+                fill={colors[i % colors.length]}
+                fillOpacity={0.3}
+              />
+            ))}
+          </RechartsAreaChart>
+        </ResponsiveContainer>
+      </div>
     )
   }

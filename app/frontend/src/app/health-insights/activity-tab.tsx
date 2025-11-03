@@ -63,7 +63,9 @@ export default function ActivityTab ({ data = [] }: { data?: BPMDataPoint[] }) {
 					<CardDescription>Heart rate information</CardDescription>
 				</CardHeader>
 				<CardContent className="md:col-span-1">
-					<HeartRateDetailedChart data={chartData}/>
+					<div className="h-[260px] sm:h-[320px]">
+						<HeartRateDetailedChart data={chartData}/>
+					</div>
 				</CardContent>
             </Card>
 
@@ -73,7 +75,9 @@ export default function ActivityTab ({ data = [] }: { data?: BPMDataPoint[] }) {
 					<CardDescription>Steps, distance, and active minutes</CardDescription>
 				</CardHeader>
 				<CardContent className="md:col-span-1">
-					<HeartRateTimeline data={chartData}/>
+					<div className="h-[240px]">
+						<HeartRateTimeline data={chartData}/>
+					</div>
 				</CardContent>
             </Card>
           </div>

@@ -54,8 +54,8 @@ export default function HeartRateDetailedChart({ data, timeframe=7 }: { data: BP
         );
     }
   
-    return (
-      <div className="w-full h-92">
+        return (
+                <div className="w-full h-full min-h-[240px] sm:min-h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
 			<LineChart
 				data={filteredData}
