@@ -1,3 +1,20 @@
+/**
+ * @file HealthConnectModule.kt
+ * @brief Provides the native Android bridge module for integrating Health Connect
+ *        with the React Native (and WebView) layers of the Smart Health Companion app.
+ *
+ * @description
+ * This module exposes a set of React Native methods that allow JavaScript
+ * code to interact with Android Health Connect through the React Native bridge.
+ * It supports:
+ * - Checking Health Connect availability and permissions
+ * - Requesting user permissions for reading health data
+ * - Extracting 30-day baseline health data from multiple record types
+ * - Scheduling periodic background syncs via WorkManager
+ * - Running one-time on-demand synchronization tasks
+ *
+ */
+
 package com.anonymous.mobilewrapper.health
 
 import android.content.Intent
@@ -10,56 +27,64 @@ import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
+import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.records.SleepSessionRecord
+import androidx.health.connect.client.records.ExerciseSessionRecord
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.cancel
-import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
-import androidx.health.connect.client.request.AggregateRequest
-import androidx.health.connect.client.request.ChangesTokenRequest
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
-import org.json.JSONObject
 import java.io.File
-import java.io.BufferedWriter
-import java.io.OutputStreamWriter
-import java.nio.charset.StandardCharsets
 
+// React Native bridge class that exposes Health Connect APIs to JavaScript.
 class HealthConnectModule(private val reactContext: ReactApplicationContext)
   : ReactContextBaseJavaModule(reactContext) {
 
   override fun getName() = "HealthConnectModule"
 
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
+  
+  // Companion constants for file paths and filenames used in local JSON exports. (For checking data on local device)
   private companion object {
     const val DATA_DIR = "health_data"
     const val FILE_BP  = "blood_pressure_data.json"
     const val FILE_HR  = "heart_rate_data.json"
     const val FILE_SPO2 = "spo2_data.json"
+    const val FILE_STEPS = "steps_data.json"
+    const val FILE_SLEEP = "sleep_data.json"
+    const val FILE_EXERCISE = "exercise_data.json"
   }
 
+  // Returns a writable directory for saving JSON data exports.
   private fun dataDir(): File {
     val dir = reactContext.getExternalFilesDir(DATA_DIR) ?: reactContext.filesDir
     if (!dir.exists()) dir.mkdirs()
     return dir
   }
 
+  // Ensures coroutine cleanup when the React bridge is destroyed.
   override fun onCatalystInstanceDestroy() {
     super.onCatalystInstanceDestroy()
     scope.cancel()
   }
-
+  
+  // Defines the set of Health Connect read permissions required by the app.
   private fun requiredPermissions(): Set<String> = setOf(
     HealthPermission.getReadPermission(HeartRateRecord::class),
     HealthPermission.getReadPermission(BloodPressureRecord::class),
-    HealthPermission.getReadPermission(OxygenSaturationRecord::class)
+    HealthPermission.getReadPermission(OxygenSaturationRecord::class),
+    HealthPermission.getReadPermission(StepsRecord::class),
+    HealthPermission.getReadPermission(SleepSessionRecord::class),
+    HealthPermission.getReadPermission(ExerciseSessionRecord::class),
   )
 
+  // Checks whether the Health Connect SDK is available on this device.
   @ReactMethod
   fun isAvailable(promise: Promise) {
     val status = HealthConnectClient.getSdkStatus(reactContext)
@@ -67,6 +92,7 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
     promise.resolve(status == HealthConnectClient.SDK_AVAILABLE)
   }
 
+  // Checks whether the user has already granted all required Health Connect permissions.
   @ReactMethod
   fun hasRequiredPermissions(promise: Promise) {
     val status = HealthConnectClient.getSdkStatus(reactContext)
@@ -86,6 +112,7 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
     }
   }
 
+  // Requests Health Connect permissions via a trampoline activity (PermissionProxyActivity).
   @ReactMethod
   fun requestPermissions(promise: Promise) {
     val activity = currentActivity ?: return promise.reject("NO_ACTIVITY", "No foreground activity")
@@ -130,102 +157,61 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
     activity.startActivity(intent)
   }
 
+  // Extracts the 30-day baseline of all supported Health Connect record types and schedules periodic syncs (every 15 minutes)
   @ReactMethod
-  fun extractBaselineAndStoreToken(promise: Promise) {
+  fun extractBaselineAndStoreToken(userId: String, token: String, promise: Promise) {
     scope.launch {
       try {
         val status = HealthConnectClient.getSdkStatus(reactContext)
         if (status != HealthConnectClient.SDK_AVAILABLE) throw IllegalStateException("Health Connect not available")
 
         val hc = HealthConnectClient.getOrCreate(reactContext)
-        val required = setOf(
-          HealthPermission.getReadPermission(HeartRateRecord::class),
-          HealthPermission.getReadPermission(BloodPressureRecord::class),
-          HealthPermission.getReadPermission(OxygenSaturationRecord::class),
-        )
+        val required = requiredPermissions()
         val granted = hc.permissionController.getGrantedPermissions()
         if (!granted.containsAll(required)) throw SecurityException("Permissions not granted")
-        
-        val existing = HcTokenStore.getToken(reactContext)
-        val stillValid = existing != null && !HcTokenStore.isTokenExpired(reactContext)
 
-        if (stillValid) {
-          // Ensure periodic job is running
-          HealthConnectSyncWorker.schedule(reactContext, 1L)
-
-          // Trigger an immediate sync so user sees updates right away
-          HealthConnectSyncWorker.enqueueOneTime(reactContext)
-
-          withContext(Dispatchers.Main) { promise.resolve(true) }
-          return@launch
-        }
-
-        // Get & store changes token immediately
-        val token = hc.getChangesToken(
-          ChangesTokenRequest(setOf(
-            HeartRateRecord::class,
-            BloodPressureRecord::class,
-            OxygenSaturationRecord::class
-          ))
-        )
-        HcTokenStore.saveToken(reactContext, token)
-
-        // 30 day window and seed JSON with ONLY ONE page (pageSize=1000)
         val now = ZonedDateTime.now(ZoneOffset.UTC).toInstant()
         val start = now.minus(30, ChronoUnit.DAYS)
         val tr = TimeRangeFilter.between(start, now)
-        HcTokenStore.setBaselineRange(reactContext, start.toString(), now.toString())
 
         val outDir = dataDir()
-
         val bpFile = File(outDir, FILE_BP)
         val hrFile = File(outDir, FILE_HR)
         val spo2File = File(outDir, FILE_SPO2)
+        val stepsFile = File(outDir, FILE_STEPS)
+        val sleepFile = File(outDir, FILE_SLEEP)
+        val exerciseFile = File(outDir, FILE_EXERCISE)
 
-        val bpNext = HealthJsonWriters.writeFirstPageBloodPressure(hc, tr, bpFile, pageSize = 1000)
-        val hrNext = HealthJsonWriters.writeFirstPageHeartRate(hc, tr, hrFile, pageSize = 1000)
-        val spNext = HealthJsonWriters.writeFirstPageSpo2(hc, tr, spo2File, pageSize = 1000)
+        // Overwrite each baseline dump
+        bpFile.delete(); hrFile.delete(); spo2File.delete(); stepsFile.delete(); sleepFile.delete()
 
-        HcTokenStore.setNextPage(reactContext, "bp", bpNext)
-        HcTokenStore.setNextPage(reactContext, "hr", hrNext)
-        HcTokenStore.setNextPage(reactContext, "spo2", spNext)
+        HealthJsonWriters.writeBloodPressureWindow(hc, tr, bpFile, 2000)
+        HealthJsonWriters.writeHeartRateWindow(hc, tr, hrFile, 2000)
+        HealthJsonWriters.writeSpo2Window(hc, tr, spo2File, 2000)
+        HealthJsonWriters.writeStepsWindow(hc, tr, stepsFile, 2000)
+        HealthJsonWriters.writeSleepSessionsWindow(hc, tr, sleepFile, 2000)
+        HealthJsonWriters.writeExerciseSessionsWindow(hc, tr, exerciseFile, 2000)
 
-        val inProgress = (bpNext != null) || (hrNext != null) || (spNext != null)
-        HcTokenStore.setBaselineInProgress(reactContext, inProgress)
-        HcTokenStore.saveLastSyncNow(reactContext)
-
-        // start worker for periodic schedule
-        HealthConnectSyncWorker.schedule(reactContext, 1L)
-        HealthConnectSyncWorker.enqueueOneTime(reactContext)
+        // Start periodic sync every 15 minutes
+        HealthConnectSyncWorker.schedulePeriodic(reactContext, 15L, userId, token)
+        // Run one-time work immediately
+        HealthConnectSyncWorker.enqueueOneTime(reactContext, userId, token)
 
         withContext(Dispatchers.Main) { promise.resolve(true) }
       } catch (e: Exception) {
-        HcTokenStore.clear(reactContext)
         withContext(Dispatchers.Main) { promise.reject("BASELINE_ERROR", e.message, e) }
       }
     }
   }
 
-  /** Schedules the periodic HC sync worker (default: hourly) */
+  // Manually triggers an immediate Health Connect sync via WorkManager.
   @ReactMethod
-  fun schedulePeriodicHealthSync(hours: Int, promise: Promise) {
-    try {
-      HealthConnectSyncWorker.schedule(reactContext, hours.toLong().coerceAtLeast(1L))
-      promise.resolve(true)
-    } catch (t: Throwable) {
-      promise.reject("SCHEDULE_ERROR", t.message, t)
+  fun runHealthSyncNow(userId: String, token: String, promise: Promise) {
+     try {
+        HealthConnectSyncWorker.enqueueOneTime(reactContext, userId, token)
+        promise.resolve(true)
+      } catch (t: Throwable) {
+        promise.reject("RUN_NOW_ERROR", t.message, t)
     }
   }
-
-  @ReactMethod
-  fun runHealthSyncNow(promise: Promise) {
-    try {
-      HealthConnectSyncWorker.enqueueOneTime(reactContext)
-      promise.resolve(true)
-    } catch (t: Throwable) {
-      promise.reject("RUN_NOW_ERROR", t.message, t)
-    }
-  }
-
-
 }

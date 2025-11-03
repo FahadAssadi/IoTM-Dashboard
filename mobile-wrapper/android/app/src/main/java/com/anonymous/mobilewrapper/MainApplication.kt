@@ -1,3 +1,27 @@
+/**
+ * @file MainApplication.kt
+ * @brief Initializes the Android application, React Native host, Expo lifecycle, and WorkManager configuration.
+ *
+ * @description
+ * The `MainApplication` class serves as the **global entry point** for the hybrid Android app.
+ * It integrates the following key components:
+ *
+ * - **React Native Host**: Loads the JavaScript bundle via Metro or the compiled `.expo` entry point.
+ * - **Expo Modules**: Manages application lifecycle through `ApplicationLifecycleDispatcher`.
+ * - **WorkManager**: Configured globally to schedule background tasks (e.g., Health Connect syncs).
+ * - **Custom Native Modules**: Registers the `HealthConnectPackage` for accessing native Health Connect APIs.
+ *
+ * This class ensures that the Android and JavaScript layers are properly initialized
+ * before rendering begins in `MainActivity`.
+ *
+ * @remarks
+ * - The app uses **WorkManagerConfiguration.Provider** to set debug-level logging for background sync tasks.
+ * - Health Connect’s periodic background worker (`HealthConnectSyncWorker`) depends on this configuration.
+ *
+ * @see com.anonymous.mobilewrapper.health.HealthConnectPackage
+ * @see com.anonymous.mobilewrapper.health.HealthConnectSyncWorker
+ */
+
 package com.anonymous.mobilewrapper
 
 import android.app.Application
@@ -17,7 +41,16 @@ import com.anonymous.mobilewrapper.health.HealthConnectPackage
 import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ReactNativeHostWrapper
 
-class MainApplication : Application(), ReactApplication {
+import androidx.work.Configuration as WorkManagerConfiguration
+import androidx.work.WorkManager
+import android.util.Log
+
+class MainApplication : Application(), ReactApplication, WorkManagerConfiguration.Provider {
+
+  override val workManagerConfiguration: WorkManagerConfiguration
+    get() = WorkManagerConfiguration.Builder()
+      .setMinimumLoggingLevel(Log.DEBUG)
+      .build()
 
   override val reactNativeHost: ReactNativeHost = ReactNativeHostWrapper(
         this,
@@ -51,6 +84,7 @@ class MainApplication : Application(), ReactApplication {
     }
     ApplicationLifecycleDispatcher.onApplicationCreate(this)
   }
+
 
   override fun onConfigurationChanged(newConfig: Configuration) {
     super.onConfigurationChanged(newConfig)
