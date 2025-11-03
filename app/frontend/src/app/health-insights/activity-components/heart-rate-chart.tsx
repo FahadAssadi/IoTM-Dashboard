@@ -1,3 +1,21 @@
+// heart-rate-chart.tsx
+
+/**
+ * @file Provides the `HeartRateDetailedChart` component – renders a detailed heart rate
+ * line chart for a specified timeframe, using BPM data points.
+ *
+ * @remarks
+ * This component handles:
+ * - Filtering data by the last N days (default 7)
+ * - Displaying average BPM, standard deviation, and activity category
+ * - Showing a custom tooltip with duration and activity level
+ * - Handling empty datasets with a user-friendly message
+ * - Rendering a responsive chart using Recharts
+ *
+ * Used within the activity tab/health insights dashboard to visualize heart rate trends
+ * and daily variability over time.
+ */
+
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } from "recharts";
 import { TooltipProps } from "recharts";
 import { BPMDataPoint } from "./load-bpm-data";
@@ -18,7 +36,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps<number, string>)
     return null;
 }
 
-export function HeartRateDetailedChart({ data, timeframe=7 }: { data: BPMDataPoint[], timeframe? : number}) {
+export default function HeartRateDetailedChart({ data, timeframe=7 }: { data: BPMDataPoint[], timeframe? : number}) {
     const now = new Date();
     const cutoff = new Date(now.getTime() - timeframe * 24 * 60 * 60 * 1000);
 

@@ -1,7 +1,22 @@
+// vital-card.tsx
+
+/**
+ * @file Provides the `VitalCard` component – displays a single vital sign summary
+ * such as heart rate, SpO₂, or blood pressure, with contextual status and change indicators.
+ *
+ * @remarks
+ * This component handles:
+ * - Presenting a health metric value, unit, and status color
+ * - Displaying trend information (e.g., change from yesterday)
+ * - Supporting optional icons for quick visual identification
+ *
+ * Used within the health insights dashboard to show key vital signs
+ * in a compact, easy-to-read card format.
+ */
+
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { ReactNode } from "react";
 
-// TODO: FIX THIS PROPERLY
 type VitalCardProps = {
   title: string;
   value: number | string;

@@ -1,7 +1,24 @@
-import { HealthSummaryPoint } from "./load-summary-data";
-// import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Label, Tooltip, Legend, Line} from "recharts";
+// summary-timeline.tsx
 
-export function HealthSummary({data, timeframe = 30}:{data: HealthSummaryPoint[], timeframe?: number}) {
+/**
+ * @file Provides the `HealthSummary` and `DailySummary` components – visualize a user's key health metrics
+ * over a specified timeframe in a horizontal timeline view.
+ *
+ * @remarks
+ * This module handles:
+ * - Filtering health summary data points by a given timeframe (default 30 days)
+ * - Displaying daily metrics including SpO₂, BPM, blood pressure, and duration
+ * - Formatting timestamps to human-readable dates
+ * - Rendering a responsive, scrollable timeline of daily health summaries
+ * - Showing a placeholder message when no data is available
+ *
+ * Used within the health insights overview dashboard to provide an at-a-glance summary
+ * of recent health metrics and trends.
+ */
+
+import { HealthSummaryPoint } from "./load-summary-data";
+
+export default function HealthSummary({data, timeframe = 30}:{data: HealthSummaryPoint[], timeframe?: number}) {
     const now = new Date();
 	const cutoff = new Date(now.getTime() - timeframe * 24 * 60 * 60 * 1000);
 	

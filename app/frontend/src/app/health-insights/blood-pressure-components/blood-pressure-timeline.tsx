@@ -1,9 +1,26 @@
+// blood-pressure-timeline.tsx
+
+/**
+ * @file Provides the `BloodPressureTimeline` component – visualizes blood pressure stages
+ * over time in a timeline chart using VisX.
+ *
+ * @remarks
+ * This component handles:
+ * - Filtering blood pressure data points by a specified timeframe (default 7 days)
+ * - Mapping blood pressure categories to color-coded stages
+ * - Rendering a responsive timeline with labeled axes
+ * - Displaying a placeholder message when no data is available
+ *
+ * Used within the heart health dashboard to show trends in blood pressure
+ * and stage progression over time.
+ */
+
 import { scaleTime, scaleBand } from "@visx/scale";
 import { Group } from "@visx/group";
 import { AxisBottom, AxisLeft } from "@visx/axis";
 import { BloodPressureDataPoint  } from "./load-blood-pressure-data";
 
-export function BloodPressureTimeline({ data, timeframe = 7 }: { data: BloodPressureDataPoint[]; timeframe?: number }) {
+export default function BloodPressureTimeline({ data, timeframe = 7 }: { data: BloodPressureDataPoint[]; timeframe?: number }) {
   const width = 700;
   const height = 250;
 

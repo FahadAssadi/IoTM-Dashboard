@@ -1,9 +1,26 @@
+// respiratory-health-chart.tsx
+
+/**
+ * @file Provides the `RespiratoryHealthChart` component – visualizes the user’s SpO₂ (blood oxygen) levels over time.
+ *
+ * @remarks
+ * This component handles:
+ * - Displaying a horizontal timeline of SpO₂ categories ("Normal", "Insufficient", "Decreased", "Severe")
+ * - Filtering data to the specified timeframe (default 7 days)
+ * - Color-coding each category for visual clarity
+ * - Responsive rendering using @visx/scale and SVG elements
+ * - Showing a placeholder message if no data is available
+ * - Accessible with ARIA labels and descriptive titles
+ *
+ * Used within respiratory health sections of the dashboard to provide a clear view of oxygen saturation trends.
+ */
+
 import { scaleTime, scaleBand } from "@visx/scale";
 import { Group } from "@visx/group";
 import { AxisBottom, AxisLeft } from "@visx/axis";
 import { SpO2DataPoint } from "./load-spo2-data";
 
-export function RespiratoryHealthChart({ data, timeframe = 7 }: {data : SpO2DataPoint[], timeframe? : number }) {
+export default function RespiratoryHealthChart({ data, timeframe = 7 }: {data : SpO2DataPoint[], timeframe? : number }) {
     const height = 250;
     const width = 700;
     const now = new Date();

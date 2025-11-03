@@ -1,9 +1,26 @@
+// activity-tab.tsx
+
+/**
+ * @file Provides the `ActivityTab` component – displays heart rate and activity insights,
+ * including average BPM trends and categorized heart rate ranges.
+ *
+ * @remarks
+ * This component handles:
+ * - Categorizing heart rate data into defined BPM ranges
+ * - Visualizing detailed heart rate patterns via `HeartRateDetailedChart`
+ * - Displaying activity trends and daily fluctuations via `HeartRateTimeline`
+ * - Rendering responsive cards for easy comparison and trend analysis
+ *
+ * Used within the health insights dashboard to present user activity levels
+ * and cardiovascular response over time.
+ */
+
 import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
 import { BPMDataPoint, BPMCategory } from "./activity-components/load-bpm-data";
-import { HeartRateDetailedChart } from "./activity-components/heart-rate-chart";
-import { HeartRateTimeline } from "./activity-components/heart-rate-timeline";
+import HeartRateDetailedChart from "./activity-components/heart-rate-chart";
+import HeartRateTimeline from "./activity-components/heart-rate-timeline";
 
-export default function HealthInsightsActivityTab ({ data = [] }: { data?: BPMDataPoint[] }) {
+export default function ActivityTab ({ data = [] }: { data?: BPMDataPoint[] }) {
 	const chartCategorisor = (bpmValue : number): BPMCategory => {
 		if (bpmValue < 60){
 			return "0 - 60"

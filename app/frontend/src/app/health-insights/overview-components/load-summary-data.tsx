@@ -1,3 +1,20 @@
+// load-summary-data.tsx
+
+/**
+ * @file Provides the `loadSummaryData` function – fetches the user’s health summary data
+ * including SpO₂, BPM, blood pressure, and duration for each recorded period.
+ *
+ * @remarks
+ * This module handles:
+ * - Authenticating requests using the current Supabase session token
+ * - Retrieving structured health summary points with start/end times, averages, and optional metrics
+ * - Returning an empty array if no data is available or an error occurs
+ * - Logging and displaying errors via `react-toastify`
+ *
+ * Used within the health insights overview and dashboard components to visualize
+ * recent health metrics and trends over time.
+ */
+
 import { supabase } from "@/lib/supabase/client";
 import { toast } from "react-toastify";
 

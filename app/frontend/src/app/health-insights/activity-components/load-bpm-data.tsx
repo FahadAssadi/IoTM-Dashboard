@@ -1,3 +1,19 @@
+// load-bpm-data.tsx
+
+/**
+ * @file Provides the `loadBPM` function – retrieves the user’s heart rate (BPM) data from the backend.
+ *
+ * @remarks
+ * This module handles:
+ * - Authenticating requests using the current Supabase session token
+ * - Fetching BPM data points including start/end times, average BPM, standard deviation, duration, and category
+ * - Returning an empty array when no data is available or an error occurs
+ * - Displaying error notifications via `react-toastify`
+ *
+ * Used within activity components to visualize heart rate trends
+ * and stage distributions over time.
+ */
+
 import { toast } from "react-toastify";
 import { supabase } from "@/lib/supabase/client";
 

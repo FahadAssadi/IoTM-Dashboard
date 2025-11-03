@@ -1,12 +1,27 @@
-"use client"
+// heart-tab.tsx
+
+/**
+ * @file Provides the `HeartTab` component – displays detailed cardiovascular insights,
+ * including blood pressure trends and heart rate variability.
+ *
+ * @remarks
+ * This component handles:
+ * - Visualizing blood pressure data via `BloodPressureChart`
+ * - Displaying 14-day blood pressure category trends via `BloodPressureTimeline`
+ * - Showing heart rate variability metrics via `HeartRateVariabilityChart`
+ * - Rendering responsive cards for comprehensive heart health analysis
+ *
+ * Used within the health insights dashboard to present recent cardiovascular patterns
+ * and overall heart health indicators.
+ */
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent} from "@/components/ui/card"
 import { BloodPressureDataPoint } from "./blood-pressure-components/load-blood-pressure-data"
-import { BloodPressureChart } from "./blood-pressure-components/blood-pressure-chart";
-import { HeartRateVariabilityChart } from "./blood-pressure-components/heart-rate-variability-chart";
-import { BloodPressureTimeline } from "./blood-pressure-components/blood-pressure-timeline";
+import BloodPressureChart from "./blood-pressure-components/blood-pressure-chart";
+import HeartRateVariabilityChart from "./blood-pressure-components/heart-rate-variability-chart";
+import BloodPressureTimeline from "./blood-pressure-components/blood-pressure-timeline";
 
-export default function HealthInsightsHeartTab ({ data = [] } : { data? : BloodPressureDataPoint[] }) {
+export default function HeartTab ({ data = [] } : { data? : BloodPressureDataPoint[] }) {
 
 	const chartData: BloodPressureDataPoint[] = data.map(d => ({
         start: new Date(d.start).getTime(),
