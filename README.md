@@ -109,6 +109,13 @@ cd app/frontend
 npm run test
 ```
 
+- Backend tests: run from `tests`:
+
+```powershell
+cd tests
+dotnet test
+```
+
 - Backend tests: this repository does not include a dedicated test project by default. If you add tests, prefer NUnit/xUnit and a `tests/` or `src/*.Tests` project.
 
 ## Deployment notes
