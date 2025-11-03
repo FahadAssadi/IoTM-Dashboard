@@ -1,9 +1,26 @@
+// heart-rate-timeline.tsx
+
+/**
+ * @file Provides the `HeartRateTimeline` component – visualizes heart rate categories
+ * over time in a timeline chart using VisX.
+ *
+ * @remarks
+ * This component handles:
+ * - Filtering BPM data points by a specified timeframe (default 7 days)
+ * - Mapping heart rate values to color-coded categories
+ * - Rendering a responsive timeline with labeled axes
+ * - Displaying a placeholder message when no data is available
+ *
+ * Used within the activity tab/health insights dashboard to show detailed
+ * heart rate stage progression and trends.
+ */
+
 import { scaleTime, scaleBand } from "@visx/scale";
 import { Group } from "@visx/group";
 import { AxisBottom, AxisLeft } from "@visx/axis";
 import { BPMDataPoint } from "./load-bpm-data";
 
-export function HeartRateTimeline({ data, timeframe = 7 }: { data: BPMDataPoint[]; timeframe?: number }) {
+export default function HeartRateTimeline({ data, timeframe = 7 }: { data: BPMDataPoint[]; timeframe?: number }) {
 	const width = 700;
 	const height = 250;
 

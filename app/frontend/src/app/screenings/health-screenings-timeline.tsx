@@ -1,13 +1,28 @@
+// health-screenings-timeline.tsx
+
+/**
+ * @file Provides the 'HealthScreeningTimeline' component - a timeline view
+ * for upcoming and archived health screenings with calendar export.
+ * 
+ * @remarks
+ * This component handles:
+ * - Grouping scheduled screenings by month and year, sorted chronologically
+ * - Computing item status badges (due soon, overdue, upcoming) via `getTimelineStatus`
+ * - Inline actions: edit date, archive, remove, and delete archived entries
+ * - Optional display of archived screenings grouped by guideline
+ * - Building a Google Calendar event URL for quick export
+ * - Basic timezone awareness for calendar exports (defaults to AEST)
+ *
+ * Used by the screenings page to visualise the user’s schedule and manage items.
+ * Exports the helper `getTimelineStatus` for reuse in data mapping.
+ */
+
 import React from "react"
 import { Calendar, CalendarClock, Sprout, Pencil, Trash2, Archive, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import ICalendarLink from "react-icalendar-link"
-
-const ICalendarLinkAny = ICalendarLink as unknown as React.FC<
-  React.PropsWithChildren<{ event: ICalEvent; rawContent?: string; filename?: string }>
->
+import { getGoogleCalendarUrl, type CalEvent } from "@/lib/calendar"
 
 export interface TimelineItem {
   scheduledScreeningId: string
@@ -16,15 +31,6 @@ export interface TimelineItem {
   scheduledDate: string
   month: string
   status?: "due-soon" | "overdue" | "upcoming"
-}
-
-type ICalEvent = {
-  title: string
-  description?: string
-  startTime: string
-  endTime?: string
-  location?: string
-  timezone?: string
 }
 
 interface HealthScreeningTimelineProps {
@@ -170,12 +176,14 @@ export default function HealthScreeningTimeline({
 
                     <div className="space-y-4 pl-4 ml-4 border-l border-dashed">
                       {items.map((item) => {
-                        // Prepare event object for react-icalendar-link
+                        // Prepare event object for Google Calendar link
                         const startDate = new Date(item.scheduledDate)
                         const endDate = new Date(item.scheduledDate)
                         endDate.setHours(endDate.getHours() + 1) // 1 hour event by default
 
-                        const event: ICalEvent = {
+                        const computedStatus = item.status ?? getTimelineStatus(item.scheduledDate)
+
+                        const event: CalEvent = {
                           title: item.guidelineName,
                           description: "Health screening reminder",
                           startTime: startDate.toISOString(),
@@ -192,11 +200,11 @@ export default function HealthScreeningTimeline({
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <h3 className="font-medium">{item.guidelineName}</h3>
-                                    {item.status === "due-soon" ? (
+                                    {computedStatus === "due-soon" ? (
                                       <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
                                         Due Soon
                                       </Badge>
-                                    ) : item.status === "overdue" ? (
+                                    ) : computedStatus === "overdue" ? (
                                       <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200">
                                         Overdue
                                       </Badge>
@@ -239,9 +247,13 @@ export default function HealthScreeningTimeline({
                                       <Trash2 className="w-4 h-4" />
                                     </Button>
                                   )}
-                                  <ICalendarLinkAny event={event}>
+                                  <a
+                                    href={getGoogleCalendarUrl(event)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
                                     <Button variant="default">Export</Button>
-                                  </ICalendarLinkAny>
+                                  </a>
                                 </div>
                               </div>
                             </div>

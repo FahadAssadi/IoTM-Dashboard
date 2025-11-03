@@ -48,7 +48,7 @@ namespace IoTM.Services
                 // Shape the user context once for evaluation
                 var ctx = BuildUserContext(user);
 
-                // Load guidelines + basic filters you already have (age/sex/pregnancy)
+                // Load guidelines
                 var guidelines = await _context.ScreeningGuidelines
                     .Include(g => g.FrequencyRules)
                     .Where(g => g.IsActive)
@@ -57,7 +57,6 @@ namespace IoTM.Services
                 var recommended = new List<ScreeningGuideline>();
                 foreach (var g in guidelines)
                 {
-                    // Optional: still enforce MinAge/MaxAge/SexApplicable/PregnancyApplicable here
                     if (g.MinAge.HasValue && ctx.Age.HasValue && ctx.Age < g.MinAge) continue;
                     if (g.MaxAge.HasValue && ctx.Age.HasValue && ctx.Age > g.MaxAge) continue;
                     if (!string.Equals(g.SexApplicable.ToString(), "both", StringComparison.OrdinalIgnoreCase) &&
@@ -72,6 +71,9 @@ namespace IoTM.Services
 
                     if (g.ConditionsRequired is not null && !MatchesCriteriaGroup(ctx, g.ConditionsRequired))
                         continue;
+
+                    // Compute effective frequency from matching rules (if any)
+                    g.EffectiveFrequencyMonths = SelectEffectiveFrequency(ctx, g);
 
                     recommended.Add(g);
                 }
@@ -190,7 +192,7 @@ namespace IoTM.Services
                 Id = guideline.GuidelineId,
                 Name = guideline.Name,
                 ScreeningType = guideline.ScreeningType,
-                RecommendedFrequency = FormatFrequency(guideline.DefaultFrequencyMonths),
+                RecommendedFrequency = FormatFrequency(guideline.EffectiveFrequencyMonths ?? guideline.DefaultFrequencyMonths),
                 Category = guideline.Category,
                 Description = guideline.Description,
                 Cost = guideline.Cost,
@@ -303,6 +305,70 @@ namespace IoTM.Services
                 return false;
 
             return true;
+        }
+
+        private static int? SelectEffectiveFrequency(UserContext ctx, ScreeningGuideline g)
+        {
+            if (g.FrequencyRules == null || g.FrequencyRules.Count == 0) return null;
+
+            // Reuse the same criteria engine by converting a rule into a CriteriaGroup
+            var matches = g.FrequencyRules
+                .Where(r => MatchesCriteriaGroup(ctx, BuildCriteriaGroupFromRule(r)))
+                .ToList();
+
+            if (matches.Count == 0) return null;
+            // Choose the smallest frequency (most frequent) as the effective one
+            return matches
+                .OrderBy(r => r.FrequencyMonths)
+                .Select(r => (int?)r.FrequencyMonths)
+                .FirstOrDefault();
+        }
+
+        private static CriteriaGroup BuildCriteriaGroupFromRule(FrequencyRule r)
+        {
+            var group = new CriteriaGroup { All = new List<Criterion>(), Any = new List<Criterion>() };
+
+            if (r.MinAge.HasValue)
+            {
+                group.All.Add(new Criterion
+                {
+                    Factor = LifestyleFactorType.Age,
+                    Operator = ComparisonOperator.GreaterOrEqual,
+                    Min = r.MinAge
+                });
+            }
+
+            if (r.MaxAge.HasValue)
+            {
+                group.All.Add(new Criterion
+                {
+                    Factor = LifestyleFactorType.Age,
+                    Operator = ComparisonOperator.LessOrEqual,
+                    Max = r.MaxAge
+                });
+            }
+
+            if (r.SexApplicable.HasValue && r.SexApplicable.Value != SexApplicable.both)
+            {
+                group.All.Add(new Criterion
+                {
+                    Factor = LifestyleFactorType.Sex,
+                    Operator = ComparisonOperator.Equals,
+                    Values = new List<string> { r.SexApplicable.Value.ToString() }
+                });
+            }
+
+            if (r.PregnancyApplicable.HasValue && r.PregnancyApplicable.Value != PregnancyApplicable.any)
+            {
+                group.All.Add(new Criterion
+                {
+                    Factor = LifestyleFactorType.PregnancyStatus,
+                    Operator = ComparisonOperator.Equals,
+                    Values = new List<string> { r.PregnancyApplicable.Value.ToString() }
+                });
+            }
+
+            return group;
         }
     }
 }

@@ -1,3 +1,23 @@
+// health-screenings.tsx
+
+/**
+ * @file Provides the 'HealthScreenings' component - the main UI and data
+ * orchestrator for recommended health screenings.
+ * 
+ * @remarks
+ * This component handles:
+ * - Fetching screenings, scheduled items, and archived/hidden lists from the backend
+ * - Pagination of visible screenings with server-provided total counts
+ * - Scheduling, editing, archiving, and removing scheduled screenings
+ * - Hiding/unhiding screenings and "unhide all" behavior
+ * - Client-side filtering by screening type and basic status formatting
+ * - A date picker modal with validation preventing past dates
+ * - Supabase auth integration to attach the current `userId` to requests
+ *
+ * Used as the primary content of the `/screenings` route and renders
+ * `HealthScreeningTimeline` to show upcoming and archived items.
+ */
+
 "use client"
 
 import React, { useState, useEffect } from "react"
@@ -7,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import HealthScreeningTimeline, { getTimelineStatus, TimelineItem } from "./health-screenings-timeline"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { supabase } from "@/lib/supabase/client"
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -43,6 +64,20 @@ function formatDateForInput(dateStr?: string) {
   return localDate.toISOString().slice(0, 10);
 }
 
+// Today in local timezone formatted for <input type="date"> (YYYY-MM-DD)
+function todayForInput(): string {
+  const now = new Date();
+  const offset = now.getTimezoneOffset();
+  const local = new Date(now.getTime() - offset * 60 * 1000);
+  return local.toISOString().slice(0, 10);
+}
+
+// Returns true if a is before b (both in YYYY-MM-DD format)
+function isBefore(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  return a < b;
+}
+
 function formatDateDDMMYYYY(dateStr?: string) {
   if (!dateStr) return "";
   const date = new Date(dateStr);
@@ -64,6 +99,8 @@ export default function HealthScreenings() {
   const [allScreenings, setAllScreenings] = useState<ScreeningItem[]>([])
   const [visibleScreenings, setVisibleScreenings] = useState<ScreeningItem[]>([]);
   const [feedbackMessage, setFeedbackMessage] = useState<string>("") // feedback message for fetching new screenings
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [authError, setAuthError] = useState<string>("")
 
   // Pagination state
   const [page, setPage] = React.useState(1);
@@ -73,10 +110,39 @@ export default function HealthScreenings() {
   // Compute if there is a next page (based on totalCount from server)
   const hasNext = page * pageSize < totalCount;
 
+  // Helper: append userId to URL when available
+  const withUser = React.useCallback((url: string) => (
+    currentUserId ? `${url}${url.includes("?") ? "&" : "?"}userId=${encodeURIComponent(currentUserId)}` : url
+  ), [currentUserId])
+
+  // Load current user from Supabase
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (mounted) setCurrentUserId(user?.id ?? null);
+      } catch {
+        if (mounted) setCurrentUserId(null);
+      }
+    })();
+    return () => { mounted = false };
+  }, [])
+
   // Fetch timeline items from backend
-  const fetchTimelineItems = async () => {
+  const fetchTimelineItems = React.useCallback(async () => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/scheduled`);
+      if (!currentUserId) {
+        setTimelineItems([])
+        setAuthError("User ID not found. Please sign in to view your screenings.")
+        return
+      }
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/scheduled`));
+      if (!res.ok) {
+        setTimelineItems([])
+        setAuthError(res.status === 400 ? "User ID not found. Please sign in to view your screenings." : "Failed to load scheduled screenings.")
+        return
+      }
       const data = await res.json();
       // Map backend data to TimelineItem[]
       setTimelineItems(
@@ -93,19 +159,34 @@ export default function HealthScreenings() {
           }))
           : []
       );
+      setAuthError("")
     } catch {
       setTimelineItems([]);
     }
-  };
+  }, [withUser, currentUserId]);
 
   useEffect(() => {
     fetchTimelineItems();
-  }, []);
+  }, [fetchTimelineItems]);
 
   // Fetch visible (non-hidden) screenings with backend pagination
   const fetchAllScreenings = React.useCallback(async (): Promise<number> => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/?page=${page}&pageSize=${pageSize}`);
+      if (!currentUserId) {
+        setVisibleScreenings([])
+        setAllScreenings([])
+        setTotalCount(0)
+        setAuthError("User ID not found. Please sign in to view your screenings.")
+        return 0
+      }
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/?page=${page}&pageSize=${pageSize}`));
+      if (!res.ok) {
+        setVisibleScreenings([])
+        setAllScreenings([])
+        setTotalCount(0)
+        setAuthError(res.status === 400 ? "User ID not found. Please sign in to view your screenings." : "Failed to load screenings.")
+        return 0
+      }
       const payload = await res.json(); // { items, totalCount, page, pageSize }
       const data = Array.isArray(payload.items) ? payload.items : [];
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -141,6 +222,7 @@ export default function HealthScreenings() {
         setPage(page - 1);
       }
 
+      setAuthError("")
       return newTotal;
     } catch (err) {
       console.error("Failed to fetch screenings", err);
@@ -149,7 +231,7 @@ export default function HealthScreenings() {
       setTotalCount(0);
       return 0;
     }
-  }, [page]);
+  }, [page, withUser, currentUserId]);
 
   useEffect(() => {
     fetchAllScreenings();
@@ -158,7 +240,17 @@ export default function HealthScreenings() {
   // Fetch hidden screenings only when showHidden is true
   const fetchHiddenScreenings = React.useCallback(async () => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/hidden`);
+      if (!currentUserId) {
+        setHiddenScreenings([])
+        setAuthError("User ID not found. Please sign in to view your screenings.")
+        return
+      }
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/hidden`));
+      if (!res.ok) {
+        setHiddenScreenings([])
+        setAuthError(res.status === 400 ? "User ID not found. Please sign in to view your screenings." : "Failed to load hidden screenings.")
+        return
+      }
       const data = await res.json();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const screenings = (Array.isArray(data) ? data : []).map((item: any) => ({
@@ -180,10 +272,11 @@ export default function HealthScreenings() {
         reminderSent: item.reminderSent,
       }));
       setHiddenScreenings(screenings);
+      setAuthError("")
     } catch {
       setHiddenScreenings([]);
     }
-  }, []);
+  }, [withUser, currentUserId]);
 
   // Drive fetches from showHidden/page
   useEffect(() => {
@@ -196,22 +289,39 @@ export default function HealthScreenings() {
 
   // Handle scheduling a screening
   const handleSchedule = (screening: ScreeningItem) => {
+    if (!currentUserId) {
+      setErrorMessage("User ID not found. Please sign in to schedule a screening.")
+      return
+    }
     setErrorMessage("")
     setDatePickerOpen({ open: true, screening })
-    setSelectedDate(formatDateForInput(screening.lastScheduled))
+    const min = todayForInput();
+    const initial = formatDateForInput(screening.lastScheduled);
+    // Coerce to today if last scheduled is in the past
+    setSelectedDate(initial && !isBefore(initial, min) ? initial : min)
   }
 
   // Handle editing a timeline item
   const handleEditTimelineItem = (item: TimelineItem) => {
+    if (!currentUserId) {
+      setErrorMessage("User ID not found. Please sign in to edit a scheduled screening.")
+      return
+    }
     setErrorMessage("")
     setDatePickerOpen({ open: true, timelineItemId: item.scheduledScreeningId })
-    setSelectedDate(formatDateForInput(item.scheduledDate))
+    const min = todayForInput();
+    const initial = formatDateForInput(item.scheduledDate);
+    setSelectedDate(initial && !isBefore(initial, min) ? initial : min)
   }
 
   // Handle removing a timeline item
   const handleRemoveTimelineItem = async (id: string) => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/schedule/${id}`, {
+      if (!currentUserId) {
+        setErrorMessage("User ID not found. Please sign in to remove a scheduled screening.")
+        return
+      }
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/schedule/${id}`), {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -231,7 +341,11 @@ export default function HealthScreenings() {
   // Archive a timeline item (scheduled screening)
   const handleArchiveTimelineItem = async (scheduledScreeningId: string) => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/schedule/${scheduledScreeningId}/archive`, {
+      if (!currentUserId) {
+        setErrorMessage("User ID not found. Please sign in to archive a scheduled screening.")
+        return
+      }
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/schedule/${scheduledScreeningId}/archive`), {
         method: "PUT"
       });
       if (!res.ok) throw new Error();
@@ -251,11 +365,22 @@ export default function HealthScreenings() {
   const handleDateSelect = async () => {
     if (!selectedDate) return;
 
+    // Guard: prevent scheduling in the past
+    const min = todayForInput();
+    if (isBefore(selectedDate, min)) {
+      setErrorMessage("Please select today or a future date.");
+      return;
+    }
+
     if (datePickerOpen.timelineItemId) {
       // Editing an existing timeline item
       try {
+        if (!currentUserId) {
+          setErrorMessage("User ID not found. Please sign in to update a scheduled screening.")
+          return
+        }
         const res = await fetch(
-          `${apiBaseUrl}/api/UserScreenings/schedule/${datePickerOpen.timelineItemId}?newDate=${selectedDate}`,
+          withUser(`${apiBaseUrl}/api/UserScreenings/schedule/${datePickerOpen.timelineItemId}?newDate=${selectedDate}`),
           { method: "PUT" }
         );
         if (res.status === 409) {
@@ -280,8 +405,12 @@ export default function HealthScreenings() {
       const dueDate = selectedDate;
 
       try {
+        if (!currentUserId) {
+          setErrorMessage("User ID not found. Please sign in to schedule a screening.")
+          return
+        }
         const res = await fetch(
-          `${apiBaseUrl}/api/UserScreenings/schedule?guidelineId=${screeningId}&scheduledDate=${dueDate}`,
+          withUser(`${apiBaseUrl}/api/UserScreenings/schedule?guidelineId=${screeningId}&scheduledDate=${dueDate}`),
           { method: "POST" }
         );
         if (res.status === 409) {
@@ -309,7 +438,11 @@ export default function HealthScreenings() {
   // Hide a screening
   const handleHideScreening = async (screening: ScreeningItem) => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/hide/${screening.guidelineId}`, { method: "PUT" });
+      if (!currentUserId) {
+        setErrorMessage("User ID not found. Please sign in to hide a screening.")
+        return
+      }
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/hide/${screening.guidelineId}`), { method: "PUT" });
       if (!res.ok) throw new Error();
       await fetchAllScreenings();
       await fetchHiddenScreenings();
@@ -321,7 +454,11 @@ export default function HealthScreenings() {
   // Unhide a screening
   const handleUnhideScreening = async (screening: ScreeningItem) => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/unhide/${screening.guidelineId}`, { method: "PUT" });
+      if (!currentUserId) {
+        setErrorMessage("User ID not found. Please sign in to unhide a screening.")
+        return
+      }
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/unhide/${screening.guidelineId}`), { method: "PUT" });
       if (!res.ok) throw new Error();
       await fetchHiddenScreenings();
       await fetchAllScreenings();
@@ -334,10 +471,14 @@ export default function HealthScreenings() {
   // Unhide all hidden screenings
   const handleUnhideAll = async () => {
     try {
+      if (!currentUserId) {
+        setErrorMessage("User ID not found. Please sign in to unhide screenings.")
+        return
+      }
       // Unhide each hidden screening via backend
       await Promise.all(
         hiddenScreenings.map(screening =>
-          fetch(`${apiBaseUrl}/api/UserScreenings/unhide/${screening.guidelineId}`, { method: "PUT" })
+          fetch(withUser(`${apiBaseUrl}/api/UserScreenings/unhide/${screening.guidelineId}`), { method: "PUT" })
         )
       );
       await fetchAllScreenings();
@@ -364,7 +505,17 @@ export default function HealthScreenings() {
 
   const fetchArchivedScreenings = React.useCallback(async () => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/archived`);
+      if (!currentUserId) {
+        setArchivedTimelineItems([])
+        setAuthError("User ID not found. Please sign in to view archived screenings.")
+        return
+      }
+      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/archived`));
+      if (!res.ok) {
+        setArchivedTimelineItems([])
+        setAuthError(res.status === 400 ? "User ID not found. Please sign in to view archived screenings." : "Failed to load archived screenings.")
+        return
+      }
       const data = await res.json();
       const items: TimelineItem[] = [];
       Object.values(data).forEach((value: unknown) => {
@@ -382,10 +533,11 @@ export default function HealthScreenings() {
       });
       items.sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime());
       setArchivedTimelineItems(items);
+      setAuthError("")
     } catch {
       setArchivedTimelineItems([]);
     }
-  }, []);
+  }, [withUser, currentUserId]);
 
   useEffect(() => {
     if (showArchived) {
@@ -396,7 +548,7 @@ export default function HealthScreenings() {
   // Handle delete of an archived screening
   const handleDeleteArchivedScreening = async (scheduledScreeningId: string) => {
     await fetch(
-      `${apiBaseUrl}/api/UserScreenings/schedule/${scheduledScreeningId}`,
+      withUser(`${apiBaseUrl}/api/UserScreenings/schedule/${scheduledScreeningId}`),
       { method: "DELETE" }
     );
     await fetchArchivedScreenings();
@@ -426,7 +578,7 @@ export default function HealthScreenings() {
                     try {
                       const prevTotal = totalCount;
 
-                      const res = await fetch(`${apiBaseUrl}/api/UserScreenings/new-screenings`, { method: "POST" });
+                      const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/new-screenings`), { method: "POST" });
                       const data = await res.json();
                       const addedCount = Array.isArray(data) ? data.length : 0;
 
@@ -482,6 +634,9 @@ export default function HealthScreenings() {
           {/* Fetch screenings feedback Message */}
           {feedbackMessage && (
             <div className="mb-2 text-sm text-teal-700">{feedbackMessage}</div>
+          )}
+          {authError && (
+            <div className="mb-2 text-sm text-slate-600">{authError}</div>
           )}
 
           {/* Visible Screenings */}
@@ -660,9 +815,16 @@ export default function HealthScreenings() {
               type="date"
               className="border rounded px-3 py-2"
               value={selectedDate}
+              min={todayForInput()}
               onChange={e => {
                 setSelectedDate(e.target.value)
-                setErrorMessage("")
+                // Validate against past dates
+                const min = todayForInput();
+                if (isBefore(e.target.value, min)) {
+                  setErrorMessage("Please select today or a future date.");
+                } else {
+                  setErrorMessage("")
+                }
               }}
             />
             {errorMessage && (

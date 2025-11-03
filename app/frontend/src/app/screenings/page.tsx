@@ -1,3 +1,18 @@
+// page.tsx
+
+/**
+ * @file Provides the `/screenings` page component that renders the
+ * `HealthScreenings` feature with heading and description.
+ * 
+ * @remarks
+ * This page:
+ * - Wraps the `HealthScreenings` component in the route layout
+ * - Provides page-level heading and introductory copy
+ * - Leaves data fetching and interactions to `HealthScreenings`
+ *
+ * Used as the Next.js route entry point for viewing and managing screenings.
+ */
+
 import HealthScreenings from "./health-screenings"
 
 export default function Home() {

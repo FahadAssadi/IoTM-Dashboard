@@ -12,25 +12,20 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        // Set required env var so Program.cs doesn't throw
-        builder.UseEnvironment("Development");
+        // Run the app under a dedicated Testing environment
+        builder.UseEnvironment("Testing");
+        // Set required env var so Program.cs doesn't throw (kept for completeness; not used in Testing path)
         Environment.SetEnvironmentVariable("SUPABASE_DB_CONNECTION", "Host=localhost;Database=test;Username=test;Password=test");
+    Environment.SetEnvironmentVariable("SUPABASE_URL", "http://localhost");
+    Environment.SetEnvironmentVariable("SUPABASE_JWT_SECRET", "test_secret_for_integration_tests");
 
         builder.ConfigureServices(services =>
         {
             // Avoid HTTPS redirection 500 by specifying an HTTPS port
             services.PostConfigure<HttpsRedirectionOptions>(o => o.HttpsPort = 443);
 
-            // Replace the real DB with InMemory
-            var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
-            if (descriptor != null)
-            {
-                services.Remove(descriptor);
-            }
-            services.AddDbContext<ApplicationDbContext>(options =>
-            {
-                options.UseInMemoryDatabase($"IoTM_IntTest_{Guid.NewGuid()}");
-            });
+            // In Testing environment, Program.cs already configures InMemory database.
+            // No need to override DbContext here to avoid multiple provider registrations.
 
             // Register a minimal Supabase client to satisfy controller DI via reflection
             try

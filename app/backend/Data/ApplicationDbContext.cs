@@ -59,6 +59,34 @@ namespace IoTM.Data
             modelBuilder.Entity<HealthAlert>().Property(a => a.AlertType).HasConversion<string>();
             modelBuilder.Entity<HealthAlert>().Property(a => a.Severity).HasConversion<string>();
 
+            // Configure CriteriaGroup typed properties to be stored as JSON text
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            };
+
+            var criteriaConverter = new ValueConverter<CriteriaGroup?, string?>(
+                v => v == null ? null : JsonSerializer.Serialize(v, jsonOptions),
+                v => string.IsNullOrWhiteSpace(v) ? null : JsonSerializer.Deserialize<CriteriaGroup>(v!, jsonOptions)
+            );
+
+            var criteriaComparer = new ValueComparer<CriteriaGroup?>(
+                (l, r) => JsonSerializer.Serialize(l, jsonOptions) == JsonSerializer.Serialize(r, jsonOptions),
+                v => v == null ? 0 : JsonSerializer.Serialize(v, jsonOptions).GetHashCode(),
+                v => v == null ? null : JsonSerializer.Deserialize<CriteriaGroup>(JsonSerializer.Serialize(v, jsonOptions), jsonOptions)
+            );
+
+            modelBuilder.Entity<ScreeningGuideline>()
+                .Property(g => g.ConditionsRequired)
+                .HasConversion(criteriaConverter)
+                .Metadata.SetValueComparer(criteriaComparer);
+
+            modelBuilder.Entity<ScreeningGuideline>()
+                .Property(g => g.ConditionsExcluded)
+                .HasConversion(criteriaConverter)
+                .Metadata.SetValueComparer(criteriaComparer);
+
             // Configure User entity and relationships
             modelBuilder.Entity<User>(entity =>
             {

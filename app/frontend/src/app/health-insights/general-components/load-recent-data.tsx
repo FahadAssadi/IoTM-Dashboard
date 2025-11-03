@@ -1,4 +1,19 @@
-// Temporary Location
+// load-recent-data.tsx
+
+/**
+ * @file Provides the `loadRecentSummary` function – retrieves the user's most recent
+ * health metrics (heart rate, blood oxygen, and blood pressure) from the backend API.
+ *
+ * @remarks
+ * This module handles:
+ * - Authenticating requests with the current Supabase session token
+ * - Fetching the latest summary data from the ASP.NET backend endpoint
+ * - Providing fallback values when data is unavailable or errors occur
+ * - Displaying error notifications via `react-toastify`
+ *
+ * Used within the health insights dashboard to display up-to-date user vitals.
+ */
+
 import { supabase } from "@/lib/supabase/client";
 import { toast } from "react-toastify";
 

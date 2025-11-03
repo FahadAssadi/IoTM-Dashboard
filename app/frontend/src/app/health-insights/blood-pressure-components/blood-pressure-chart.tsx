@@ -1,3 +1,20 @@
+// blood-pressure-chart.tsx
+
+/**
+ * @file Provides the `BloodPressureChart` component – renders a line chart
+ * showing systolic and diastolic blood pressure trends over a specified timeframe.
+ *
+ * @remarks
+ * This component handles:
+ * - Filtering blood pressure data points by a given timeframe (default 14 days)
+ * - Displaying average systolic/diastolic values and overall deviation
+ * - Rendering a custom tooltip with period length, risk category, and deviations
+ * - Handling empty datasets with a user-friendly message
+ * - Rendering a responsive chart using Recharts
+ *
+ * Used within the heart health tab  to visualize blood pressure trends
+ */
+
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, TooltipProps } from "recharts";
 import { BloodPressureDataPoint } from "./load-blood-pressure-data";
 
@@ -18,7 +35,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps<number, string>)
   return null;
 }
 
-export function BloodPressureChart({ data, timeframe = 14 }: { data: BloodPressureDataPoint[] , timeframe?: number}) {
+export default function BloodPressureChart({ data, timeframe = 14 }: { data: BloodPressureDataPoint[] , timeframe?: number}) {
     const height = 250;
     const timeframeMs = timeframe * 24 * 60 * 60 * 1000;
     const cutoffDate = new Date(Date.now() - timeframeMs);

@@ -898,4 +898,62 @@ public class ScreeningGuidelineServiceCriteriaTests
         result.Select(g => g.GuidelineId).Should().Contain(general.GuidelineId);
         result.Should().HaveCount(2);
     }
+
+    [Fact]
+    public async Task GetRecommendedScreeningGuidelines_Uses_FrequencyRule_Over_Default()
+    {
+        // Arrange
+        var (ctx, conn) = SqliteDbContextFactory.CreateInMemory();
+        await using var _ = conn;
+        var userId = Guid.NewGuid();
+
+        // User female, age 55, not pregnant
+        var dob55 = DateOnly.FromDateTime(DateTime.Today.AddYears(-55));
+        ctx.Users.Add(new User { UserId = userId, FirstName = "Test", LastName = "User", DateOfBirth = dob55, Sex = Sex.female });
+        ctx.UserMedicalProfiles.Add(new UserMedicalProfile { UserId = userId, PregnancyStatus = PregnancyStatus.not_pregnant });
+
+        // Guideline: default every 24 months, but frequency rule says 12 months for 50-60 females not pregnant
+        var guideline = new ScreeningGuideline
+        {
+            GuidelineId = Guid.NewGuid(),
+            Name = "Age/Sex specific frequency",
+            ScreeningType = "general",
+            DefaultFrequencyMonths = 24,
+            Category = ScreeningCategory.checkup,
+            Description = "Frequency varies by age/sex",
+            SourceOrganisation = "org",
+            LastUpdated = DateOnly.FromDateTime(DateTime.UtcNow),
+            IsRecurring = true,
+            IsActive = true,
+            SexApplicable = SexApplicable.both,
+            PregnancyApplicable = PregnancyApplicable.any,
+            FrequencyRules = new System.Collections.Generic.List<FrequencyRule>
+            {
+                new FrequencyRule
+                {
+                    MinAge = 50,
+                    MaxAge = 60,
+                    SexApplicable = SexApplicable.female,
+                    PregnancyApplicable = PregnancyApplicable.not_pregnant,
+                    FrequencyMonths = 12
+                }
+            }
+        };
+
+        ctx.ScreeningGuidelines.Add(guideline);
+        await ctx.SaveChangesAsync();
+
+        var service = CreateService(ctx);
+
+        // Act
+        var result = await service.GetRecommendedScreeningGuidelines(userId);
+
+        // Assert: guideline is included and effective frequency reflects rule (12 months)
+        var matched = result.Single(g => g.GuidelineId == guideline.GuidelineId);
+        matched.EffectiveFrequencyMonths.Should().Be(12);
+
+        // And MapToDto should reflect rule-based frequency string
+        var dto = service.MapToDto(matched);
+        dto.RecommendedFrequency.Should().Be("1 year");
+    }
 }

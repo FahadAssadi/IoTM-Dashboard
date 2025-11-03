@@ -1,3 +1,31 @@
+/**
+ * @file Provides the 'useOnboardingStatus' custom hook - checks whether the
+ * current authenticated user has completed the onboarding process
+ * 
+ * @remarks
+ * This hook handles:
+ * - Fetching the current user from Supabase authentication
+ * - Checking onboarding completion status from backend API
+ * - Managing loading states during async operations
+ * - Error handling for authentication and API failures
+ * - Automatic redirect to login page if user is not authenticated
+ * - Returning onboarding status, loading state, and error information
+ *
+ * The hook makes an API call to GET /users/{id}/onboarding-status
+ * which returns an object indicating whether the user has completed
+ * the onboarding process (isOnboarded: boolean).
+ *
+ * Used by protected route components and layout wrappers to determine
+ * whether to show the onboarding flow or allow access to the main application.
+ * Typically used in conjunction with route guards to enforce onboarding
+ * completion before accessing certain features.
+ * 
+ * @returns {OnboardingStatus} Object containing:
+ * - isOnboarded: boolean indicating completion status
+ * - loading: boolean indicating if check is in progress
+ * - error: string | null with any error messages
+ */
+
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'

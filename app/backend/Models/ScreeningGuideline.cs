@@ -38,6 +38,10 @@ namespace IoTM.Models
         //TODO: make sure this is only required if IsRecurring is true.
         public int DefaultFrequencyMonths { get; set; }
 
+        // Computed at runtime from matching FrequencyRules; not persisted
+        [NotMapped]
+        public int? EffectiveFrequencyMonths { get; set; }
+
         [Required]
         public ScreeningCategory Category { get; set; }
 

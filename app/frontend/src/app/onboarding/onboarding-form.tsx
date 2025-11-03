@@ -1,3 +1,29 @@
+/**
+ * @file Provides the 'OnboardingForm' component - a multi-step onboarding wizard
+ * that collects user information during initial account setup
+ * 
+ * @remarks
+ * This component handles:
+ * - Three-step progressive form (Basic Info → Health Metrics → Health Conditions)
+ * - Client-side validation for required fields (firstName, lastName, DOB, sex, state, postcode)
+ * - Age verification (minimum 13 years old)
+ * - Fetching and pre-filling existing user profile data from backend API
+ * - Collecting optional health metrics (height, weight)
+ * - Managing health conditions and lifestyle factors via checkboxes and radio groups
+ * - Submitting complete onboarding data to backend via POST request
+ * - Allowing users to skip the health information step (Step 3)
+ * - Progress bar visualization across steps
+ * - Integration with Supabase authentication for user identification
+ * - Redirecting to home page after successful onboarding completion
+ *
+ * The form data structure is initialized from 'onboarding-scaffold.json' and
+ * conforms to the 'OnboardingFormType' interface. User data is transformed
+ * from camelCase to PascalCase before sending to the C# backend.
+ *
+ * Used as the primary onboarding experience after initial user registration,
+ * typically accessed via the '/onboarding' route.
+ */
+
 "use client"
 
 import { useRouter } from "next/navigation"
