@@ -8,25 +8,39 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load .env variables from backend project root
-Env.Load();
+// Environment-aware configuration
+var env = builder.Environment;
 
-// Get Supabase DB connection string from environment variable
-var connectionString = Environment.GetEnvironmentVariable("SUPABASE_DB_CONNECTION")
-    ?? throw new InvalidOperationException("SUPABASE_DB_CONNECTION is missing.");
-var supabaseUrlString = Environment.GetEnvironmentVariable("SUPABASE_URL")
-    ?? throw new InvalidOperationException("SUPABASE_URL is missing.");
-var supabaseJwtSecret = Environment.GetEnvironmentVariable("SUPABASE_JWT_SECRET")
-    ?? throw new InvalidOperationException("SUPABASE_JWT_SECRET is missing.");
-
-if (string.IsNullOrEmpty(connectionString))
+string? supabaseJwtSecret;
+if (env.IsEnvironment("Testing"))
 {
-    throw new Exception("SUPABASE_DB_CONNECTION environment variable not found");
+    // In testing, avoid external dependencies and use in-memory DB
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseInMemoryDatabase("IoTM_Test_Db"));
+    supabaseJwtSecret = "test_secret"; // minimal secret for auth wiring in tests
 }
+else
+{
+    // Load .env variables from backend project root
+    Env.Load();
 
-// Register EF Core DbContext with Npgsql using Supabase connection string
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    // Get Supabase DB connection string from environment variable
+    var connectionString = Environment.GetEnvironmentVariable("SUPABASE_DB_CONNECTION")
+        ?? throw new InvalidOperationException("SUPABASE_DB_CONNECTION is missing.");
+    var supabaseUrlString = Environment.GetEnvironmentVariable("SUPABASE_URL")
+        ?? throw new InvalidOperationException("SUPABASE_URL is missing.");
+    supabaseJwtSecret = Environment.GetEnvironmentVariable("SUPABASE_JWT_SECRET")
+        ?? throw new InvalidOperationException("SUPABASE_JWT_SECRET is missing.");
+
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        throw new Exception("SUPABASE_DB_CONNECTION environment variable not found");
+    }
+
+    // Register EF Core DbContext with Npgsql using Supabase connection string
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseNpgsql(connectionString));
+}
 
 // Config stuff
 builder.Services.Configure<HealthThresholds>(
