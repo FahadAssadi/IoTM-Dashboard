@@ -23,7 +23,7 @@ This folder contains the ASP.NET Core Web API backend for the IoTM Dashboard. Th
 
 ## Prerequisites
 
-- .NET 8 SDK — download from https://dotnet.microsoft.com/download/dotnet/8.0
+- .NET 8 SDK — download from [Microsoft .NET](https://dotnet.microsoft.com/)
 - A PostgreSQL instance (Supabase or local) and a valid connection string
 - (Optional) Docker if you plan to run the database or the service in containers
 
@@ -37,7 +37,7 @@ dotnet --version
 
 This project uses DotNetEnv to load `.env` from the backend project root. Create a file named `.env` in `app/backend/` and set the following variables (example names):
 
-```
+```bash
 SUPABASE_DB_CONNECTION=Host=...;Username=...;Password=...;Database=...;Port=5432;Pooling=true
 SUPABASE_URL=https://<your-supabase>.supabase.co
 SUPABASE_JWT_SECRET=<your-supabase-jwt-secret>
@@ -101,7 +101,7 @@ When the application runs in Development mode, Swagger UI is enabled and routed 
 
 Open your browser to:
 
-http://localhost:<port>/
+[http://localhost](http://localhost):<port>/
 
 (If HTTPS is enforced `https://localhost:<port>/`.) Swagger shows available endpoints and allows you to issue test requests.
 

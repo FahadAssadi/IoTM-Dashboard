@@ -61,13 +61,13 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
-Open http://localhost:3000 in your browser. The dev server uses Next's Turbopack for fast refresh.
+Open [http://localhost:3000](http://localhost:3000) in your browser. The dev server uses Next's Turbopack for fast refresh.
 
 ## Environment variables
 
 Create a `.env.local` in `app/frontend/` (do not commit secrets). Example values used in development:
 
-```
+```bash
 NEXT_PUBLIC_SUPABASE_URL=https://<your-supabase>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5225
@@ -100,7 +100,7 @@ npm run build && npm run start
 npm run test:coverage
 ```
 
-## Project structure (high level)
+## Project structure
 
 - `app/` — Next.js App Router pages and layout (primary entrypoint)
 - `components/` — React components and UI primitives
@@ -179,8 +179,8 @@ Please follow repo-wide contribution guidelines. For frontend-specific changes:
 
 ## Notes & references
 
-- Live demo (if available): https://previe-ten.vercel.app/
-- Next.js docs: https://nextjs.org/docs
-- Supabase docs: https://supabase.com/docs
+[Vercel Preview](https://previe-ten.vercel.app/)
+[Next.js Docs](https://nextjs.org/docs)
+[Supabase Docs](https://supabase.com/docs)
 
 ---

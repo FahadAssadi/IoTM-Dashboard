@@ -120,8 +120,8 @@ npm run test
 ## Project layout
 
 - `app/` - contains both `frontend/` and `backend/` apps and a sample `docker-compose.yml` for local wiring.
-	- `app/frontend/` - Next.js app (see its README)
-	- `app/backend/` - ASP.NET Core Web API (see its README)
+  - `app/frontend/` - Next.js app (see its README)
+  - `app/backend/` - ASP.NET Core Web API (see its README)
 - `mobile-wrapper/` - mobile app wrapper (React Native / Expo)
 - `IoTM-Dashboard.sln` - Visual Studio / .NET solution for the backend
 
