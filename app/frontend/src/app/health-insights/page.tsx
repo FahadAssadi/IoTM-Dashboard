@@ -20,6 +20,7 @@ import { loadSpO2, SpO2DataPoint } from "./respiratory-components/load-spo2-data
 import { loadSleepData, SleepDataPoint } from "./sleep-components/load-sleep-data"
 import { loadBloodPressure, BloodPressureDataPoint } from "./blood-pressure-components/load-blood-pressure-data"
 import { AiHealthInsights } from "./general-components/ai-health-insights"
+import { HealthSummaryPoint, loadSummaryData } from "./summary-components/load-summary-data"
 
 // Renamed the component and main heading to "Health Insights"
 export default function HealthInsightsPage() {
@@ -29,6 +30,7 @@ export default function HealthInsightsPage() {
 	const [spO2Data, setSpO2Data] = useState<SpO2DataPoint[]>([]);
 	const [sleepData, setSleepData ] = useState<SleepDataPoint[]>([]);
 	const [bloodPressureData, setBloodPressureData ] = useState<BloodPressureDataPoint[]>([]);
+	const [summaryData, setSummaryData] = useState<HealthSummaryPoint[]>([]);
 
 	const [recentSummary, setRecentSummary ] = useState<RecentSummary>({
 		bpm: "loading",
@@ -49,6 +51,8 @@ export default function HealthInsightsPage() {
           	setSleepData(sleepData);
 			const bloodPressureData = await loadBloodPressure();
 			setBloodPressureData(bloodPressureData);
+			const summaryData = await loadSummaryData();
+			setSummaryData(summaryData);
 		}
 		fetchData();
   	}, []);
@@ -147,7 +151,7 @@ export default function HealthInsightsPage() {
 
 			{/* Overview tab */}
 			<TabsContent value="overview" className="space-y-6">
-				<HealthInsightsOverviewTab />
+				<HealthInsightsOverviewTab data={summaryData} />
 			</TabsContent>
 
 			{/* Heart tab */}

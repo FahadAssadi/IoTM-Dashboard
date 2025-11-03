@@ -20,16 +20,16 @@ export function HeartRateTimeline({ data, timeframe = 7 }: { data: BPMDataPoint[
 		"0 - 60",
 	]
 	const color = {
-		"220+": "#93c5fd",
-		"0 - 60": "#93c5fd",
-		"60 - 80": "#93c5fd",
-		"80 - 100": "#93c5fd",
-		"100 - 120": "#93c5fd",
-		"120 - 140": "#93c5fd",
-		"140 - 160": "#93c5fd",
-		"160 - 180": "#93c5fd",
-		"180 - 200": "#93c5fd",
-		"200 - 220": "#93c5fd",
+		"220+": "#FF4500",
+		"0 - 60": "#007BFF",
+		"60 - 80": "#2066F0",
+		"80 - 100": "#4050E1",
+		"100 - 120": "#604AD1",
+		"120 - 140": "#A23EB3",
+		"140 - 160": "#C338A3",
+		"160 - 180": "#C338A3",
+		"180 - 200": "#E33294",
+		"200 - 220": "#F63B5E",
 	};
 
 	const timeframeMs = timeframe * 24 * 60 * 60 * 1000;
@@ -61,14 +61,6 @@ export function HeartRateTimeline({ data, timeframe = 7 }: { data: BPMDataPoint[
 		range: [40, height - 40],
 		padding: 0.25,
 	});
-
-  	console.log("Filtered data:", filteredData);
-	console.log("xScale domain:", [
-	Math.min(...filteredData.map(d => d.start)),
-	Math.max(...filteredData.map(d => d.end)),
-	]);
-	console.log("yScale domain:", yScale.domain());
-
 
 	return (
 		<div className="w-full max-w-2xl flex flex-col items-center">

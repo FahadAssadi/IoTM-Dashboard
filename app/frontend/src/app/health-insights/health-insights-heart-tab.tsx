@@ -28,28 +28,28 @@ export default function HealthInsightsHeartTab ({ data = [] } : { data? : BloodP
                     <CardDescription>Comprehensive view of your blood pressure patterns</CardDescription>
                 </CardHeader>
                 <CardContent className="md:col-span-2">
-                  <BloodPressureChart data={data}/>
+                  	<BloodPressureChart data={data}/>
                 </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Blood Pressure Category Timeline</CardTitle>
-                <CardDescription>14-day trend</CardDescription>
-              </CardHeader>
-              <CardContent className="md:col-span-1">
-                <BloodPressureTimeline data={chartData} timeframe={14}/>
-              </CardContent>
+				<CardHeader>
+					<CardTitle>Blood Pressure Category Timeline</CardTitle>
+					<CardDescription>14-day trend</CardDescription>
+				</CardHeader>
+				<CardContent className="md:col-span-1">
+					<BloodPressureTimeline data={chartData} timeframe={14}/>
+				</CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Blood Pressure Variability</CardTitle>
-                <CardDescription>Measure of heart health</CardDescription>
-              </CardHeader>
-              <CardContent className="md:col-span-1">
-                <HeartRateVariabilityChart data={data}/>
-              </CardContent>
+				<CardHeader>
+					<CardTitle>Blood Pressure Variability</CardTitle>
+					<CardDescription>Measure of heart health</CardDescription>
+				</CardHeader>
+				<CardContent className="md:col-span-1">
+					<HeartRateVariabilityChart data={data}/>
+				</CardContent>
             </Card>
           </div>
     )

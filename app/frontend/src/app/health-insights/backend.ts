@@ -39,7 +39,6 @@ export async function loadRecentSummary(): Promise<RecentSummary> {
     }
 
     const data_json = await response.json();
-    console.log("Fetched BPM data:", data_json);
     // Ensure all values are defined — fallback to "no data" if missing
     const summary: RecentSummary = {
       bpm: data_json.bpm ?? "no data",

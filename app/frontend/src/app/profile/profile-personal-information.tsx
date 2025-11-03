@@ -156,6 +156,10 @@ export default function ProfileCompletePage() {
     if (!currentUserId) return
 
     const loadProfile = async () => {
+        console.log('Current User ID:', currentUserId)
+        console.log('PI Base URL:', API_BASE_URL)
+        console.log('Full URL:', `${API_BASE_URL}/users/${currentUserId}/profile`)
+
       setInitialLoading(true)
       try {
         const profileResponse = await makeRequest<UserProfileResponse>(`/users/${currentUserId}/profile`)

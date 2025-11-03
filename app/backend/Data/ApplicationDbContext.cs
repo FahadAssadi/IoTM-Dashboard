@@ -55,6 +55,68 @@ namespace IoTM.Data
             modelBuilder.Entity<UserScreening>().Property(s => s.Status).HasConversion<string>();
             modelBuilder.Entity<HealthAlert>().Property(a => a.AlertType).HasConversion<string>();
             modelBuilder.Entity<HealthAlert>().Property(a => a.Severity).HasConversion<string>();
+
+            // Configure User entity and relationships
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(e => e.UserId);
+                entity.Property(e => e.UserId).ValueGeneratedNever(); // Supabase generates the GUID
+                
+                // Configure relationships with cascade delete for profile-related data
+                entity.HasMany(u => u.MedicalConditions)
+                    .WithOne(mc => mc.User)
+                    .HasForeignKey(mc => mc.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(u => u.FamilyHistories)
+                    .WithOne(fh => fh.User)
+                    .HasForeignKey(fh => fh.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(u => u.Medications)
+                    .WithOne(m => m.User)
+                    .HasForeignKey(m => m.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(u => u.Allergies)
+                    .WithOne(a => a.User)
+                    .HasForeignKey(a => a.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(u => u.ConnectedDevices)
+                    .WithOne(cd => cd.User)
+                    .HasForeignKey(cd => cd.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(u => u.HealthMetrics)
+                    .WithOne(hm => hm.User)
+                    .HasForeignKey(hm => hm.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(u => u.UserScreenings)
+                    .WithOne(us => us.User)
+                    .HasForeignKey(us => us.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(u => u.HealthAlerts)
+                    .WithOne(ha => ha.User)
+                    .HasForeignKey(ha => ha.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Configure MedicalCondition entity
+            modelBuilder.Entity<MedicalCondition>(entity =>
+            {
+                entity.HasKey(e => e.ConditionId);
+                entity.HasIndex(e => e.UserId); // Add index for better query performance
+            });
+
+            // Configure FamilyHistory entity
+            modelBuilder.Entity<FamilyHistory>(entity =>
+            {
+                entity.HasKey(e => e.HistoryId);
+                entity.HasIndex(e => e.UserId); // Add index for better query performance
+            });
         }
     }
 }
