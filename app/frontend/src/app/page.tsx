@@ -89,6 +89,7 @@ export default function DashboardPage() {
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([])
   const [timelineLoading, setTimelineLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [timelineError, setTimelineError] = useState<string | null>(null)
   
   // Emergency Alerts State
   const [emergencyAlerts, setEmergencyAlerts] = useState<any[]>([]);
@@ -127,7 +128,20 @@ export default function DashboardPage() {
     const fetchTimelineItems = async () => {
       try {
         setTimelineLoading(true)
+        if (!currentUserId) {
+          if (!aborted) {
+            setTimelineItems([])
+            setTimelineError("User ID not found. Please sign in to view your timeline.")
+          }
+          return
+        }
         const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/scheduled`))
+        if (!res.ok) {
+          const msg = "Unable to load timeline. " + (res.status === 400 ? "User ID not found." : "")
+          setTimelineError(msg)
+          setTimelineItems([])
+          return
+        }
         const data = await res.json()
         if (aborted) return
         type ScheduledItemDto = {
@@ -147,6 +161,7 @@ export default function DashboardPage() {
             }))
           : []
         setTimelineItems(items)
+        setTimelineError(null)
       } catch {
         if (!aborted) setTimelineItems([])
       } finally {
@@ -275,6 +290,8 @@ export default function DashboardPage() {
             <p className="text-slate-600 text-sm flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading timeline...
             </p>
+          ) : timelineError ? (
+            <p className="text-slate-600 text-sm">{timelineError}</p>
           ) : timelineItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8">
               <Sprout className="w-12 h-12 text-teal-600 mb-2" />

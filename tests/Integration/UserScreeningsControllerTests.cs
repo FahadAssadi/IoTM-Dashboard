@@ -17,7 +17,8 @@ public class UserScreeningsControllerTests : IClassFixture<CustomWebApplicationF
     public async Task GetUserScreenings_Should_Return_OK()
     {
         var client = _factory.CreateClient();
-        var response = await client.GetAsync("/api/UserScreenings?page=1&pageSize=4");
+        var userId = Guid.NewGuid();
+        var response = await client.GetAsync($"/api/UserScreenings?page=1&pageSize=4&userId={userId}");
         if (response.StatusCode != HttpStatusCode.OK)
         {
             var body = await response.Content.ReadAsStringAsync();
