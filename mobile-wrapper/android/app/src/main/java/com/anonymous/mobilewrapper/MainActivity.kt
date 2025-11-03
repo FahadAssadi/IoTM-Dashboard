@@ -1,3 +1,24 @@
+/**
+ * @file MainActivity.kt
+ * @brief Main entry point of the Android application hosting the React Native WebView and Expo modules.
+ *
+ * @description
+ * The `MainActivity` serves as the bridge between the Android runtime and the
+ * React Native JavaScript layer. It inherits from `ReactActivity` and configures:
+ *
+ * - The **main React component** (`main`) to render the app UI.
+ * - The **Expo splash screen integration** via `SplashScreenManager`.
+ * - Compatibility with **Fabric (New Architecture)** if enabled.
+ * - Correct **back button behavior** for Android 11 (R) and newer.
+ *
+ * This class is auto-generated and extended to support the hybrid
+ * structure of our app — a WebView-based Next.js UI with embedded
+ * native modules
+ *
+ *
+ * @see com.anonymous.mobilewrapper.health.HealthConnectModule
+ */
+
 package com.anonymous.mobilewrapper
 import expo.modules.splashscreen.SplashScreenManager
 

@@ -1,3 +1,30 @@
+/**
+ * @file index.tsx
+ * @brief Entry point for the Android wrapper application.
+ *
+ * @description
+ * This screen embeds the hosted web application inside a React Native WebView
+ * and enables **two-way communication** between:
+ *
+ * - The **web frontend** (Next.js app) and
+ * - The **native Android layer** (Health Connect Kotlin modules)
+ *
+ * The React Native bridge listens for JSON messages from the web app
+ * (e.g., `EXTRACT_BASELINE`, `RUN_SYNC_NOW`) and executes corresponding native
+ * actions through the `Health` module.
+ *
+ * Native responses (e.g., `BASELINE_OK`, `HC_SYNC_ERROR`) are sent back to the
+ * web layer via `window.ReactNativeWebView.postMessage`.
+ *
+ * @remarks
+ * - The WebView points to a **deployed web app** hosted on Vercel.
+ * - Each health-related operation requires permissions via Health Connect.
+ * - This layer keeps the native logic thin and delegates UI to the web layer.
+ *
+ * @see ../lib/health
+ * @see com.anonymous.mobilewrapper.health.HealthConnectModule
+ */
+
 import React, { useCallback, useRef } from "react";
 import { Alert, SafeAreaView, StyleSheet, View, Pressable, Text } from "react-native";
 import WebView, { WebViewMessageEvent } from "react-native-webview";

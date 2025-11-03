@@ -1,3 +1,29 @@
+/**
+ * @file HealthJsonWriters.kt
+ * @brief Provides helper functions for exporting Health Connect records to structured JSON.
+ *
+ * @description
+ * This singleton (`HealthJsonWriters`) encapsulates all logic for reading raw Health Connect
+ * data from the Android `HealthConnectClient` and serializing it to JSON files.
+ *
+ * It supports multiple record types:
+ * - Heart Rate
+ * - Blood Pressure
+ * - Oxygen Saturation
+ * - Steps
+ * - Sleep Sessions
+ * - Exercise Sessions
+ *
+ * @usage
+ * Used by:
+ * - `HealthConnectSyncWorker` for background sync uploads
+ * - `HealthConnectModule.extractBaselineAndStoreToken()` during baseline export
+ *
+ * @note
+ * The current implementation fetches only the first page (no pagination) for simplicity,
+ * but can be extended by increasing `maxPages` or handling `pageToken` iteration.
+ */
+
 package com.anonymous.mobilewrapper.health
 
 import androidx.health.connect.client.HealthConnectClient
@@ -13,19 +39,22 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
+// Utility object responsible for serializing Health Connect data windows to JSON.
 object HealthJsonWriters {
 
+  // Creates a base JSON container for any record type with range and empty points array.
   private fun newContainer(rangeStart: String, rangeEnd: String): JSONObject =
     JSONObject().apply {
       put("range", JSONObject().put("start", rangeStart).put("end", rangeEnd))
       put("points", JSONArray())
     }
 
-
+  // Writes the provided JSON object to file in UTF-8 encoding.
   private fun save(file: File, json: JSONObject) {
     file.writeText(json.toString(), Charsets.UTF_8)
   }
 
+  // Maps numeric sleep stage codes to human-readable labels.
   private fun stageName(stage: Int): String = when (stage) {
     6 -> "REM"
     5 -> "DEEP"
@@ -37,6 +66,7 @@ object HealthJsonWriters {
     else -> "UNKNOWN"
   }
 
+  // Maps numeric exercise type codes to string labels.
   private fun exerciseTypeName(type: Int): String = when (type) {
     0 -> "OTHER_WORKOUT"
     2 -> "BADMINTON"
@@ -102,10 +132,7 @@ object HealthJsonWriters {
     else -> "UNKNOWN"
   }
 
-  // ----------------------------
-  // FIRST PAGE (seed, single call)
-  // ----------------------------
-
+  // Reads Heart Rate records within the given time range and writes them to file.
   suspend fun writeHeartRateWindow(
     hc: HealthConnectClient,
     tr: TimeRangeFilter,
@@ -130,6 +157,7 @@ object HealthJsonWriters {
           pageToken = pageToken
         )
       )
+      // Each record may contain multiple heart rate samples
       resp.records.forEach { r ->
         val meta = r.metadata
         val recordId = meta.id
@@ -153,6 +181,7 @@ object HealthJsonWriters {
     save(file, json)
   }
 
+  // Reads Blood Pressure records and exports systolic/diastolic values.
   suspend fun writeBloodPressureWindow(
     hc: HealthConnectClient,
     tr: TimeRangeFilter,
@@ -199,6 +228,7 @@ object HealthJsonWriters {
     save(file, json)
   }
 
+  // Reads oxygen saturation records and exports as percentage values.
   suspend fun writeSpo2Window(
     hc: HealthConnectClient,
     tr: TimeRangeFilter,
@@ -244,6 +274,7 @@ object HealthJsonWriters {
     save(file, json)
   }
 
+  // Reads step count records and exports start/end times and step totals.
   suspend fun writeStepsWindow(
     hc: HealthConnectClient,
     tr: TimeRangeFilter,
@@ -287,6 +318,7 @@ object HealthJsonWriters {
     save(file, json)
   }
 
+  // Reads Sleep Session records and exports all sleep stages.
   suspend fun writeSleepSessionsWindow(
     hc: HealthConnectClient,
     tr: TimeRangeFilter,
@@ -336,6 +368,7 @@ object HealthJsonWriters {
     save(file, json)
   }
 
+  // Reads Exercise Session records and exports type and duration info.
   suspend fun writeExerciseSessionsWindow(
     hc: HealthConnectClient,
     tr: TimeRangeFilter,

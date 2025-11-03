@@ -1,3 +1,21 @@
+/**
+ * @file Provides the `DevicesPage` component — a user interface for linking and
+ * synchronizing health data via Health Connect within a hybrid web + React Native setup.
+ *
+ * @remarks
+ * This page is designed to work both as a standalone Next.js web page and when
+ * embedded inside the React Native companion app through a WebView. It leverages:
+ *
+ * - `useIsEmbeddedRN()` to detect if running inside a native WebView
+ * - `useRNBridge()` to send and receive JSON messages from the native Android/iOS layer
+ * - Supabase authentication for user session and access token management
+ *
+ * The page provides two main sections:
+ * 1. **Health Connect Linking:** Initiates permission and baseline extraction.
+ * 2. **Sync Status:** Displays the latest synchronization summary from native health data origins.
+ *
+ */
+
 "use client";
 
 import React, { useMemo, useState } from "react";
@@ -41,6 +59,7 @@ function Button(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   );
 }
 
+// Maps raw Health Connect package IDs to user-friendly names
 const ORIGIN_FRIENDLY: Record<string, string> = {
   "com.google.android.apps.fitness": "Google Fit",
   "com.samsung.android.app.health": "Samsung Health",
@@ -59,6 +78,7 @@ function formatIso(iso?: string) {
   const dt = new Date(iso);
   return dt.toLocaleString();
 }
+// Type guard: checks if a message payload matches the RNSyncSnapshot shape
 function isRNSyncSnapshot(payload: unknown): payload is RNSyncSnapshot {
   return (
     typeof payload === "object" &&
@@ -67,12 +87,17 @@ function isRNSyncSnapshot(payload: unknown): payload is RNSyncSnapshot {
   );
 }
 
+// Displays the Connected Devices page for managing Health Connect integrations.
 export default function DevicesPage() {
+  // Detects if running inside RN WebView
   const isEmbedded = useIsEmbeddedRN();
+  // UI state for baseline linking
   const [linking, setLinking] = useState(false);
+  // UI state for sync in progress
   const [syncing, setSyncing] = useState(false);
-
+  // Last sync timestamp
   const [lastSyncMs, setLastSyncMs] = useState<number | null>(null);
+  // Data snapshot from native
   const [snapshot, setSnapshot] = useState<RNSyncSnapshot | null>(null);
 
   const { post } = useRNBridge((msg) => {
@@ -112,6 +137,7 @@ export default function DevicesPage() {
     }
   });
 
+  // Renders a dynamic table of origin breakdowns (e.g., Google Fit, Samsung Health).
   const originRows = useMemo(() => {
     const origins = snapshot?.origins ?? {};
     const keys = Object.keys(origins);
@@ -133,6 +159,7 @@ export default function DevicesPage() {
     });
   }, [snapshot]);
 
+  // UI
   return (
     <div className="flex min-h-screen flex-col">
       <main className="flex-1 space-y-6 p-8 pt-6">

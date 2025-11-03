@@ -1,3 +1,24 @@
+/**
+ * @file health.ts
+ * @brief Type-safe React Native bridge to the Android Health Connect native module.
+ *
+ * @description
+ * This module provides a strongly typed JavaScript interface to the native
+ * `HealthConnectModule` implemented in Kotlin. It acts as the middle layer between:
+ *
+ * WebView (Next.js) → React Native (JS Bridge) → Kotlin (NativeModule) → Health Connect API
+ *
+ * The exported `Health` object safely wraps calls to the underlying
+ * Android native module, ensuring platform and availability checks are
+ * performed before invoking native functions.
+ *
+ * @remarks
+ * - These methods only execute on Android; they safely no-op or throw on iOS.
+ *
+ * @see com.anonymous.mobilewrapper.health.HealthConnectModule
+ * @see ../index.tsx
+ */
+
 import { NativeModules, Platform } from "react-native";
 
 type HealthConnectNative = {

@@ -1,3 +1,20 @@
+/**
+ * @file HealthConnectModule.kt
+ * @brief Provides the native Android bridge module for integrating Health Connect
+ *        with the React Native (and WebView) layers of the Smart Health Companion app.
+ *
+ * @description
+ * This module exposes a set of React Native methods that allow JavaScript
+ * code to interact with Android Health Connect through the React Native bridge.
+ * It supports:
+ * - Checking Health Connect availability and permissions
+ * - Requesting user permissions for reading health data
+ * - Extracting 30-day baseline health data from multiple record types
+ * - Scheduling periodic background syncs via WorkManager
+ * - Running one-time on-demand synchronization tasks
+ *
+ */
+
 package com.anonymous.mobilewrapper.health
 
 import android.content.Intent
@@ -25,13 +42,15 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.io.File
 
+// React Native bridge class that exposes Health Connect APIs to JavaScript.
 class HealthConnectModule(private val reactContext: ReactApplicationContext)
   : ReactContextBaseJavaModule(reactContext) {
 
   override fun getName() = "HealthConnectModule"
 
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
+  
+  // Companion constants for file paths and filenames used in local JSON exports. (For checking data on local device)
   private companion object {
     const val DATA_DIR = "health_data"
     const val FILE_BP  = "blood_pressure_data.json"
@@ -42,17 +61,20 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
     const val FILE_EXERCISE = "exercise_data.json"
   }
 
+  // Returns a writable directory for saving JSON data exports.
   private fun dataDir(): File {
     val dir = reactContext.getExternalFilesDir(DATA_DIR) ?: reactContext.filesDir
     if (!dir.exists()) dir.mkdirs()
     return dir
   }
 
+  // Ensures coroutine cleanup when the React bridge is destroyed.
   override fun onCatalystInstanceDestroy() {
     super.onCatalystInstanceDestroy()
     scope.cancel()
   }
-
+  
+  // Defines the set of Health Connect read permissions required by the app.
   private fun requiredPermissions(): Set<String> = setOf(
     HealthPermission.getReadPermission(HeartRateRecord::class),
     HealthPermission.getReadPermission(BloodPressureRecord::class),
@@ -62,6 +84,7 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
     HealthPermission.getReadPermission(ExerciseSessionRecord::class),
   )
 
+  // Checks whether the Health Connect SDK is available on this device.
   @ReactMethod
   fun isAvailable(promise: Promise) {
     val status = HealthConnectClient.getSdkStatus(reactContext)
@@ -69,6 +92,7 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
     promise.resolve(status == HealthConnectClient.SDK_AVAILABLE)
   }
 
+  // Checks whether the user has already granted all required Health Connect permissions.
   @ReactMethod
   fun hasRequiredPermissions(promise: Promise) {
     val status = HealthConnectClient.getSdkStatus(reactContext)
@@ -88,6 +112,7 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
     }
   }
 
+  // Requests Health Connect permissions via a trampoline activity (PermissionProxyActivity).
   @ReactMethod
   fun requestPermissions(promise: Promise) {
     val activity = currentActivity ?: return promise.reject("NO_ACTIVITY", "No foreground activity")
@@ -132,6 +157,7 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
     activity.startActivity(intent)
   }
 
+  // Extracts the 30-day baseline of all supported Health Connect record types and schedules periodic syncs (every 15 minutes)
   @ReactMethod
   fun extractBaselineAndStoreToken(userId: String, token: String, promise: Promise) {
     scope.launch {
@@ -178,7 +204,7 @@ class HealthConnectModule(private val reactContext: ReactApplicationContext)
     }
   }
 
-
+  // Manually triggers an immediate Health Connect sync via WorkManager.
   @ReactMethod
   fun runHealthSyncNow(userId: String, token: String, promise: Promise) {
      try {

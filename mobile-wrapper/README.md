@@ -1,6 +1,7 @@
-# Welcome to your Expo app 👋
+# Welcome to your Smart Health Track Companion app 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This project is a hybrid mobile application built with **Expo** and **React Native**, embedding a hosted **Next.js web app** inside a native Android WebView.  
+It integrates with **Android Health Connect** via custom Kotlin modules to read, sync, and upload user health metrics to a backend (.NET API).
 
 ## Get started
 
@@ -23,7 +24,45 @@ In the output, you'll find options to open the app in a
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
 - [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Running and Debugging on Android Devices
+
+Option A:
+1. Enable Developer Options
+2. Enable USB Debugging
+3. Connect your device via a USB cable
+4. Verify connections via 
+``` bash
+adb devices
+```
+5. Run the app for debugging with 
+``` bash
+npx expo run:android
+```
+
+This command will build the android native project and install the development APK on your device.
+
+Option B:
+1. Install Android Studio and created a virtual device.
+2. Start your emulator from Android Studio.
+3. Run the app with 
+```bash 
+npx expo run:android
+```
+
+## Building and Installing the App Manually
+
+1. Build Release APK (for deployment)
+From project root: 
+``` bash
+cd android
+./gradlew assembleRelease
+```
+This compiles the app into: android/app/build/outputs/apk/release/app-release.apk
+
+2. Install it manually via ADB:
+``` bash
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
 
 ## Get a fresh project
 
