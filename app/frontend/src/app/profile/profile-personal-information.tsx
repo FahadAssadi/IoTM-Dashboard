@@ -1,3 +1,35 @@
+/**
+ * @file Provides the 'ProfileCompletePage' component - a comprehensive profile
+ * management interface for viewing and updating user information
+ * 
+ * @remarks
+ * This component handles:
+ * - Loading and displaying user profile data from backend API
+ * - Form-based editing of personal information (name, DOB, sex, phone, city)
+ * - Avatar upload functionality with file validation (type, size limits)
+ * - Avatar deletion capability
+ * - Managing medical conditions via multi-select checkboxes
+ * - Managing family medical history via multi-select checkboxes
+ * - Separate save operations for personal info, medical conditions, and family history
+ * - Integration with Supabase authentication for user identification
+ * - Real-time form validation via react-hook-form
+ * - Loading states for initial data fetch and save operations
+ * - Error handling with user-friendly toast notifications
+ * - Responsive grid layout for desktop and mobile views
+ *
+ * The component makes multiple API calls:
+ * - GET /users/{id}/profile - Fetches user profile and health data
+ * - PUT /users/{id}/profile - Updates user profile information
+ * - GET /users/medical-conditions/available - Gets list of available conditions
+ * - GET /users/family-history/available - Gets list of available family conditions
+ * - POST /users/{id}/avatar - Uploads profile picture
+ * - DELETE /users/{id}/avatar - Removes profile picture
+ *
+ * Used within a tabs interface as the "personal" tab content, typically
+ * accessed via the '/profile' route after successful authentication.
+ */
+
+
 import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"

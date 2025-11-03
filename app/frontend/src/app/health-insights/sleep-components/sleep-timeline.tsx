@@ -1,9 +1,24 @@
+// sleep-timeline.tsx
+
+/**
+ * @file Provides the `SleepTimeline` component – visualizes a user’s sleep stages over a specified timeframe.
+ *
+ * @remarks
+ * This component handles:
+ * - Filtering sleep data points by the given timeframe
+ * - Mapping sleep stages (AWAKE, REM, LIGHT, DEEP) to a vertical timeline with color coding
+ * - Rendering an interactive SVG timeline using VisX scales and axes
+ * - Displaying a placeholder message if no data is available
+ *
+ * Used within sleep health components to give a quick overview of nightly sleep patterns and stage distribution.
+ */
+
 import { scaleTime, scaleBand } from "@visx/scale";
 import { Group } from "@visx/group";
 import { AxisBottom, AxisLeft } from "@visx/axis";
 import { SleepDataPoint } from "./load-sleep-data";
 
-export function SleepTimeline({ data, timeframe = 1 }: { data: SleepDataPoint[]; timeframe?: number }) {
+export default function SleepTimeline({ data, timeframe = 1 }: { data: SleepDataPoint[]; timeframe?: number }) {
   const width = 700;
   const height = 250;
 

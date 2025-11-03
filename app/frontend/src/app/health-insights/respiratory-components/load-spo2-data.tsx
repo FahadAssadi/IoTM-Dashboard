@@ -1,3 +1,18 @@
+// load-spo2-data.tsx
+
+/**
+ * @file Provides the `loadSpO2` function – fetches the user’s SpO₂ (blood oxygen) data.
+ *
+ * @remarks
+ * This module handles:
+ * - Authenticating requests using the current Supabase session token
+ * - Returning structured SpO₂ data points with start/end times, averages, standard deviation, duration, and category
+ * - Returning an empty array if no data is available or an error occurs
+ * - Logging errors and displaying notifications via `react-toastify`
+ *
+ * Used within respiratory health components to visualize blood oxygen levels and trends.
+ */
+
 import { toast } from "react-toastify";
 import { supabase } from "@/lib/supabase/client";
 

@@ -1,3 +1,13 @@
+// ai-health-insights.tsx
+
+/**
+ * @file Provides the `AiHealthInsights` component – displays AI-generated summaries
+ * and observations about the user’s recent health data.
+ *
+ * @remarks
+ * This component is a placeholder and contains no current functionality
+ */
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Activity, Calendar, Clock }  from "lucide-react"
 

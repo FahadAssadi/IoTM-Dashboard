@@ -1,6 +1,13 @@
-"use client"
+// page.tsx
 
-import LoginSignUpForm from "./login-signup-form"
+/**
+ * @file Defines the login page of the application.
+ *
+ * Renders the `LoginSignUpForm` component with the "login" tab selected by default.
+ * Acts as the entry point for user authentication in the Next.js app.
+ */
+
+import LoginSignUpForm from "./auth-tabs"
 
 export default function LoginPage() {
     return (

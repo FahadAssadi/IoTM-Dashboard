@@ -1,7 +1,24 @@
+// heart-rate-variability-chart.tsx
+
+/**
+ * @file Provides the `HeartRateVariabilityChart` component – renders a line chart
+ * showing blood pressure variability (heart rate variance) over a specified timeframe.
+ *
+ * @remarks
+ * This component handles:
+ * - Filtering blood pressure data points by a given timeframe (default 14 days)
+ * - Displaying systolic standard deviation as a measure of heart rate variability
+ * - Rendering a responsive chart using Recharts
+ * - Handling empty datasets with a user-friendly message
+ *
+ * Used within the heart health dashboard to visualize trends in blood pressure
+ * variability and assess cardiovascular stability over time.
+ */
+
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } from "recharts";
 import { BloodPressureDataPoint } from "./load-blood-pressure-data";
 
-export function HeartRateVariabilityChart({ data, timeframe = 14 }: { data: BloodPressureDataPoint[], timeframe? : number }) {
+export default function HeartRateVariabilityChart({ data, timeframe = 14 }: { data: BloodPressureDataPoint[], timeframe? : number }) {
     const height = 250;
     const timeframeMs = timeframe * 24 * 60 * 60 * 1000;
     const cutoffDate = new Date(Date.now() - timeframeMs);
