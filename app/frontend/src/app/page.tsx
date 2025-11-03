@@ -14,7 +14,6 @@ import { getGoogleCalendarUrl, type CalEvent } from "@/lib/calendar"
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
 
-
 const BADGE_MAP: Record<"upcoming" | "due-soon" | "overdue", { bg: string; text: string; border: string; label: string }> = {
   "upcoming": {
     bg: "bg-teal-100",
