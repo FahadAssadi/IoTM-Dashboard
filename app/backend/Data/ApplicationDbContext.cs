@@ -148,6 +148,34 @@ namespace IoTM.Data
                 entity.HasKey(e => e.HistoryId);
                 entity.HasIndex(e => e.UserId); // Add index for better query performance
             });
+
+            // Configure CriteriaGroup typed properties to be stored as JSON text
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            };
+
+            var criteriaConverter = new ValueConverter<CriteriaGroup?, string?>(
+                v => v == null ? null : JsonSerializer.Serialize(v, jsonOptions),
+                v => string.IsNullOrWhiteSpace(v) ? null : JsonSerializer.Deserialize<CriteriaGroup>(v!, jsonOptions)
+            );
+
+            var criteriaComparer = new ValueComparer<CriteriaGroup?>(
+                (l, r) => JsonSerializer.Serialize(l, jsonOptions) == JsonSerializer.Serialize(r, jsonOptions),
+                v => v == null ? 0 : JsonSerializer.Serialize(v, jsonOptions).GetHashCode(),
+                v => v == null ? null : JsonSerializer.Deserialize<CriteriaGroup>(JsonSerializer.Serialize(v, jsonOptions), jsonOptions)
+            );
+
+            modelBuilder.Entity<ScreeningGuideline>()
+                .Property(g => g.ConditionsRequired)
+                .HasConversion(criteriaConverter)
+                .Metadata.SetValueComparer(criteriaComparer);
+
+            modelBuilder.Entity<ScreeningGuideline>()
+                .Property(g => g.ConditionsExcluded)
+                .HasConversion(criteriaConverter)
+                .Metadata.SetValueComparer(criteriaComparer);
         }
     }
 }

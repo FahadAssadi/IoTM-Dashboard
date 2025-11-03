@@ -109,6 +109,13 @@ cd app/frontend
 npm run test
 ```
 
+- Backend tests: run from `tests`:
+
+```powershell
+cd tests
+dotnet test
+```
+
 - Backend tests: this repository does not include a dedicated test project by default. If you add tests, prefer NUnit/xUnit and a `tests/` or `src/*.Tests` project.
 
 ## Deployment notes
@@ -120,8 +127,8 @@ npm run test
 ## Project layout
 
 - `app/` - contains both `frontend/` and `backend/` apps and a sample `docker-compose.yml` for local wiring.
-	- `app/frontend/` - Next.js app (see its README)
-	- `app/backend/` - ASP.NET Core Web API (see its README)
+  - `app/frontend/` - Next.js app (see its README)
+  - `app/backend/` - ASP.NET Core Web API (see its README)
 - `mobile-wrapper/` - mobile app wrapper (React Native / Expo)
 - `IoTM-Dashboard.sln` - Visual Studio / .NET solution for the backend
 
