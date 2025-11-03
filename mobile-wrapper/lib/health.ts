@@ -1,11 +1,32 @@
+/**
+ * @file health.ts
+ * @brief Type-safe React Native bridge to the Android Health Connect native module.
+ *
+ * @description
+ * This module provides a strongly typed JavaScript interface to the native
+ * `HealthConnectModule` implemented in Kotlin. It acts as the middle layer between:
+ *
+ * WebView (Next.js) → React Native (JS Bridge) → Kotlin (NativeModule) → Health Connect API
+ *
+ * The exported `Health` object safely wraps calls to the underlying
+ * Android native module, ensuring platform and availability checks are
+ * performed before invoking native functions.
+ *
+ * @remarks
+ * - These methods only execute on Android; they safely no-op or throw on iOS.
+ *
+ * @see com.anonymous.mobilewrapper.health.HealthConnectModule
+ * @see ../index.tsx
+ */
+
 import { NativeModules, Platform } from "react-native";
 
 type HealthConnectNative = {
   isAvailable: () => Promise<boolean>;
   hasRequiredPermissions: () => Promise<boolean>;
   requestPermissions: () => Promise<void>;
-  extractBaselineAndStoreToken: () => Promise<boolean>;
-  runHealthSyncNow: () => Promise<boolean>;
+  extractBaselineAndStoreToken: (userId: string, token: string) => Promise<boolean>;
+  runHealthSyncNow: (userId: string, token: string) => Promise<boolean>;
 };
 
 const native = NativeModules.HealthConnectModule as Partial<HealthConnectNative> | undefined;
@@ -26,15 +47,15 @@ export const Health: HealthConnectNative = {
     }
     return native.requestPermissions();
   },
-  async extractBaselineAndStoreToken() {
+  async extractBaselineAndStoreToken(userId: string, token: string) {
     if (Platform.OS !== "android" || !native?.extractBaselineAndStoreToken)
       throw new Error("HealthConnectModule not available");
-    return native.extractBaselineAndStoreToken();
+    return native.extractBaselineAndStoreToken(userId, token);
   },
-  async runHealthSyncNow() {
+  async runHealthSyncNow(userId: string, token: string) {
     if (Platform.OS !== "android" || !native?.runHealthSyncNow)
       throw new Error("HealthConnectModule not available");
-    return native.runHealthSyncNow();
+    return native.runHealthSyncNow(userId, token);
   },
 
 };

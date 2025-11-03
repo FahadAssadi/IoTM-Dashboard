@@ -1,3 +1,30 @@
+/**
+ * @file index.tsx
+ * @brief Entry point for the Android wrapper application.
+ *
+ * @description
+ * This screen embeds the hosted web application inside a React Native WebView
+ * and enables **two-way communication** between:
+ *
+ * - The **web frontend** (Next.js app) and
+ * - The **native Android layer** (Health Connect Kotlin modules)
+ *
+ * The React Native bridge listens for JSON messages from the web app
+ * (e.g., `EXTRACT_BASELINE`, `RUN_SYNC_NOW`) and executes corresponding native
+ * actions through the `Health` module.
+ *
+ * Native responses (e.g., `BASELINE_OK`, `HC_SYNC_ERROR`) are sent back to the
+ * web layer via `window.ReactNativeWebView.postMessage`.
+ *
+ * @remarks
+ * - The WebView points to a **deployed web app** hosted on Vercel.
+ * - Each health-related operation requires permissions via Health Connect.
+ * - This layer keeps the native logic thin and delegates UI to the web layer.
+ *
+ * @see ../lib/health
+ * @see com.anonymous.mobilewrapper.health.HealthConnectModule
+ */
+
 import React, { useCallback, useRef } from "react";
 import { Alert, SafeAreaView, StyleSheet, View, Pressable, Text } from "react-native";
 import WebView, { WebViewMessageEvent } from "react-native-webview";
@@ -13,30 +40,34 @@ export default function Screen() {
   }, []);
 
   // Native actions exposed to the web
-  const doExtractBaseline = useCallback(async () => {
+  const doExtractBaseline = useCallback(async (userId: string, token: string) => {
     try {
-      if (!(await Health.isAvailable())) return postToWeb("HC_UNAVAILABLE");
-      if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
+        if (!(await Health.isAvailable())) return postToWeb("HC_UNAVAILABLE");
+        if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
 
-      await Health.extractBaselineAndStoreToken();
-      postToWeb("BASELINE_OK", { dirHint: "files/health_data" });
-    } catch (e) {
-      postToWeb("BASELINE_ERROR", { error: String(e) });
-    }
-  }, [postToWeb]);
+        await Health.extractBaselineAndStoreToken(userId, token);
+        postToWeb("BASELINE_OK", { dirHint: "files/health_data" });
+      } catch (e) {
+        postToWeb("BASELINE_ERROR", { error: String(e) });
+      }
+    },
+    [postToWeb]
+  );
 
 
-  const doRunSyncNow = useCallback(async () => {
+  const doRunSyncNow = useCallback(async (userId: string, token: string) => {
     try {
-      if (!(await Health.isAvailable())) return postToWeb("HC_UNAVAILABLE");
-      if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
+        if (!(await Health.isAvailable())) return postToWeb("HC_UNAVAILABLE");
+        if (!(await Health.hasRequiredPermissions())) await Health.requestPermissions();
 
-      await Health.runHealthSyncNow();
-      postToWeb("RUN_NOW_OK");
-    } catch (e) {
-      postToWeb("HC_SYNC_ERROR", { error: String(e) });
-    }
-  }, [postToWeb]);
+        await Health.runHealthSyncNow(userId, token);
+        postToWeb("RUN_NOW_OK");
+      } catch (e) {
+        postToWeb("HC_SYNC_ERROR", { error: String(e) });
+      }
+    },
+    [postToWeb]
+  );
 
   // Web -> RN bridge
   const onMessage = useCallback(async (e: WebViewMessageEvent) => {
@@ -45,11 +76,25 @@ export default function Screen() {
 
     switch (msg.type) {
       case "EXTRACT_BASELINE":
-        await doExtractBaseline();
-        break;
+        {
+          const { userId, token } = msg.payload ?? {};
+          if (!userId || !token) {
+            postToWeb("BASELINE_ERROR", { error: "Missing userId or token" });
+            return;
+          }
+          await doExtractBaseline(userId, token);
+          break;
+        }
       case "RUN_SYNC_NOW":
-        await doRunSyncNow();
-        break;
+         {
+          const { userId, token } = msg.payload ?? {};
+          if (!userId || !token) {
+            postToWeb("HC_SYNC_ERROR", { error: "Missing userId or token" });
+            return;
+          }
+          await doRunSyncNow(userId, token);
+          break;
+        }
       default:
         // ignore unknown
         break;
