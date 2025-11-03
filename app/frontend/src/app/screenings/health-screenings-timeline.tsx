@@ -22,6 +22,7 @@ import { Calendar, CalendarClock, Sprout, Pencil, Trash2, Archive, X } from "luc
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { getGoogleCalendarUrl, type CalEvent } from "@/lib/calendar"
 
 export interface TimelineItem {
   scheduledScreeningId: string
@@ -30,38 +31,6 @@ export interface TimelineItem {
   scheduledDate: string
   month: string
   status?: "due-soon" | "overdue" | "upcoming"
-}
-
-type CalEvent = {
-  title: string
-  description?: string
-  startTime: string
-  endTime?: string
-  location?: string
-  timezone?: string
-}
-
-// Google Calendar helper: format Date to YYYYMMDDTHHMMSSZ
-function formatGoogleDate(date: Date): string {
-  return date
-    .toISOString()
-    .replace(/[-:]/g, "")
-    .replace(/\.\d{3}Z$/, "Z");
-}
-
-// Build a Google Calendar "Add event" URL (opens Google Calendar UI in a new tab)
-function getGoogleCalendarUrl(event: CalEvent): string {
-  const start = formatGoogleDate(new Date(event.startTime));
-  const end = event.endTime ? formatGoogleDate(new Date(event.endTime)) : start;
-  const params = new URLSearchParams({
-    action: "TEMPLATE",
-    text: event.title || "",
-    details: event.description || "",
-    location: event.location || "",
-    dates: `${start}/${end}`,
-    ctz: event.timezone || "UTC",
-  });
-  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
 interface HealthScreeningTimelineProps {

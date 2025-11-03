@@ -9,6 +9,7 @@ import { getTimelineStatus } from "./screenings/health-screenings-timeline"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase/client"
+import { getGoogleCalendarUrl, type CalEvent } from "@/lib/calendar"
 
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
@@ -35,8 +36,6 @@ const BADGE_MAP: Record<"upcoming" | "due-soon" | "overdue", { bg: string; text:
   },
 }
 
-
-
 function HealthScreeningCard({
   item,
 }: { item: TimelineItem }) {
@@ -46,6 +45,19 @@ function HealthScreeningCard({
     month: "long",
     day: "numeric",
   })
+  // Prepare event object for Google Calendar link
+  const startDate = new Date(item.scheduledDate)
+  const endDate = new Date(item.scheduledDate)
+  endDate.setHours(endDate.getHours() + 1) // 1 hour default duration
+  const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+  const event: CalEvent = {
+    title: item.guidelineName,
+    description: "Health screening reminder",
+    startTime: startDate.toISOString(),
+    endTime: endDate.toISOString(),
+    location: "",
+    timezone: browserTz,
+  }
   return (
     <div className="flex items-center gap-4 rounded-lg border border-slate-200 p-4">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
@@ -64,9 +76,9 @@ function HealthScreeningCard({
       >
         {badge.label}
       </Badge>
-      <Button variant="default">
-        Export
-      </Button>
+      <a href={getGoogleCalendarUrl(event)} target="_blank" rel="noopener noreferrer">
+        <Button variant="default">Export</Button>
+      </a>
     </div>
   )
 }
