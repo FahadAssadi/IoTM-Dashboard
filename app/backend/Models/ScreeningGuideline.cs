@@ -18,7 +18,7 @@ namespace IoTM.Models
     }
     public enum PregnancyApplicable
     {
-        not_pregnant, pregnant, postpartum
+        not_pregnant, pregnant, postpartum, any
     }
 
     [Table("screening_guidelines")]
@@ -37,6 +37,10 @@ namespace IoTM.Models
 
         //TODO: make sure this is only required if IsRecurring is true.
         public int DefaultFrequencyMonths { get; set; }
+
+        // Computed at runtime from matching FrequencyRules; not persisted
+        [NotMapped]
+        public int? EffectiveFrequencyMonths { get; set; }
 
         [Required]
         public ScreeningCategory Category { get; set; }
@@ -61,11 +65,11 @@ namespace IoTM.Models
         /// </summary>
         public PregnancyApplicable PregnancyApplicable { get; set; }
 
-        /// <summary>
-        /// Recommendation Criteria
-        /// </summary>
-        public string? ConditionsRequired { get; set; } // e.g. "smoker", "family history"
-        public string? ConditionsExcluded { get; set; }
+    /// <summary>
+    /// Additional criteria that must be met for this guideline (typed, persisted as JSON).
+    /// </summary>
+    public CriteriaGroup? ConditionsRequired { get; set; }
+    public CriteriaGroup? ConditionsExcluded { get; set; }
         public string? RiskFactors { get; set; }
 
         [Required]

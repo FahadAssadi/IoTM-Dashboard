@@ -1,19 +1,21 @@
 "use client"
 
-import { Calendar, Clock, Heart, ArrowRight, Loader2 } from "lucide-react"
+import { Calendar, Clock, Heart, ArrowRight, Loader2, Sprout } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { TimelineItem } from "./screenings/health-screenings-timeline"
-import timelineData from "./screenings/timeline-data.json"
+import { getTimelineStatus } from "./screenings/health-screenings-timeline"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase/client"
+import { getGoogleCalendarUrl, type CalEvent } from "@/lib/calendar"
 
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const timelineItems: TimelineItem[] = timelineData as any[] // TODO: connect backend to get real scheduled screening data
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
 
-const BADGE_MAP: Record<TimelineItem["status"], { bg: string; text: string; border: string; label: string }> = {
+
+const BADGE_MAP: Record<"upcoming" | "due-soon" | "overdue", { bg: string; text: string; border: string; label: string }> = {
   "upcoming": {
     bg: "bg-teal-100",
     text: "text-teal-700",
@@ -34,12 +36,28 @@ const BADGE_MAP: Record<TimelineItem["status"], { bg: string; text: string; bord
   },
 }
 
-
-
 function HealthScreeningCard({
   item,
 }: { item: TimelineItem }) {
-  const badge = BADGE_MAP[item.status]
+  const badge = BADGE_MAP[item.status as "upcoming" | "due-soon" | "overdue"] ?? BADGE_MAP["upcoming"]
+  const dateLabel = new Date(item.scheduledDate).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  })
+  // Prepare event object for Google Calendar link
+  const startDate = new Date(item.scheduledDate)
+  const endDate = new Date(item.scheduledDate)
+  endDate.setHours(endDate.getHours() + 1) // 1 hour default duration
+  const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+  const event: CalEvent = {
+    title: item.guidelineName,
+    description: "Health screening reminder",
+    startTime: startDate.toISOString(),
+    endTime: endDate.toISOString(),
+    location: "",
+    timezone: browserTz,
+  }
   return (
     <div className="flex items-center gap-4 rounded-lg border border-slate-200 p-4">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
@@ -49,7 +67,7 @@ function HealthScreeningCard({
         <p className="font-medium text-slate-800">{item.guidelineName}</p>
         <div className="flex items-center text-sm text-slate-600">
           <Clock className="mr-1 h-4 w-4" />
-          <span>{item.scheduledDate}</span>
+          <span>{dateLabel}</span>
         </div>
       </div>
       <Badge
@@ -58,16 +76,20 @@ function HealthScreeningCard({
       >
         {badge.label}
       </Badge>
-      <Button variant="default">
-        Export
-      </Button>
+      <a href={getGoogleCalendarUrl(event)} target="_blank" rel="noopener noreferrer">
+        <Button variant="default">Export</Button>
+      </a>
     </div>
   )
 }
 
 
 export default function DashboardPage() {
-
+  // Timeline State
+  const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([])
+  const [timelineLoading, setTimelineLoading] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [timelineError, setTimelineError] = useState<string | null>(null)
   
   // Emergency Alerts State
   const [emergencyAlerts, setEmergencyAlerts] = useState<any[]>([]);
@@ -81,6 +103,75 @@ export default function DashboardPage() {
 
   const [alertSummary, setAlertSummary] = useState<string>("");
   const [alertSummaryLoading, setAlertSummaryLoading] = useState(false);
+
+  // Load current user from Supabase for userId-aware API calls
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (mounted) setCurrentUserId(user?.id ?? null)
+      } catch {
+        if (mounted) setCurrentUserId(null)
+      }
+    })()
+    return () => { mounted = false }
+  }, [])
+
+  // Fetch scheduled timeline items
+  useEffect(() => {
+    let aborted = false
+    const withUser = (url: string) => (
+      currentUserId ? `${url}${url.includes("?") ? "&" : "?"}userId=${encodeURIComponent(currentUserId)}` : url
+    )
+
+    const fetchTimelineItems = async () => {
+      try {
+        setTimelineLoading(true)
+        if (!currentUserId) {
+          if (!aborted) {
+            setTimelineItems([])
+            setTimelineError("User ID not found. Please sign in to view your timeline.")
+          }
+          return
+        }
+        const res = await fetch(withUser(`${apiBaseUrl}/api/UserScreenings/scheduled`))
+        if (!res.ok) {
+          const msg = "Unable to load timeline. " + (res.status === 400 ? "User ID not found." : "")
+          setTimelineError(msg)
+          setTimelineItems([])
+          return
+        }
+        const data = await res.json()
+        if (aborted) return
+        type ScheduledItemDto = {
+          scheduledScreeningId: string
+          guidelineId: string
+          guidelineName: string
+          scheduledDate: string
+        }
+        const items: TimelineItem[] = Array.isArray(data)
+          ? data.map((item: ScheduledItemDto) => ({
+              scheduledScreeningId: item.scheduledScreeningId,
+              guidelineId: item.guidelineId,
+              guidelineName: item.guidelineName,
+              scheduledDate: item.scheduledDate,
+              month: new Date(item.scheduledDate).toLocaleString("default", { month: "long" }),
+              status: getTimelineStatus(item.scheduledDate) ?? "upcoming",
+            }))
+          : []
+        setTimelineItems(items)
+        setTimelineError(null)
+      } catch {
+        if (!aborted) setTimelineItems([])
+      } finally {
+        if (!aborted) setTimelineLoading(false)
+      }
+    }
+
+    fetchTimelineItems()
+    return () => { aborted = true }
+  }, [currentUserId])
 
   useEffect(() => {
     const fetchEmergencyAlerts = async () => {
@@ -195,9 +286,22 @@ export default function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {timelineItems.slice(0, 2).map(item => (
-            <HealthScreeningCard key={item.scheduledScreeningId} item={item} />
-          ))}
+          {timelineLoading ? (
+            <p className="text-slate-600 text-sm flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading timeline...
+            </p>
+          ) : timelineError ? (
+            <p className="text-slate-600 text-sm">{timelineError}</p>
+          ) : timelineItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <Sprout className="w-12 h-12 text-teal-600 mb-2" />
+              <p className="text-slate-600">There&apos;s nothing here yet</p>
+            </div>
+          ) : (
+            timelineItems.slice(0, 2).map(item => (
+              <HealthScreeningCard key={item.scheduledScreeningId} item={item} />
+            ))
+          )}
         </CardContent>
         <CardFooter>
           <Button variant="outline"
