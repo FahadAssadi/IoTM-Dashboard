@@ -102,3 +102,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Test project build outputs
+/tests/bin/
+/tests/obj/

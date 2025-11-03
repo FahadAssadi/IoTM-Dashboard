@@ -12,13 +12,14 @@ namespace IoTM.Services
         Task<List<UserScreening>> GetNewScreeningsForUserAsync(Guid userId);
         List<UserScreeningDto> MapToDto(List<UserScreening> screenings);
         Task<List<ScheduledScreeningDto>> GetScheduledScreenings(Guid userId);
-        Task ScheduleScreening(Guid userId, Guid guidelineId, DateOnly scheduledDate);
-        Task EditScheduledScreening(Guid screeningId, DateOnly newDate);
+        Task<bool> ScheduleScreening(Guid userId, Guid guidelineId, DateOnly scheduledDate);
+        Task<bool> EditScheduledScreening(Guid screeningId, DateOnly newDate);
         Task CancelScheduledScreening(Guid screeningId);
-        Task ArchiveScheduledScreening(Guid screeningId);
+        Task ArchiveScheduledScreening(Guid scheduledScreeningId);
         Task HideScreening(Guid userId, Guid guidelineId);
         Task UnhideScreening(Guid userId, Guid guidelineId);
         Task<List<UserScreening>> GetHiddenScreeningsForUserAsync(Guid userId);
+        Task<Dictionary<Guid, List<ScheduledScreeningDto>>> GetArchivedScreeningsForUserAsync(Guid userId);
     }
 
     public class UserScreeningsService : IUserScreeningsService
@@ -47,7 +48,7 @@ namespace IoTM.Services
                 var query = _context.UserScreenings
                     .Include(us => us.Guideline)
                     .Include(us => us.ScheduledScreenings)
-                    .Where(us => us.UserId == userId && us.Status != ScreeningStatus.skipped)
+                    .Where(us => us.UserId == userId && us.Status != ScreeningStatus.skipped && us.Status != ScreeningStatus.completed && us.Status != ScreeningStatus.scheduled)
                     .OrderBy(us => us.Guideline.Name);
 
                 var total = await query.CountAsync();
@@ -67,32 +68,39 @@ namespace IoTM.Services
         }
 
         /// <summary>
-        /// Get new screening programs for a specific user.
-        /// This is called when the user creates an account and when they request to fetch new screenings,
-        /// such as when a new screening program is introduced.
+        /// Ensure the user's screenings match current recommendations:
+        /// - Adds new UserScreenings for newly recommended guidelines.
+        /// - Removes UserScreenings that are no longer recommended (based on updated profile).
+        ///   Removes completed screenings.
         /// </summary>
         public async Task<List<UserScreening>> GetNewScreeningsForUserAsync(Guid userId)
         {
             try
             {
-                // Fetch all recommended screening guidelines for the user
+                // Get current recommended guidelines for the user profile
                 var recommendedGuidelines = await _screeningGuidelineService.GetRecommendedScreeningGuidelines(userId);
+                var recommendedIds = recommendedGuidelines.Select(g => g.GuidelineId).ToHashSet();
 
-                // Fetch existing screenings for the user
+                // Load existing screenings for user
                 var existingScreenings = await _context.UserScreenings
                     .Where(us => us.UserId == userId)
                     .ToListAsync();
 
-                var existingGuidelineIds = existingScreenings
-                    .Select(us => us.GuidelineId)
-                    .ToHashSet();
-
-                // Find guidelines that are not yet in the user's screenings
+                // Determine which to add
+                var existingIds = existingScreenings.Select(us => us.GuidelineId).ToHashSet();
                 var newGuidelines = recommendedGuidelines
-                    .Where(g => !existingGuidelineIds.Contains(g.GuidelineId))
+                    .Where(g => !existingIds.Contains(g.GuidelineId))
                     .ToList();
 
-                // Create new UserScreening entries for missing guidelines
+                // Determine which to remove (no longer recommended).
+                var screeningsToRemove = existingScreenings
+                    .Where(us => !recommendedIds.Contains(us.GuidelineId) && (us.Status == ScreeningStatus.completed || us.Status != ScreeningStatus.scheduled))
+                    .ToList();
+
+                // Apply changes transactionally
+                using var tx = await _context.Database.BeginTransactionAsync();
+
+                // Add new screenings
                 var newUserScreenings = newGuidelines.Select(g => new UserScreening
                 {
                     ScreeningId = Guid.NewGuid(),
@@ -103,18 +111,36 @@ namespace IoTM.Services
                     UpdatedAt = DateTime.UtcNow
                 }).ToList();
 
-                // Add new screenings to the database
                 if (newUserScreenings.Any())
                 {
                     _context.UserScreenings.AddRange(newUserScreenings);
-                    await _context.SaveChangesAsync();
                 }
+
+                // Remove screenings that no longer apply (and their scheduled entries)
+                if (screeningsToRemove.Any())
+                {
+                    var toRemoveIds = screeningsToRemove.Select(us => us.ScreeningId).ToList();
+
+                    // Remove scheduled screenings (active or archived) tied to these UserScreenings
+                    var scheduledToRemove = await _context.ScheduledScreenings
+                        .Where(ss => toRemoveIds.Contains(ss.ScreeningId))
+                        .ToListAsync();
+                    if (scheduledToRemove.Any())
+                    {
+                        _context.ScheduledScreenings.RemoveRange(scheduledToRemove);
+                    }
+
+                    _context.UserScreenings.RemoveRange(screeningsToRemove);
+                }
+
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
 
                 return newUserScreenings;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching new screenings for user {UserId}", userId);
+                _logger.LogError(ex, "Error reconciling screenings for user {UserId}", userId);
                 return new List<UserScreening>();
             }
         }
@@ -170,7 +196,7 @@ namespace IoTM.Services
             }
         }
 
-        public async Task ScheduleScreening(Guid userId, Guid guidelineId, DateOnly scheduledDate)
+        public async Task<bool> ScheduleScreening(Guid userId, Guid guidelineId, DateOnly scheduledDate)
         {
             try
             {
@@ -193,6 +219,15 @@ namespace IoTM.Services
                     await _context.SaveChangesAsync();
                 }
 
+                // Idempotency: if a scheduled screening already exists for the same date and is active, return Duplicate
+                var duplicateExists = await _context.ScheduledScreenings
+                    .AnyAsync(ss => ss.ScreeningId == userScreening.ScreeningId && ss.ScheduledDate == scheduledDate && ss.IsActive);
+                if (duplicateExists)
+                {
+                    // No-op: idempotent duplicate
+                    return false;
+                }
+
                 // Add scheduled screening
                 var scheduledScreening = new ScheduledScreening
                 {
@@ -202,7 +237,17 @@ namespace IoTM.Services
                     CreatedAt = DateTime.UtcNow
                 };
                 _context.ScheduledScreenings.Add(scheduledScreening);
+
+                // If the guideline is not recurring, mark as scheduled
+                var guideline = await _context.ScreeningGuidelines.FindAsync(guidelineId);
+                if (guideline != null && !guideline.IsRecurring)
+                {
+                    userScreening.Status = ScreeningStatus.scheduled;
+                    userScreening.UpdatedAt = DateTime.UtcNow;
+                }
+
                 await _context.SaveChangesAsync();
+                return true;
             }
             catch (Exception ex)
             {
@@ -211,19 +256,40 @@ namespace IoTM.Services
             }
         }
 
-        public async Task EditScheduledScreening(Guid screeningId, DateOnly newDate)
+        public async Task<bool> EditScheduledScreening(Guid screeningId, DateOnly newDate)
         {
             try
             {
                 var scheduledScreening = await _context.ScheduledScreenings
                     .FirstOrDefaultAsync(ss => ss.ScheduledScreeningId == screeningId);
 
-                if (scheduledScreening != null)
+                if (scheduledScreening == null)
                 {
-                    scheduledScreening.ScheduledDate = newDate;
-                    scheduledScreening.UpdatedAt = DateTime.UtcNow;
-                    await _context.SaveChangesAsync();
+                    throw new KeyNotFoundException("Scheduled screening does not exist.");
                 }
+
+                // If the date hasn't changed, consider it a success (idempotent)
+                if (scheduledScreening.ScheduledDate == newDate)
+                {
+                    return true;
+                }
+
+                // Idempotency: prevent changing to a date that already exists for the same UserScreening (active only)
+                var duplicateExists = await _context.ScheduledScreenings
+                    .AnyAsync(ss => ss.ScreeningId == scheduledScreening.ScreeningId
+                                    && ss.ScheduledScreeningId != screeningId
+                                    && ss.ScheduledDate == newDate
+                                    && ss.IsActive);
+                if (duplicateExists)
+                {
+                    return false;
+                }
+
+                scheduledScreening.ScheduledDate = newDate;
+                scheduledScreening.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                return true;
             }
             catch (Exception ex)
             {
@@ -241,7 +307,25 @@ namespace IoTM.Services
 
                 if (scheduledScreening != null)
                 {
+                    // Load the related UserScreening (and its Guideline) using the ScreeningId
+                    var userScreening = await _context.UserScreenings
+                        .Include(us => us.Guideline)
+                        .FirstOrDefaultAsync(us => us.ScreeningId == scheduledScreening.ScreeningId);
+
+                    // Remove the scheduled screening
                     _context.ScheduledScreenings.Remove(scheduledScreening);
+
+                    // Update parent UserScreening status based on whether the guideline is recurring
+                    if (userScreening?.Guideline != null)
+                    {
+                        // if screening is not archived and recurring, set status back to pending
+                        if (scheduledScreening.IsActive && userScreening.Guideline.IsRecurring)
+                        {
+                            userScreening.Status = ScreeningStatus.pending;
+                            userScreening.UpdatedAt = DateTime.UtcNow;
+                        }
+                    }
+
                     await _context.SaveChangesAsync();
                 }
             }
@@ -252,22 +336,38 @@ namespace IoTM.Services
             }
         }
 
-        public async Task ArchiveScheduledScreening(Guid screeningId)
+        public async Task ArchiveScheduledScreening(Guid scheduledScreeningId)
         {
             try
             {
                 var scheduledScreening = await _context.ScheduledScreenings
-                    .FirstOrDefaultAsync(ss => ss.ScheduledScreeningId == screeningId);
+                    .FirstOrDefaultAsync(x => x.ScheduledScreeningId == scheduledScreeningId);
 
                 if (scheduledScreening != null)
                 {
                     scheduledScreening.IsActive = false;
+
+                    // Load the related UserScreening (and its Guideline) using the ScreeningId
+                    var userScreening = await _context.UserScreenings
+                        .Include(us => us.Guideline)
+                        .FirstOrDefaultAsync(us => us.ScreeningId == scheduledScreening.ScreeningId);
+                    // Update parent UserScreening status based on whether the guideline is recurring
+                    if (userScreening?.Guideline != null)
+                    {
+                        // if screening is non-recurring, set status to completed
+                        // TODO: add check to make sure the scheduled date has passed, and throw error if not
+                        if (!userScreening.Guideline.IsRecurring)
+                        {
+                            userScreening.Status = ScreeningStatus.completed;
+                            userScreening.UpdatedAt = DateTime.UtcNow;
+                        }
+                    }
                     await _context.SaveChangesAsync();
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error archiving scheduled screening {ScreeningId}", screeningId);
+                _logger.LogError(ex, "Error archiving scheduled screening {ScreeningId}", scheduledScreeningId);
                 throw;
             }
         }
@@ -305,6 +405,36 @@ namespace IoTM.Services
                 .Include(us => us.ScheduledScreenings)
                 .Where(us => us.UserId == userId && us.Status == ScreeningStatus.skipped)
                 .ToListAsync();
+        }
+
+        public async Task<Dictionary<Guid, List<ScheduledScreeningDto>>> GetArchivedScreeningsForUserAsync(Guid userId)
+        {
+            var archived = await _context.ScheduledScreenings
+                .Include(ss => ss.UserScreening)
+                .ThenInclude(us => us.Guideline)
+                .Where(ss => ss.UserScreening.UserId == userId && ss.IsActive == false)
+                .ToListAsync();
+
+            // Group by guidelineId and sort dates
+            var grouped = archived
+                .GroupBy(ss => ss.UserScreening.Guideline.GuidelineId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderBy(ss => ss.ScheduledDate)
+                          .Select(ss => new ScheduledScreeningDto
+                          {
+                              ScheduledScreeningId = ss.ScheduledScreeningId,
+                              ScheduledDate = ss.ScheduledDate,
+                              IsActive = ss.IsActive,
+                              ScreeningId = ss.ScreeningId,
+                              GuidelineId = ss.UserScreening.Guideline.GuidelineId,
+                              GuidelineName = ss.UserScreening.Guideline.Name,
+                              ScreeningType = ss.UserScreening.Guideline.ScreeningType,
+                              DefaultFrequencyMonths = ss.UserScreening.Guideline.DefaultFrequencyMonths
+                          }).ToList()
+                );
+
+            return grouped;
         }
     }
 }
